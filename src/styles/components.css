@@ -1,0 +1,103 @@
+@layer components {
+
+  .emoji {
+      font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+  }
+
+      
+  .lined-paper {
+    background-color: #fff;
+    background-image:
+    linear-gradient(90deg, transparent 79px, #abced4 79px, #abced4 81px, transparent 81px),
+    linear-gradient(#eee .1em, transparent .1em);
+    background-size: 100% 1.2em;
+  }
+
+  .flowery {
+    margin: 0;
+    background: 
+    /* Group Four */ 
+    radial-gradient(
+      circle at 165px 165px,
+      var(--c2) 20px,
+      transparent 21px
+    ),
+    radial-gradient(circle at 195px 165px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 165px 195px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 135px 165px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 165px 135px, var(--c3) 20px, transparent 21px),
+    /* Group Three */
+    radial-gradient(circle at 55px 165px, var(--c3) 24px, transparent 25px),
+    radial-gradient(circle at 81px 139px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 81px 191px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 29px 191px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 29px 139px, var(--c2) 24px, transparent 25px),
+    /* Group Two */
+      radial-gradient(circle at 165px 55px, var(--c3) 24px, transparent 25px),
+    radial-gradient(circle at 191px 29px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 191px 81px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 139px 81px, var(--c2) 24px, transparent 25px),
+    radial-gradient(circle at 139px 29px, var(--c2) 24px, transparent 25px),
+    /* Group One */
+      radial-gradient(circle at 55px 55px, var(--c2) 20px, transparent 21px),
+    radial-gradient(circle at 85px 55px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 55px 85px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 25px 55px, var(--c3) 20px, transparent 21px),
+    radial-gradient(circle at 55px 25px, var(--c3) 20px, transparent 21px);
+
+    background-color: var(--c1);
+    background-size: 220px 220px;
+
+  }
+
+  .puzzle-bg {
+  --sz: 31px;
+  --c1: #2c8928ff;
+  --c2: #eed200ff;
+  --c3: #2e811cff;
+  --c4: #afd146ff;
+  --ts: 50% / calc(var(--sz) * 10) calc(var(--sz) * 10);
+  --pz: calc(var(--sz) * 0.65), #fff0 calc((var(--sz) * 0.65) + 1px);
+  height: 100%;
+  background: radial-gradient(circle at 53% 25%, var(--c4) var(--pz)) var(--ts),
+    radial-gradient(circle at 75% 47%, var(--c2) var(--pz)) var(--ts),
+    radial-gradient(circle at 3% 75%, var(--c2) var(--pz)) var(--ts),
+    radial-gradient(circle at 25% 53%, var(--c4) var(--pz)) var(--ts),
+    radial-gradient(circle at 53% 75%, var(--c3) var(--pz)) var(--ts),
+    radial-gradient(circle at 75% 97%, var(--c1) var(--pz)) var(--ts),
+    radial-gradient(circle at 3% 25%, var(--c1) var(--pz)) var(--ts),
+    radial-gradient(circle at 25% 3%, var(--c3) var(--pz)) var(--ts),
+    conic-gradient(
+        from 0deg at 50% 50%,
+        var(--c1) 0 25%,
+        var(--c2) 0 50%,
+        var(--c3) 0 75%,
+        var(--c4) 0 100%
+      )
+      var(--ts);
+  }
+        
+    button {
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-size: 1em;
+      font-weight: 500;
+      font-family: inherit;
+      /* background-color: #1a1a1a; */
+      cursor: pointer;
+      transition: border-color 0.25s;
+    }
+    /* button:hover {
+      border-color: var(--color-accent-foreground);
+    } */
+    /* button:focus,
+    button:focus-visible {
+      outline: 4px auto -webkit-focus-ring-color;
+    }  */
+  
+    /* @media (prefers-color-scheme: light) {
+      button {
+        background-color: #f9f9f9;
+      }
+    } */
+}

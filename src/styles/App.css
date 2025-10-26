@@ -1,0 +1,31 @@
+#root {
+  width: 100%;
+  margin: 0 auto;
+  text-align: center;
+}
+//Fix for Safari/iOS
+/* Disable touch callout */
+.animated-element {
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+/* globals.css */
+.animation-element {
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  perspective: 1000px;
+}
+
+/* Only apply to actively animating elements */
+.animate-me {
+  will-change: transform, opacity;
+}
+.clickable {
+  touch-action: manipulation;
+}
+/* Hardware acceleration hack */
+@supports (-webkit-overflow-scrolling: touch) {
+  .mobile-animation {
+    -webkit-overflow-scrolling: touch;
+  }
+}

@@ -1,0 +1,301 @@
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+
+  :root {
+    --main: #88aaee;
+    --overlay: rgba(0, 0, 0, 0.8); /* background color overlay for alert dialogs, modals, etc. */
+
+    --bg: #dfe5f2;
+    --bw: #fff; /* white and secondary black e.g. utility class variant would be: bg-[#fff] dark:bg-[#212121] */
+    --blank: #000; /* blank black and white */
+    --border: #000;
+    --text: #000;
+    --mtext: #000; /* text that is placed on background with main color e.g. text color of default button */
+    --ring-offset: #fff;
+  
+    --heading-desktop-h1-font-family: "Roboto", Helvetica;
+    --heading-desktop-h1-font-size: 56px;
+    --heading-desktop-h1-font-style: normal;
+    --heading-desktop-h1-font-weight: 700;
+    --heading-desktop-h1-letter-spacing: 0px;
+    --heading-desktop-h1-line-height: 120.00000762939453%;
+    --heading-desktop-h2-font-family: "Roboto", Helvetica;
+    --heading-desktop-h2-font-size: 48px;
+    --heading-desktop-h2-font-style: normal;
+    --heading-desktop-h2-font-weight: 700;
+    --heading-desktop-h2-letter-spacing: 0px;
+    --heading-desktop-h2-line-height: 120.00000762939453%;
+    --heading-desktop-h3-font-family: "Roboto", Helvetica;
+    --heading-desktop-h3-font-size: 40px;
+    --heading-desktop-h3-font-style: normal;
+    --heading-desktop-h3-font-weight: 700;
+    --heading-desktop-h3-letter-spacing: 0px;
+    --heading-desktop-h3-line-height: 120.00000762939453%;
+    --heading-desktop-h5-font-family: "Roboto", Helvetica;
+    --heading-desktop-h5-font-size: 24px;
+    --heading-desktop-h5-font-style: normal;
+    --heading-desktop-h5-font-weight: 700;
+    --heading-desktop-h5-letter-spacing: 0px;
+    --heading-desktop-h5-line-height: 140%;
+    --heading-desktop-h6-font-family: "Roboto", Helvetica;
+    --heading-desktop-h6-font-size: 20px;
+    --heading-desktop-h6-font-style: normal;
+    --heading-desktop-h6-font-weight: 700;
+    --heading-desktop-h6-letter-spacing: 0px;
+    --heading-desktop-h6-line-height: 140%;
+    --heading-desktop-tagline-font-family: "Roboto", Helvetica;
+    --heading-desktop-tagline-font-size: 16px;
+    --heading-desktop-tagline-font-style: normal;
+    --heading-desktop-tagline-font-weight: 600;
+    --heading-desktop-tagline-letter-spacing: 0px;
+    --heading-desktop-tagline-line-height: 150%;
+    --text-medium-normal-font-family: "Roboto", Helvetica;
+    --text-medium-normal-font-size: 18px;
+    --text-medium-normal-font-style: normal;
+    --text-medium-normal-font-weight: 400;
+    --text-medium-normal-letter-spacing: 0px;
+    --text-medium-normal-line-height: 150%;
+    --text-regular-link-font-family: "Roboto", Helvetica;
+    --text-regular-link-font-size: 16px;
+    --text-regular-link-font-style: normal;
+    --text-regular-link-font-weight: 400;
+    --text-regular-link-letter-spacing: 0px;
+    --text-regular-link-line-height: 150%;
+    --text-regular-normal-font-family: "Roboto", Helvetica;
+    --text-regular-normal-font-size: 16px;
+    --text-regular-normal-font-style: normal;
+    --text-regular-normal-font-weight: 400;
+    --text-regular-normal-letter-spacing: 0px;
+    --text-regular-normal-line-height: 150%;
+    --text-regular-semi-bold-font-family: "Roboto", Helvetica;
+    --text-regular-semi-bold-font-size: 16px;
+    --text-regular-semi-bold-font-style: normal;
+    --text-regular-semi-bold-font-weight: 600;
+    --text-regular-semi-bold-letter-spacing: 0px;
+    --text-regular-semi-bold-line-height: 150%;
+    --text-small-link-font-family: "Roboto", Helvetica;
+    --text-small-link-font-size: 14px;
+    --text-small-link-font-style: normal;
+    --text-small-link-font-weight: 400;
+    --text-small-link-letter-spacing: 0px;
+    --text-small-link-line-height: 150%;
+    --text-small-normal-font-family: "Roboto", Helvetica;
+    --text-small-normal-font-size: 14px;
+    --text-small-normal-font-style: normal;
+    --text-small-normal-font-weight: 400;
+    --text-small-normal-letter-spacing: 0px;
+    --text-small-normal-line-height: 150%;
+    --text-tiny-normal-font-family: "Roboto", Helvetica;
+    --text-tiny-normal-font-size: 12px;
+    --text-tiny-normal-font-style: normal;
+    --text-tiny-normal-font-weight: 400;
+    --text-tiny-normal-letter-spacing: 0px;
+    --text-tiny-normal-line-height: 150%;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.556 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --destructive-foreground: oklch(0.9 0.05 27.325);
+    --border: oklch(0.922 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+    --chart-1: oklch(0.646 0.222 41.116);
+    --chart-2: oklch(0.6 0.118 184.704);
+    --chart-3: oklch(0.398 0.07 227.392);
+    --chart-4: oklch(0.828 0.189 84.429);
+    --chart-5: oklch(0.769 0.188 70.08);
+    --radius: 0.625rem;
+    --sidebar: oklch(0.985 0 0);
+    --sidebar-foreground: oklch(0.145 0 0);
+    --sidebar-primary: oklch(0.205 0 0);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.97 0 0);
+    --sidebar-accent-foreground: oklch(0.205 0 0);
+    --sidebar-border: oklch(0.922 0 0);
+    --sidebar-ring: oklch(0.708 0 0);
+
+    --border-radius: 6px;
+    --box-shadow-x: 4px;
+    --box-shadow-y: 4px;
+    --reverse-box-shadow-x: -4px;
+    --reverse-box-shadow-y: -4px;
+    --base-font-weight: 500;
+    --heading-font-weight: 700;
+  
+    --shadow: var(--box-shadow-x) var(--box-shadow-y) 0px 0px var(--border);
+  }
+  
+  .dark {
+    --background: oklch(0.145 0 0);
+    --foreground: oklch(0.985 0 0);
+    --card: oklch(0.145 0 0);
+    --card-foreground: oklch(0.985 0 0);
+    --popover: oklch(0.145 0 0);
+    --popover-foreground: oklch(0.985 0 0);
+    --primary: oklch(0.985 0 0);
+    --primary-foreground: oklch(0.205 0 0);
+    --secondary: oklch(0.269 0 0);
+    --secondary-foreground: oklch(0.985 0 0);
+    --muted: oklch(0.269 0 0);
+    --muted-foreground: oklch(0.708 0 0);
+    --accent: oklch(0.269 0 0);
+    --accent-foreground: oklch(0.985 0 0);
+    --destructive: oklch(0.396 0.141 25.723);
+    --destructive-foreground: oklch(0.637 0.237 25.331);
+    --border: oklch(0.269 0 0);
+    --input: oklch(0.269 0 0);
+    --ring: oklch(0.439 0 0);
+    --chart-1: oklch(0.488 0.243 264.376);
+    --chart-2: oklch(0.696 0.17 162.48);
+    --chart-3: oklch(0.769 0.188 70.08);
+    --chart-4: oklch(0.627 0.265 303.9);
+    --chart-5: oklch(0.645 0.246 16.439);
+    --sidebar: oklch(0.205 0 0);
+    --sidebar-foreground: oklch(0.985 0 0);
+    --sidebar-primary: oklch(0.488 0.243 264.376);
+    --sidebar-primary-foreground: oklch(0.985 0 0);
+    --sidebar-accent: oklch(0.269 0 0);
+    --sidebar-accent-foreground: oklch(0.985 0 0);
+    --sidebar-border: oklch(0.269 0 0);
+    --sidebar-ring: oklch(0.439 0 0);
+    --bg: #272933;
+    --bw: #212121;
+    --blank: #fff;
+    --border: #000;
+    --text: #e6e6e6;
+    --mtext: #000;
+    --ring: #fff;
+    --ring-offset: #000;
+
+    --shadow: var(--box-shadow-x) var(--box-shadow-y) 0px 0px var(--border);
+  }
+  
+
+  html {
+    position: relative;
+    overflow-x: clip;
+  }
+
+  body {
+    margin: 0;
+    /* display: flex; */
+    /* place-items: center; */
+    min-width: 320px;
+    min-height: 100vh;
+    font-family: "Nunito", Arial, Helvetica, sans-serif;
+    line-height: 1.5;
+    font-weight: 400;
+    color-scheme: light dark;
+    color: rgba(255, 255, 255, 0.87);
+    background-color: #32241B;
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    transition: background-color 1s ease;
+  }
+
+  img {
+    max-width: none;
+  }
+
+  a {
+    font-weight: 500;
+    color: #646cff;
+    text-decoration: inherit;
+
+    &&:hover {
+      color: #535bf2;
+    }
+  } 
+
+  h1 {
+    font-size: 3.2em;
+    line-height: 1.1;
+  }
+
+  #contact {
+    background-image: url("/bg/dark-tl.svg"), url("/bg/dark-tr.svg"), url("/bg/dark-bl.svg"), url("/bg/dark-br.svg");
+    background-position: top left, top right, bottom left, bottom right;
+    background-repeat: no-repeat;
+    background-size: 25em;
+    padding: 7em 0;
+  }
+  
+  /* @media (prefers-color-scheme: light) {
+    :root {
+      color: #213547;
+      background-color: #ffffff;
+    }
+    a:hover {
+      color: #747bff;
+    }
+  } */
+
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html {
+    @apply scroll-smooth;
+  }
+  body {
+    @apply bg-background text-foreground overscroll-none font-poppins;
+    /* font-feature-settings: "rlig" 1, "calt" 1; */
+    font-synthesis-weight: none;
+    text-rendering: optimizeLegibility;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-amiri;
+  }
+  
+  @supports (font: -apple-system-body) and (-webkit-appearance: none) {
+    [data-wrapper] {
+      @apply min-[1800px]:border-t;
+    }
+  }
+
+  /* Custom scrollbar styling. Thanks @pranathiperii. */
+  ::-webkit-scrollbar {
+    width: 5px;
+  }
+  ::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  ::-webkit-scrollbar-thumb {
+    background: hsl(var(--border));
+    border-radius: 5px;
+  }
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: hsl(var(--border)) transparent;
+  }
+}
