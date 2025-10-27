@@ -1,0 +1,238 @@
+// ======================================
+// Hiring Management App Prisma Schema 
+// ======================================
+
+generator client {
+  provider = "prisma-client"
+  output   = "../node_modules/.prisma/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ======================================
+// ENUMS
+// ======================================
+
+enum UserRole {
+  ADMIN
+  APPLICANT
+}
+
+enum JobStatus {
+  ACTIVE
+  INACTIVE
+  DRAFT
+}
+
+// ======================================
+// MODELS
+// ======================================
+// Auth profiles table
+model Profile {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email     String   @unique
+  role      String   // "recruiter" or "job_seeker"
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  recruiterProfile  RecruiterProfile?
+  jobSeekerProfile  JobSeekerProfile?
+  jobs              Job[]
+  applications      Application[]
+
+  @@map("profiles")
+}
+
+// Recruiter-specific profile
+model RecruiterProfile {
+  id               String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId        String   @unique @db.Uuid
+  fullName         String?  @map("full_name")
+  companyName      String?  @map("company_name")
+  phone            String?
+  profileImageUrl  String?  @map("profile_image_url")
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt        DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("recruiter_profiles")
+}
+
+// Job seeker-specific profile
+model JobSeekerProfile {
+  id                        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  profileId                 String   @unique @db.Uuid
+  fullName                  String?  @map("full_name")
+  phone                     String?
+  location                  String?
+  bio                       String?
+  profileImageUrl           String?  @map("profile_image_url")
+  resumeUrl                 String?  @map("resume_url")
+  portfolioUrl              String?  @map("portfolio_url")
+  profileCompletionPercentage Int?   @map("profile_completion_percentage")
+  createdAt                 DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                 DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  profile Profile @relation(fields: [profileId], references: [id], onDelete: Cascade)
+
+  @@map("job_seeker_profiles")
+}
+
+
+// Application form field configuration
+model ApplicationFormField {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId        String   @map("job_id") @db.Uuid
+  fieldName    String   @map("field_name")
+  fieldType    String   @default("text") @map("field_type") // "text", "email", "phone", "textarea", etc.
+  fieldState   String   @default("optional") @map("field_state") // "mandatory", "optional", "off"
+  displayOrder Int      @default(0) @map("display_order")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  job                  Job                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  applicationResponses ApplicationResponse[]
+
+  @@index([jobId])
+  @@map("application_form_fields")
+}
+
+// Job applications
+model Application {
+  id          String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId       String   @map("job_id") @db.Uuid
+  jobSeekerId String   @map("job_seeker_id") @db.Uuid
+  status      String   @default("pending") // "pending", "reviewed", "rejected", "accepted"
+  appliedAt   DateTime @default(now()) @map("applied_at") @db.Timestamptz(6)
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  job                  Job                    @relation(fields: [jobId], references: [id], onDelete: Cascade)
+  jobSeeker            Profile                @relation(fields: [jobSeekerId], references: [id], onDelete: Cascade)
+  applicationResponses ApplicationResponse[]
+
+  @@unique([jobId, jobSeekerId])
+  @@index([jobId])
+  @@index([jobSeekerId])
+  @@map("applications")
+}
+
+// Application form responses
+model ApplicationResponse {
+  id            String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  applicationId String   @map("application_id") @db.Uuid
+  fieldId       String   @map("field_id") @db.Uuid
+  responseValue String?  @map("response_value")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  application Application           @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  field       ApplicationFormField  @relation(fields: [fieldId], references: [id], onDelete: Cascade)
+
+  @@index([applicationId])
+  @@map("application_responses")
+}
+// ======================================
+// USER MODELS
+// ======================================
+
+model User {
+  id          String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email       String        @unique
+  password    String
+  fullName    String
+  role        UserRole      @default(APPLICANT)
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  // Relations
+  jobs        Job[]         @relation("JobAuthor")
+  candidates  Candidate[]   @relation("CandidateUser")
+}
+
+// ======================================
+// JOB MANAGEMENT
+// ======================================
+
+// Job postings
+model Job {
+  id              String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  slug            String   @unique
+  recruiterId     String   @map("recruiter_id") @db.Uuid
+  title           String
+  description     String?
+  department      String?
+  location        String?
+  salaryMin       Decimal? @map("salary_min") @db.Decimal(10, 2)
+  salaryMax       Decimal? @map("salary_max") @db.Decimal(10, 2)
+  salaryCurrency String?      @default("IDR")
+  salaryDisplay  String?
+  employmentType  String?  @default("Full-time") @map("employment_type")
+  status          String   @default("draft") // "draft", "active", "inactive"
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(6)
+  
+  // Display card data
+  listBadge      String?      // e.g. "Active"
+  startedOnText  String?      // e.g. "started on 1 Oct 2025"
+  ctaText        String?      // e.g. "Manage Job"
+
+  // Relations
+  authorId       String
+  author         User         @relation("JobAuthor", fields: [authorId], references: [id])
+  config         JobConfig?
+  candidates     Candidate[]
+  recruiter              Profile                    @relation(fields: [recruiterId], references: [id], onDelete: Cascade)
+  applicationFormFields  ApplicationFormField[]
+  applications           Application[]
+
+  @@index([recruiterId])
+  @@index([status])
+  @@map("jobs")
+}
+
+// ======================================
+// JOB CONFIGURATION
+// ======================================
+
+model JobConfig {
+  id        String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  jobId     String       @unique
+  job       Job          @relation(fields: [jobId], references: [id])
+  sections  Json         // stores {title, fields:[{key, validation:{required}}]}
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+}
+
+// ======================================
+// CANDIDATES (APPLICANTS)
+// ======================================
+
+model Candidate {
+  id          String               @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId      String?              // optional, in case applicant has an account
+  jobId       String
+  appliedAt   DateTime             @default(now())
+
+  user        User?                @relation("CandidateUser", fields: [userId], references: [id])
+  job         Job                  @relation(fields: [jobId], references: [id])
+  attributes  CandidateAttribute[]
+}
+
+// ======================================
+// CANDIDATE ATTRIBUTES (Dynamic fields)
+// ======================================
+
+model CandidateAttribute {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  candidateId String
+  candidate   Candidate   @relation(fields: [candidateId], references: [id])
+  key         String      // e.g. "full_name", "email"
+  label       String?
+  value       String?
+  order       Int?
+}

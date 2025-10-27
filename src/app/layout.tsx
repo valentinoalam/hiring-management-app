@@ -47,7 +47,7 @@ export default async function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <NextAuthProvider session={session}>
+        <NextAuthProvider session={session as any}>
           <AuthProvider>
             <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
               <QueryClientProvider client={queryClient}>

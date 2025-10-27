@@ -2,7 +2,7 @@
 
 import type React from "react"
 import { createContext, useContext, useEffect, useState } from "react"
-import { createClient } from "@/lib/supabase/client"
+import { useCurrentUser, useSignOut } from "@/lib/queries/auth"
 import type { User } from "@supabase/supabase-js"
 
 interface UserProfile {
@@ -54,106 +54,32 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<UserProfile | null>(null)
   const [recruiterProfile, setRecruiterProfile] = useState<RecruiterProfile | null>(null)
   const [jobSeekerProfile, setJobSeekerProfile] = useState<JobSeekerProfile | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
 
-  const supabase = createClient()
+  const { data: currentUserData, isLoading: isLoadingUser } = useCurrentUser()
+  const { mutateAsync: signOut } = useSignOut()
 
   useEffect(() => {
-    const initializeAuth = async () => {
-      try {
-        // Get current user
-        const {
-          data: { user: currentUser },
-        } = await supabase.auth.getUser()
+    if (currentUserData) {
+      setUser(currentUserData.user)
+      setProfile(currentUserData.profile)
 
-        if (currentUser) {
-          setUser(currentUser)
-
-          // Fetch user profile
-          const { data: profileData } = await supabase.from("profiles").select("*").eq("id", currentUser.id).single()
-
-          if (profileData) {
-            setProfile(profileData)
-
-            // Fetch role-specific profile
-            if (profileData.role === "recruiter") {
-              const { data: recruiterData } = await supabase
-                .from("recruiter_profiles")
-                .select("*")
-                .eq("id", currentUser.id)
-                .single()
-
-              if (recruiterData) {
-                setRecruiterProfile(recruiterData)
-              }
-            } else {
-              const { data: jobSeekerData } = await supabase
-                .from("job_seeker_profiles")
-                .select("*")
-                .eq("id", currentUser.id)
-                .single()
-
-              if (jobSeekerData) {
-                setJobSeekerProfile(jobSeekerData)
-              }
-            }
-          }
-        }
-      } catch (error) {
-        console.error("[v0] Error initializing auth:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    initializeAuth()
-
-    // Subscribe to auth changes
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange(async (event, session) => {
-      if (session?.user) {
-        setUser(session.user)
-
-        // Fetch updated profile
-        const { data: profileData } = await supabase.from("profiles").select("*").eq("id", session.user.id).single()
-
-        if (profileData) {
-          setProfile(profileData)
-
-          if (profileData.role === "recruiter") {
-            const { data: recruiterData } = await supabase
-              .from("recruiter_profiles")
-              .select("*")
-              .eq("id", session.user.id)
-              .single()
-
-            setRecruiterProfile(recruiterData || null)
-          } else {
-            const { data: jobSeekerData } = await supabase
-              .from("job_seeker_profiles")
-              .select("*")
-              .eq("id", session.user.id)
-              .single()
-
-            setJobSeekerProfile(jobSeekerData || null)
-          }
-        }
-      } else {
-        setUser(null)
-        setProfile(null)
-        setRecruiterProfile(null)
+      if (currentUserData.profile.role === "recruiter") {
+        setRecruiterProfile(currentUserData.roleProfile)
         setJobSeekerProfile(null)
+      } else {
+        setJobSeekerProfile(currentUserData.roleProfile)
+        setRecruiterProfile(null)
       }
-    })
-
-    return () => {
-      subscription?.unsubscribe()
+    } else {
+      setUser(null)
+      setProfile(null)
+      setRecruiterProfile(null)
+      setJobSeekerProfile(null)
     }
-  }, [])
+  }, [currentUserData])
 
   const logout = async () => {
-    await supabase.auth.signOut()
+    await signOut()
     setUser(null)
     setProfile(null)
     setRecruiterProfile(null)
@@ -167,7 +93,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         profile,
         recruiterProfile,
         jobSeekerProfile,
-        isLoading,
+        isLoading: isLoadingUser,
         isAuthenticated: !!user,
         logout,
       }}

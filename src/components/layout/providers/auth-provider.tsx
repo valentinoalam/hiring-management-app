@@ -5,7 +5,6 @@ import type React from "react"
 import { useEffect } from "react"
 import { useSession } from "next-auth/react"
 import { useAuthStore } from "@/stores/auth-store"
-import { checkAccess } from "@/app/actions"
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { data: session, status } = useSession()
@@ -31,10 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         roles: session.user.roles,
       })
 
-      // Fetch accessible pages
-      checkAccess().then((result) => {
-        setAccessiblePages(result.accessiblePages)
-      })
+
     }
   }, [session, status, setUser, setLoading, setAccessiblePages, logout])
   if (isLoading) {

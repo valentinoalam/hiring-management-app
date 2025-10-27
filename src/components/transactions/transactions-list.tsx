@@ -8,7 +8,7 @@ import { format } from "date-fns";
 import { id } from "date-fns/locale";
 import { TransactionType } from "@prisma/client";
 import { formatCurrency } from "#@/lib/utils/formatters.ts";
-import { cn } from "#@/lib/utils/utils.ts";
+import { cn } from "@/utils/utils";
 import { 
   Table, 
   TableBody, 

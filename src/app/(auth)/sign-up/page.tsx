@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { createClient } from "@/lib/supabase/client"
+import { useSignUp } from "@/lib/queries/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -16,43 +15,33 @@ export default function SignUpPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [repeatPassword, setRepeatPassword] = useState("")
+  const [fullName, setFullName] = useState("")
   const [role, setRole] = useState<"recruiter" | "job_seeker">("job_seeker")
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  const { mutate: signUp, isPending: isLoading } = useSignUp()
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
     setError(null)
 
     if (password !== repeatPassword) {
       setError("Passwords do not match")
-      setIsLoading(false)
       return
     }
 
-    try {
-      const { error: signUpError } = await supabase.auth.signUp({
-        email,
-        password,
-        options: {
-          emailRedirectTo:
-            process.env.NEXT_PUBLIC_DEV_SUPABASE_REDIRECT_URL || `${window.location.origin}/auth/sign-up-success`,
-          data: {
-            role,
-          },
+    signUp(
+      { email, password, role, fullName },
+      {
+        onSuccess: () => {
+          router.push("/auth/sign-up-success")
         },
-      })
-
-      if (signUpError) throw signUpError
-      router.push("/auth/sign-up-success")
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
+        onError: (error) => {
+          setError(error instanceof Error ? error.message : "An error occurred")
+        },
+      },
+    )
   }
 
   return (
@@ -83,6 +72,18 @@ export default function SignUpPage() {
                         <SelectItem value="recruiter">Recruiter</SelectItem>
                       </SelectContent>
                     </Select>
+                  </div>
+
+                  <div className="grid gap-2">
+                    <Label htmlFor="fullName">Full Name</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="John Doe"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      disabled={isLoading}
+                    />
                   </div>
 
                   <div className="grid gap-2">

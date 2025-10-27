@@ -6,7 +6,7 @@ import { CameraView } from "./camera-view";
 import { FC, useRef } from "react";
 import { CameraType } from "@/components/ui/camera/camera-types";
 import { useCamera } from "@/components/ui/camera/camera-provider";
-import { cn } from "#@/lib/utils/utils.ts";
+import { cn } from "@/utils/utils";
 import {
   Dialog,
   DialogContent,

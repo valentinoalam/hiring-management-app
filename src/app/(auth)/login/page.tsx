@@ -1,8 +1,7 @@
 "use client"
 
 import type React from "react"
-
-import { createClient } from "@/lib/supabase/client"
+import { useSignIn } from "@/lib/queries/auth"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -15,37 +14,30 @@ export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [error, setError] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
+
+  const { mutate: signIn, isPending: isLoading } = useSignIn()
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    const supabase = createClient()
-    setIsLoading(true)
     setError(null)
 
-    try {
-      const { data, error: signInError } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      })
-
-      if (signInError) throw signInError
-
-      // Get user role from metadata
-      const role = data.user?.user_metadata?.role || "job_seeker"
-
-      // Redirect based on role
-      if (role === "recruiter") {
-        router.push("/recruiter/dashboard")
-      } else {
-        router.push("/job-seeker/dashboard")
-      }
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
-    } finally {
-      setIsLoading(false)
-    }
+    signIn(
+      { email, password },
+      {
+        onSuccess: (data) => {
+          // Redirect based on role
+          if (data.profile.role === "recruiter") {
+            router.push("/recruiter/dashboard")
+          } else {
+            router.push("/job-seeker/dashboard")
+          }
+        },
+        onError: (error) => {
+          setError(error instanceof Error ? error.message : "An error occurred")
+        },
+      },
+    )
   }
 
   return (

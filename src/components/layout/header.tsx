@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { cn } from "#@/lib/utils/utils.ts"
+import { cn } from "@/utils/utils"
 import { ModeToggle } from "@/components/ui/mode-toggle"
 import { useMemo } from "react"
 import { Role } from "@prisma/client"
