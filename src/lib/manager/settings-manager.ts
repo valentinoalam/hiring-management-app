@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import { toast } from '#@/hooks/use-toast.ts';
-import settingsApi from '#@/services/settings-service.ts';
-import type { CustomGroup, SettingValue, LogoSettings, GroupSettings } from '#@/types/settings.ts';
+import { toast } from '@/hooks/use-toast';
+import settingsApi from '@/services/settings-service';
+import type { CustomGroup, SettingValue, LogoSettings, GroupSettings } from '@/types/settings';
 
 export class SettingsManager {
 

@@ -1,7 +1,6 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
+import { compare } from "bcryptjs"
 
 export async function POST(request: NextRequest) {
   try {
@@ -11,66 +10,31 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Email and password are required" }, { status: 400 })
     }
 
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-            } catch {
-              // Handle cookie setting errors
-            }
-          },
-        },
-      },
-    )
-
-    // Sign in with Supabase Auth
-    const { data, error: signInError } = await supabase.auth.signInWithPassword({
-      email,
-      password,
+    // Find user
+    const user = await prisma.user.findUnique({
+      where: { email },
+      include: { profile: true }
     })
 
-    if (signInError) {
-      return NextResponse.json({ error: signInError.message }, { status: 401 })
+    if (!user || !user.password) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
-    if (!data.user) {
-      return NextResponse.json({ error: "Failed to sign in" }, { status: 500 })
-    }
-
-    // Fetch user profile
-    const profile = await prisma.profile.findUnique({
-      where: { id: data.user.id },
-    })
-
-    if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
-    }
-
-    // Fetch role-specific profile
-    let roleProfile = null
-    if (profile.role === "recruiter") {
-      roleProfile = await prisma.recruiterProfile.findUnique({
-        where: { id: data.user.id },
-      })
-    } else {
-      roleProfile = await prisma.jobSeekerProfile.findUnique({
-        where: { id: data.user.id },
-      })
+    // Verify password
+    const isPasswordValid = await compare(password, user.password)
+    if (!isPasswordValid) {
+      return NextResponse.json({ error: "Invalid credentials" }, { status: 401 })
     }
 
     return NextResponse.json(
       {
-        user: data.user,
-        profile,
-        roleProfile,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.fullName,
+          role: user.role
+        },
+        profile: user.profile,
       },
       { status: 200 },
     )

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react"
-import { LogoutButton } from "../auth/logout-button"
+import { LogoutButton } from "../custom-ui/auth/logout-button"
 import jest from "jest" // Import jest to fix the undeclared variable error
 
 jest.mock("@/lib/auth/hooks", () => ({

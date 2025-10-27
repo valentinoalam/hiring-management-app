@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { createBrowserClient } from "@supabase/ssr"
-import { GestureProfileCapture } from "@/components/gesture-profile-capture"
+import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"

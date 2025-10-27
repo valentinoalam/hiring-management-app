@@ -17,7 +17,7 @@ export function sortFormFields(fields: FormField[]): FormField[] {
 }
 
 export function validateFormData(
-  data: Record<string, any>,
+  data: Record<string, unknown>,
   fields: FormField[],
 ): { valid: boolean; errors: Record<string, string> } {
   const errors: Record<string, string> = {}

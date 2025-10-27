@@ -7,22 +7,11 @@ import { Toaster } from "@/components/ui/toaster"
 import { Footer } from "@/components/layout/footer"
 import { generateMetaData } from "@/utils/metadata"
 import { NextAuthProvider } from "@/components/layout/providers/next-auth-provider"
-import getServerSession from "next-auth"
-import { authOptions } from "./api/auth/[...nextauth]/route"
-import { AuthProvider } from "@/components/layout/providers/auth-provider"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { queryClient } from "@/lib/query-client"
 import { Analytics } from "@vercel/analytics/next"
-
+import { auth } from '@/auth'
 const inter = Inter({ subsets: ["latin"] })
-// const _geist = Geist({ subsets: ["latin"] })
-// const _geistMono = Geist_Mono({ subsets: ["latin"] })
-
-// export const metadata: Metadata = {
-//   title: "HireFlow - Hiring Management Platform",
-//   description: "A modern hiring platform connecting recruiters and job seekers",
-//   generator: "v0.app",
-// }
 
 export async function generateMetadata() {
   return generateMetaData();
@@ -34,7 +23,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   themeColor: 'white',
-  // interactiveWidget: 'resizes-visual',
+  interactiveWidget: 'resizes-visual',
 }
 
 export default async function RootLayout({
@@ -42,22 +31,19 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode
 }>) {
-  const session = await getServerSession(authOptions)
-  
+  const session = await auth()
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <NextAuthProvider session={session as any}>
-          <AuthProvider>
-            <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
-              <QueryClientProvider client={queryClient}>
-                <AuthProvider>{children}</AuthProvider>
-              </QueryClientProvider>
-              <Analytics />
-              <Footer />
-              <Toaster />
-            </ThemeProvider>
-          </AuthProvider>
+        <NextAuthProvider session={session}> 
+          <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
+            <QueryClientProvider client={queryClient}>
+              {children}
+            </QueryClientProvider>
+            <Analytics />
+            <Footer />
+            <Toaster />
+          </ThemeProvider>
         </NextAuthProvider>
       </body>
     </html>

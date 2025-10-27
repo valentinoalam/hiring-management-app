@@ -1,66 +1,35 @@
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
-import { type NextRequest, NextResponse } from "next/server"
+import { NextResponse } from "next/server"
+import getServerSession, { type Session } from "next-auth"
+import { authOptions } from "../[...nextauth]/route"
 import { prisma } from "@/lib/prisma"
 
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-          setAll(cookiesToSet) {
-            try {
-              cookiesToSet.forEach(({ name, value, options }) => cookieStore.set(name, value, options))
-            } catch {
-              // Handle cookie setting errors
-            }
-          },
-        },
-      },
-    )
+    const session = await getServerSession(authOptions) as unknown as Session
 
-    // Get current user
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser()
-
-    if (userError || !user) {
+    if (!session?.user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // Fetch user profile
-    const profile = await prisma.profile.findUnique({
-      where: { id: user.id },
+    // Fetch user with profile
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { profile: true }
     })
 
-    if (!profile) {
-      return NextResponse.json({ error: "User profile not found" }, { status: 404 })
-    }
-
-    // Fetch role-specific profile
-    let roleProfile = null
-    if (profile.role === "recruiter") {
-      roleProfile = await prisma.recruiterProfile.findUnique({
-        where: { id: user.id },
-      })
-    } else {
-      roleProfile = await prisma.jobSeekerProfile.findUnique({
-        where: { id: user.id },
-      })
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 })
     }
 
     return NextResponse.json(
       {
-        user,
-        profile,
-        roleProfile,
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.fullName,
+          role: user.role
+        },
+        profile: user.profile,
       },
       { status: 200 },
     )

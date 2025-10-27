@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-gradient-to-br from-slate-900 to-slate-800">
+    <main className="min-h-screen bg-linear-to-br from-slate-900 to-slate-800">
       <div className="flex flex-col items-center justify-center min-h-screen px-6">
         <div className="text-center max-w-2xl">
           <h1 className="text-5xl font-bold text-white mb-4">HireFlow</h1>

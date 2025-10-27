@@ -10,7 +10,7 @@ import {
 } from "@/components/ui/navigation-menu"
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
-import ShareButton from '../ui/buttons/shareButton';
+import ShareButton from '../custom-ui/buttons/shareButton';
 import { Button } from '../ui/button';
 import { usePathname } from "next/navigation";
 interface NavLinkProps {

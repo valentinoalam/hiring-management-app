@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react"
-import { ApplicationFeedback } from "../job-seeker/application-feedback"
+import { ApplicationFeedback } from "../job/job-seeker/application-feedback"
 
 describe("ApplicationFeedback", () => {
   it("should render success state", () => {
