@@ -28,7 +28,6 @@ export default function JobSeekerProfilePage() {
     try {
       setLoading(true)
       
-      // 7. ✅ Replace Supabase call with a call to your protected API route
       const response = await fetch(`/api/profile/${user?.id}`, {
         method: "GET",
       })
@@ -36,8 +35,8 @@ export default function JobSeekerProfilePage() {
       if (!response.ok) {
         // Handle 404/not found by just initializing empty form
         if (response.status === 404) {
-             console.log("Profile not found, starting fresh.");
-             return;
+            console.log("Profile not found, starting fresh.");
+            return;
         }
         throw new Error(`Failed to fetch profile: ${response.statusText}`)
       }
@@ -83,7 +82,6 @@ export default function JobSeekerProfilePage() {
       setProfileImage(imageData)
       setShowGestureCapture(false)
 
-      // 8. ✅ Replace Supabase call with a call to your protected API route
       const response = await fetch(`/api/profile/${user?.id}/image`, {
         method: "PUT",
         body: JSON.stringify({ profile_image_url: imageData }),
@@ -107,7 +105,6 @@ export default function JobSeekerProfilePage() {
     try {
       setSaving(true)
 
-      // 9. ✅ Replace Supabase call with a call to your protected API route
       const response = await fetch(`/api/profile/${user?.id}`, {
         method: "PUT",
         body: JSON.stringify(formData),
