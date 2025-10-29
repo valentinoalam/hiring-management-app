@@ -13,7 +13,7 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
   const [handPose, setHandPose] = useState<HandPose | null>(null)
   const [isLoading, setIsLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const detectorRef = useRef<any>(null)
+  const detectorRef = useRef<{ detectForVideo: (video: HTMLVideoElement, timestamp: number) => unknown } | null>(null)
   const animationFrameRef = useRef<number | null>(null)
 
   // Initialize MediaPipe Hand Detector
@@ -59,14 +59,17 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
     if (!videoRef.current || !detectorRef.current) return
 
     try {
-      const results = detectorRef.current.detectForVideo(videoRef.current, performance.now())
+      const results = detectorRef.current.detectForVideo(videoRef.current, performance.now()) as {
+        landmarks?: { x: number; y: number; z: number }[][];
+        handedness?: { score: number }[];
+      }
 
       if (results.landmarks && results.landmarks.length > 0) {
         const landmarks = results.landmarks[0]
         const fingers = countExtendedFingers(landmarks)
         setHandPose({
           fingers,
-          confidence: results.handedness[0].score,
+          confidence: results.handedness?.[0]?.score || 0,
         })
       } else {
         setHandPose(null)
@@ -97,7 +100,7 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
 }
 
 // Count extended fingers based on hand landmarks
-function countExtendedFingers(landmarks: any[]): number {
+function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]): number {
   if (!landmarks || landmarks.length < 21) return 0
 
   // Finger tip indices: thumb=4, index=8, middle=12, ring=16, pinky=20

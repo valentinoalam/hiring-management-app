@@ -31,12 +31,12 @@ export const CameraView = React.forwardRef<unknown, CameraProps>(
         await initCameraStream();
       }
       init();
-    }, [activeDeviceId]);
+    }, [activeDeviceId, initCameraStream]);
 
     return (
       <div
         ref={containerRef}
-        className="min-h-[calc(100vh_-_theme(spacing.16))] bg-muted"
+        className="min-h-[calc(100vh-(--spacing(16)))] bg-muted"
       >
         <div className="absolute left-0 top-0 h-svh w-full">
           <WarningMessage
@@ -70,7 +70,7 @@ function WarningMessage({ message, show }: { message: string; show: boolean }) {
   return toShow ? (
     <div className="rounded-md bg-yellow-50 p-4">
       <div className="flex">
-        <div className="flex-shrink-0">
+        <div className="shrink-0">
           <TriangleAlert
             className="h-5 w-5 text-yellow-400"
             aria-hidden="true"

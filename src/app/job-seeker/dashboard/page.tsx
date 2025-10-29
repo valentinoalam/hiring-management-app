@@ -1,6 +1,5 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { LogoutButton } from "@/components/custom-ui/auth/logout-button"
 
 export default async function JobSeekerDashboard() {
   const supabase = await createClient()
@@ -25,7 +24,6 @@ export default async function JobSeekerDashboard() {
       <div className="max-w-7xl mx-auto px-6 py-12">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-3xl font-bold">Job Seeker Dashboard</h1>
-          <LogoutButton />
         </div>
 
         <div className="bg-white rounded-lg shadow p-6">

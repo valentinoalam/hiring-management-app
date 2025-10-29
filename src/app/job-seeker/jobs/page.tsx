@@ -6,8 +6,9 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MapPin, DollarSign, Briefcase, Search, Loader2 } from "lucide-react"
-import { useActiveJobs } from "@/lib/queries/jobs"
-import { useUIStore } from "@/lib/store/ui-store"
+import { useActiveJobs } from "@/hooks/queries/jobs"
+import { useUIStore } from "@/stores/ui-store"
+import { salaryDisplay } from "@/utils/formatters/salaryFormatter"
 
 export default function JobListPage() {
   const router = useRouter()
@@ -27,18 +28,11 @@ export default function JobListPage() {
   const filteredJobs = jobs.filter((job) => {
     const matchesSearch =
       job.title.toLowerCase().includes(jobSearchTerm.toLowerCase()) ||
-      job.description.toLowerCase().includes(jobSearchTerm.toLowerCase())
+      (job.description || '').toLowerCase().includes(jobSearchTerm.toLowerCase())
     const matchesDepartment = jobDepartmentFilter === "all" || job.department === jobDepartmentFilter
-    const matchesEmploymentType = jobEmploymentTypeFilter === "all" || job.employment_type === jobEmploymentTypeFilter
+    const matchesEmploymentType = jobEmploymentTypeFilter === "all" || job.employmentType === jobEmploymentTypeFilter
     return matchesSearch && matchesDepartment && matchesEmploymentType
   })
-
-  const formatSalary = (min: number | null, max: number | null) => {
-    if (!min && !max) return "Salary not specified"
-    if (min && max) return `$${min.toLocaleString()} - $${max.toLocaleString()}`
-    if (min) return `From $${min.toLocaleString()}`
-    return `Up to $${max?.toLocaleString()}`
-  }
 
   return (
     <div className="min-h-screen bg-background p-6">
@@ -68,8 +62,8 @@ export default function JobListPage() {
               <SelectContent>
                 <SelectItem value="all">All Departments</SelectItem>
                 {departments.map((dept) => (
-                  <SelectItem key={dept} value={dept}>
-                    {dept}
+                  <SelectItem key={dept || 'unknown'} value={dept || 'unknown'}>
+                    {dept || 'Unknown'}
                   </SelectItem>
                 ))}
               </SelectContent>
@@ -120,11 +114,11 @@ export default function JobListPage() {
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <DollarSign className="w-4 h-4" />
-                      <span>{formatSalary(job.salary_min, job.salary_max)}</span>
+                      <span>{salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}</span>
                     </div>
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Briefcase className="w-4 h-4" />
-                      <span>{job.employment_type}</span>
+                      <span>{job.employmentType}</span>
                     </div>
                   </div>
 

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import { useRef, useState, useEffect } from "react"
@@ -5,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { useHandGestureDetection } from "@/hooks/use-hand-gesture-detection"
 import { Camera, RotateCcw, Download, X } from "lucide-react"
+import Image from "next/image"
 
 interface GestureProfileCaptureProps {
   onSave?: (imageData: string) => void
@@ -12,7 +14,7 @@ interface GestureProfileCaptureProps {
 }
 
 export function GestureProfileCapture({ onSave, onClose }: GestureProfileCaptureProps) {
-  const videoRef = useRef<HTMLVideoElement>(null)
+  const videoRef = useRef<HTMLVideoElement | null>(null)
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const [capturedImage, setCapturedImage] = useState<string | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
@@ -20,7 +22,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   const [message, setMessage] = useState<string>("")
   const [isCapturing, setIsCapturing] = useState(false)
 
-  const { handPose, isLoading, error } = useHandGestureDetection(videoRef)
+  const { handPose, isLoading, error } = useHandGestureDetection(videoRef as React.RefObject<HTMLVideoElement>)
 
   // Initialize camera
   const startCamera = async () => {
@@ -54,15 +56,36 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   useEffect(() => {
     if (!handPose || !cameraActive) return
 
+    // Capture photo from video
+    const capturePhoto = () => {
+      if (!videoRef.current || !canvasRef.current) return
+
+      setIsCapturing(true)
+      const context = canvasRef.current.getContext("2d")
+      if (context) {
+        canvasRef.current.width = videoRef.current.videoWidth
+        canvasRef.current.height = videoRef.current.videoHeight
+        context.drawImage(videoRef.current, 0, 0)
+        const imageData = canvasRef.current.toDataURL("image/jpeg")
+        setCapturedImage(imageData)
+        setMessage("✓ Photo captured! Review and save.")
+        stopCamera()
+      }
+    }
+
     const currentFingers = handPose.fingers
 
     // Check if this is a new gesture in the sequence
     if (gestureSequence.length === 0 && currentFingers === 1) {
-      setGestureSequence([1])
-      setMessage("✓ 1 finger detected! Now show 2 fingers...")
+      setTimeout(() => {
+        setGestureSequence([1])
+        setMessage("✓ 1 finger detected! Now show 2 fingers...")
+      }, 0)
     } else if (gestureSequence.length === 1 && gestureSequence[0] === 1 && currentFingers === 2) {
-      setGestureSequence([1, 2])
-      setMessage("✓ 2 fingers detected! Now show 3 fingers to capture...")
+      setTimeout(() => {
+        setGestureSequence([1, 2])
+        setMessage("✓ 2 fingers detected! Now show 3 fingers to capture...")
+      }, 0)
     } else if (
       gestureSequence.length === 2 &&
       gestureSequence[0] === 1 &&
@@ -70,27 +93,12 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
       currentFingers === 3
     ) {
       // Capture photo
-      capturePhoto()
-      setGestureSequence([])
+      setTimeout(() => {
+        capturePhoto()
+        setGestureSequence([])
+      }, 0)
     }
   }, [handPose, gestureSequence, cameraActive])
-
-  // Capture photo from video
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return
-
-    setIsCapturing(true)
-    const context = canvasRef.current.getContext("2d")
-    if (context) {
-      canvasRef.current.width = videoRef.current.videoWidth
-      canvasRef.current.height = videoRef.current.videoHeight
-      context.drawImage(videoRef.current, 0, 0)
-      const imageData = canvasRef.current.toDataURL("image/jpeg")
-      setCapturedImage(imageData)
-      setMessage("✓ Photo captured! Review and save.")
-      stopCamera()
-    }
-  }
 
   // Save captured image
   const handleSave = () => {
@@ -151,7 +159,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
             )}
           </>
         ) : (
-          <img
+          <Image width={300} height={300}
             src={capturedImage || "/placeholder.svg"}
             alt="Captured profile"
             className="w-full h-full object-cover"

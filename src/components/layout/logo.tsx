@@ -1,5 +1,5 @@
 // import Image from 'next/image';
-import { cn } from '#@/lib/utils/utils.ts';
+import { cn } from '@/lib/utils';
 import Image from 'next/image';
 import Link from 'next/link';
 interface LogoProps {
@@ -13,8 +13,8 @@ interface LogoProps {
 
 const Logo = ({
   className, 
-  width = 128, 
-  height = 23, 
+  width = 145, 
+  height = 50, 
   size = "medium", 
   linkToHome = true,
   withName = true
@@ -25,30 +25,24 @@ const Logo = ({
     large: "h-10",
   };
   const logoElement = (
-    <div className={cn("relative h-2/5 w-max flex items-center", className)}>
-      <div className="absolute inset-0 bg-primary/20 rounded-full blur-lg transform scale-110 opacity-70"></div>
-      <div className={cn("relative flex items-center", sizeClasses[size])}>
-        <div className='w-32 h-auto place-items-center'>
+      <div className={cn("relative flex items-center", className, sizeClasses[size])}>
+        <div className='w-36 h-12 place-items-center'>
           <Image priority
-            src="/logo2.svg"
-            alt="As-Salam" width={width} height={height} placeholder="blur"
-            blurDataURL={`${process.env.NEXT_PUBLIC_APP_URL}/logo2.svg`}
+            src="/logo+text.png"
+            alt="Rakamin" width={width} height={height} placeholder="blur"
+            blurDataURL={`${process.env.NEXT_PUBLIC_APP_URL}/logo+text.png`}
             style={{ width:width, height:height }}
-            className="self-center aspect-auto transition-transform duration-300 transform drop-shadow-lg hover:scale-105"
+            className="self-center aspect-auto object-cover transition-transform duration-300 transform drop-shadow-lg hover:scale-105"
           />
         </div>
         {withName && (
           <>
-          <span className="font-bold text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70 tracking-tight mr-1">
-          As Salam JS
-          </span>
-          <span className="font-light text-transparent bg-clip-text bg-gradient-to-r from-primary to-primary/70 tracking-tight">
-            Online 
+          <span className="font-bold text-transparent bg-clip-text bg-linear-to-r from-primary to-primary/70 tracking-tight mr-1">
+            Rakamin
           </span>
           </>
         )}
       </div>
-    </div>
   )
   return linkToHome ? (
     <Link href="/" className='self-center'>{logoElement}

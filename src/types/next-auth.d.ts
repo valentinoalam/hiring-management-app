@@ -5,33 +5,21 @@ declare module "next-auth" {
   interface User {
     id: string
     email: string
-    fullName?: string | null
-    role?: UserRole | null
-    image?: string | null
-    name?: string | null
-    isVerified?: boolean | null
+    fullName?: string
+    role?: UserRole
+    isVerified?: boolean
   }
 
   interface Session {
-    user: {
-      id: string
-      email: string
-      name: string
-      fullName: string
-      image?: string | null
-      role: UserRole
-    }
+    user: User
   }
 }
 
 declare module "next-auth/jwt" {
   interface JWT {
     id: string
-    role: UserRole
-    name: string
-    fullName: string
-    email: string
-    image?: string | null
-    isVerified?: boolean | null
+    role?: UserRole
+    fullName?: string
+    isVerified?: boolean
   }
 }

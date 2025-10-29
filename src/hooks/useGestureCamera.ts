@@ -19,7 +19,7 @@ export function useGestureCamera({ onCapture }: { onCapture?: (blob: Blob) => vo
     setIsReady(true)
   }, [])
 
-  const detectFingers = useCallback((landmarks: any[]) => {
+  const detectFingers = useCallback((landmarks: { x: number; y: number; z: number }[][]) => {
     if (!landmarks || landmarks.length === 0) return 0
     const hand = landmarks[0] // Only one hand
     const tips = [8, 12, 16, 20] // Index, Middle, Ring, Pinky tips
@@ -34,8 +34,27 @@ export function useGestureCamera({ onCapture }: { onCapture?: (blob: Blob) => vo
     return count
   }, [])
 
+  
+  const capturePhoto = useCallback(() => {
+    const video = videoRef.current
+    const canvas = document.createElement('canvas')
+    if (!video) return
+    canvas.width = video.videoWidth
+    canvas.height = video.videoHeight
+    const ctx = canvas.getContext('2d')
+    ctx?.drawImage(video, 0, 0)
+    canvas.toBlob((blob) => {
+      if (blob) {
+        const url = URL.createObjectURL(blob)
+        setPhoto(url)
+        onCapture?.(blob)
+      }
+    }, 'image/jpeg')
+  }, [onCapture])
+
   useEffect(() => {
-    if (!videoRef.current) return
+    const videoElement = videoRef.current
+    if (!videoElement) return
 
     const hands = new Hands({
       locateFile: (file) =>
@@ -67,7 +86,7 @@ export function useGestureCamera({ onCapture }: { onCapture?: (blob: Blob) => vo
       }
     })
 
-    const camera = new Camera(videoRef.current, {
+    const camera = new Camera(videoElement, {
       onFrame: async () => {
         await hands.send({ image: videoRef.current! })
       },
@@ -75,32 +94,20 @@ export function useGestureCamera({ onCapture }: { onCapture?: (blob: Blob) => vo
       height: 480,
     })
 
-    setupCamera().then(() => camera.start())
+    const initializeCamera = async () => {
+      await setupCamera()
+      camera.start()
+    }
+    
+    initializeCamera()
 
     return () => {
       hands.close()
       camera.stop()
-      const stream = videoRef.current?.srcObject as MediaStream
+      const stream = videoElement?.srcObject as MediaStream
       stream?.getTracks().forEach((t) => t.stop())
     }
-  }, [setupCamera, detectFingers])
-
-  const capturePhoto = useCallback(() => {
-    const video = videoRef.current
-    const canvas = document.createElement('canvas')
-    if (!video) return
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    const ctx = canvas.getContext('2d')
-    ctx?.drawImage(video, 0, 0)
-    canvas.toBlob((blob) => {
-      if (blob) {
-        const url = URL.createObjectURL(blob)
-        setPhoto(url)
-        onCapture?.(blob)
-      }
-    }, 'image/jpeg')
-  }, [onCapture])
+  }, [setupCamera, detectFingers, capturePhoto])
 
   return {
     videoRef,

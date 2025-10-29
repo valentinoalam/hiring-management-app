@@ -1,392 +1,271 @@
-import type { Metadata } from 'next'
+// metadata.ts
+import type { Metadata } from "next";
 
-interface MetadataConfig {
-  [key: string]: Metadata
-}
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://rakamin-hiringhub.com";
 
-const mosqueSchema = {
-  "@id": "https://as-salamjs.online",
-  "@context": "https://schema.org",
-  "@type": ["Place","PlaceOfWorship","Mosque"],
-  "name": "Masjid As-Salam Jakasampurna",
-  "description": "Masjid As-Salam Jakasampurna is a mosque in Bekasi, Indonesia, serving as a place for worship and community activities.",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Jl. Raya Jakasampurna IV",
-    "addressLocality": "Jakasampurna",
-    "addressRegion": "Bekasi",
-    "postalCode": "17145",
-    "addressCountry": "ID"
-  },
-  "geo": {
-    "@type": "GeoCoordinates",
-    "latitude": -6.2451448,
-    "longitude": 106.9695972
-  },
-  "url": "https://as-salamjs.online",
-  "sameAs": [
-    "https://www.google.com/maps/place/Masjid+As+Salam+Jakasampurna/@-6.2451448,106.9695972",
-    "https://www.youtube.com/@MasjidAsSalam",
-    "https://www.instagram.com/assalam_jakasampurna/"
-  ],
-  "telephone": "+62-21-12345678",
-  "openingHoursSpecification": [
-    {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": [
-        "Monday",
-        "Tuesday",
-        "Wednesday",
-        "Thursday",
-        "Friday",
-        "Saturday",
-        "Sunday"
+// =====================================
+// PAGE METADATA (EN + ID)
+// =====================================
+
+export const pageMetadata = {
+  home: {
+    en: {
+      title: "HiringHub | Smart Hiring Management Platform",
+      description:
+        "Streamline your recruitment process with HiringHub — post jobs, manage applicants, and hire smarter with dynamic, configurable workflows.",
+      keywords: [
+        "hiring platform",
+        "recruitment management",
+        "job application system",
+        "applicant tracking",
+        "HR software",
       ],
-      "opens": "04:00",
-      "closes": "22:00"
     },
-    {
-      "@type": "OpeningHoursSpecification",
-      "dayOfWeek": "Friday",
-      "opens": "11:00",
-      "closes": "13:30",
-      "description": "Friday Prayer (Jumu'ah)"
-    }
-  ],
-  "image": "https://as-salamjs.online/images/masjid-as-salam.jpg",
-  "isAccessibleForFree": true,
-  "publicAccess": true,
-  "aggregateRating": {
-    "@type": "AggregateRating",
-    "ratingValue": "4.8",
-    "reviewCount": "50"
-  },
-  "potentialAction": {
-    "@type": "SearchAction",
-    "target": {
-      "@type": "EntryPoint",
-      "urlTemplate": "https://as-salamjs.online/search?q={search_term_string}"
-    },
-    "query-input": "required name=search_term"
-  },
-  "amenityFeature": [
-    {
-      "@type": "LocationFeatureSpecification",
-      "name": "Prayer Hall",
-      "value": true
-    },
-    {
-      "@type": "LocationFeatureSpecification",
-      "name": "Ablution Facilities",
-      "value": true
-    },
-    {
-      "@type": "LocationFeatureSpecification",
-      "name": "Community Events",
-      "value": true
-    }
-  ]
-}
-
-const organizationSchema = {
-  "@context": "https://schema.org",
-  "@type": "Organization",
-  "name": "Masjid As-Salam Jakasampurna",
-  "url": "https://as-salamjs.online",
-  "logo": "https://as-salamjs.online/images/logo.png",
-  "description": "Islamic community center and mosque in Bekasi, Indonesia",
-  "address": {
-    "@type": "PostalAddress",
-    "streetAddress": "Jl. Raya Jakasampurna IV",
-    "addressLocality": "Jakasampurna",
-    "addressRegion": "Bekasi",
-    "postalCode": "17145",
-    "addressCountry": "ID"
-  },
-  "contactPoint": {
-    "@type": "ContactPoint",
-    "telephone": "+62-21-12345678",
-    "contactType": "customer service",
-    "areaServed": "ID",
-    "availableLanguage": ["Indonesian", "Arabic"]
-  },
-  "sameAs": [
-    "https://www.youtube.com/@MasjidAsSalam",
-    "https://www.instagram.com/assalam_jakasampurna/"
-  ]
-}
-
-export const METADATA: MetadataConfig = {
-  global: {
-    title: {
-      template: '%s | As-SalamJs',
-      default: 'Masjid As-Salam Jakasampurna - Bekasi',
-    },
-    description: 'Masjid As-Salam Jakasampurna, a muslim place of worship located in Bekasi, Indonesia, offering daily prayers, Quranic education, community events, and social services. Join us for prayers, spiritual growth and community outreach.',
-    keywords: ['Masjid As-Salam', 'Jakasampurna', 'Bekasi', 'mosque', 'Islam', 'prayer', 'community', 'Indonesia', 'Quran Classes', 'Muslim Community Indonesia', 'Mosque Events'],
-    authors: [{ name: 'Masjid As-Salam Jakasampurna' }],
-    creator: 'Masjid As-Salam Jakasampurna',
-    publisher: 'Masjid As-Salam Jakasampurna',
-    icons: {
-      icon: [
-        { url: '/favicon.ico' },
-        { url: '/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-        { url: '/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
+    id: {
+      title: "HiringHub | Platform Manajemen Rekrutmen Cerdas",
+      description:
+        "Permudah proses rekrutmen Anda dengan HiringHub — buat lowongan, kelola pelamar, dan rekrut dengan sistem cerdas yang dinamis dan fleksibel.",
+      keywords: [
+        "platform rekrutmen",
+        "sistem manajemen pelamar",
+        "lowongan kerja online",
+        "software HR",
+        "manajemen rekrutmen",
       ],
+    },
+  },
+
+  jobs: {
+    en: {
+      title: "Browse Jobs | HiringHub",
+      description:
+        "Discover open job positions across departments. Apply easily with a smart, dynamic form that adapts to each job's requirements.",
+      keywords: [
+        "job listings",
+        "apply job",
+        "career opportunities",
+        "dynamic job form",
+      ],
+    },
+    id: {
+      title: "Cari Lowongan | HiringHub",
+      description:
+        "Temukan berbagai lowongan kerja di berbagai departemen. Lamar dengan mudah melalui form dinamis yang menyesuaikan kebutuhan tiap posisi.",
+      keywords: [
+        "daftar lowongan kerja",
+        "lamar pekerjaan",
+        "kesempatan karier",
+        "formulir lamaran dinamis",
+      ],
+    },
+  },
+
+  apply: {
+    en: {
+      title: "Apply for Job | HiringHub",
+      description:
+        "Submit your application quickly and easily. Each form adapts dynamically based on recruiter requirements — ensuring a smooth experience.",
+      keywords: [
+        "job application",
+        "apply job",
+        "career submission",
+        "recruitment process",
+        "smart form",
+      ],
+    },
+    id: {
+      title: "Lamar Pekerjaan | HiringHub",
+      description:
+        "Kirim lamaran Anda dengan cepat dan mudah. Formulir akan menyesuaikan secara dinamis sesuai kebutuhan rekruter untuk pengalaman terbaik.",
+      keywords: [
+        "lamar pekerjaan",
+        "formulir lamaran kerja",
+        "proses rekrutmen",
+        "karier",
+      ],
+    },
+  },
+
+  admin: {
+    en: {
+      title: "Admin Dashboard | Manage Jobs & Applicants | HiringHub",
+      description:
+        "Create and manage job postings, configure application forms, and track candidate progress — all in one place with HiringHub’s admin dashboard.",
+      keywords: [
+        "admin dashboard",
+        "job management",
+        "candidate tracking",
+        "recruitment analytics",
+      ],
+    },
+    id: {
+      title: "Dasbor Admin | Kelola Lowongan & Pelamar | HiringHub",
+      description:
+        "Buat dan kelola lowongan pekerjaan, atur formulir lamaran, dan pantau progres pelamar — semua dalam satu dashboard HiringHub.",
+      keywords: [
+        "dashboard admin",
+        "manajemen lowongan",
+        "pelacakan pelamar",
+        "analitik rekrutmen",
+      ],
+    },
+  },
+
+  candidates: {
+    en: {
+      title: "Candidate Management | HiringHub",
+      description:
+        "View, sort, and manage applicants per job. Customize your candidate table just like a spreadsheet — sort, resize, and reorder columns easily.",
+      keywords: [
+        "candidate management",
+        "applicant tracking",
+        "recruiter tools",
+        "HR software",
+      ],
+    },
+    id: {
+      title: "Manajemen Pelamar | HiringHub",
+      description:
+        "Lihat, urutkan, dan kelola pelamar per lowongan. Sesuaikan tampilan tabel pelamar seperti spreadsheet — ubah ukuran dan urutan kolom dengan mudah.",
+      keywords: [
+        "manajemen pelamar",
+        "pelacakan kandidat",
+        "alat rekruter",
+        "sistem HR",
+      ],
+    },
+  },
+
+  contact: {
+    en: {
+      title: "Contact HiringHub | Partner with Us",
+      description:
+        "Get in touch with our team for inquiries, demos, or partnership opportunities. Let’s simplify recruitment together.",
+      keywords: [
+        "contact HiringHub",
+        "business inquiry",
+        "demo request",
+        "partnership",
+      ],
+    },
+    id: {
+      title: "Hubungi HiringHub | Jadi Mitra Kami",
+      description:
+        "Hubungi tim kami untuk pertanyaan, demo, atau peluang kerja sama. Mari permudah proses rekrutmen bersama.",
+      keywords: [
+        "hubungi HiringHub",
+        "permintaan demo",
+        "kerja sama bisnis",
+        "kontak HiringHub",
+      ],
+    },
+  },
+};
+
+// =====================================
+// MAIN METADATA GENERATOR
+// =====================================
+
+export const generateMetaData = (
+  pageKey: keyof typeof pageMetadata = "home",
+  locale: "en" | "id" = "en",
+  path: string = ""
+): Metadata => {
+  const meta = pageMetadata[pageKey][locale];
+  const safePath = path.startsWith("/") ? path : `/${path}`;
+  const url = `${baseUrl}${locale === "en" ? "" : `/id`}${safePath}`;
+
+  return {
+    metadataBase: new URL(baseUrl),
+    title: meta.title,
+    description: meta.description,
+    keywords: meta.keywords,
+    alternates: {
+      canonical: url,
+      languages: {
+        "en-US": `${baseUrl}${safePath}`,
+        "id-ID": `${baseUrl}/id${safePath}`,
+      },
     },
     openGraph: {
-      title: 'Masjid As Salam Jakasampurna | Islamic Community Hub in Bekasi',
-      description: 'Explore spiritual programs, daily prayers, and community services at Masjid As Salam Jakasampurna. Located in Bekasi, Indonesia.',
-      url: 'https://as-salamjs.online',
-      siteName: 'Masjid As-Salam Jakasampurna',
+      type: "website",
+      locale: locale === "id" ? "id_ID" : "en_US",
+      url,
+      siteName: "HiringHub",
+      title: meta.title,
+      description: meta.description,
       images: [
         {
-          url: 'https://as-salamjs.online/images/alquran.jpg',
+          url: `${baseUrl}/og-image.jpg`,
           width: 1200,
           height: 630,
-          alt: 'Masjid As-Salam Jakasampurna Building',
+          alt: meta.title,
         },
       ],
-      locale: 'id_ID',
-      type: 'website',
     },
     twitter: {
-      card: 'summary_large_image',
-      title: 'Masjid As-Salam Jakasampurna | Community & Worship',
-      description: 'Join our vibrant Islamic community in Bekasi for prayers, education, and social initiatives.',
-      images: ['https://as-salamjs.online/images/alquran.jpg'],
-      site: '@assalam_jakasampurna',
+      card: "summary_large_image",
+      title: meta.title,
+      description: meta.description,
+      images: [`${baseUrl}/og-image.jpg`],
     },
     robots: {
       index: true,
       follow: true,
-      nocache: false,
-      googleBot: {
-        index: true,
-        follow: true,
-        noimageindex: false,
-        'max-video-preview': -1,
-        'max-image-preview': 'large',
-        'max-snippet': -1,
-      },
     },
-    verification: {
-      google: process.env.GOOGLE_VERIFICATION || '',
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online',
-      types: {
-        'application/ld+json': JSON.stringify([mosqueSchema, organizationSchema]),
-      },
-    },
-    other: {
-      'geo.region': 'ID-JB',
-      'geo.placename': 'Bekasi',
-      'msvalidate.01': process.env.BING_VERIFICATION || '',
-    },
-    formatDetection: {
-      email: false,
-      address: true,
-      telephone: true,
-    },
+  };
+};
+
+// =====================================
+// DEFAULT METADATA (for root layout)
+// =====================================
+
+export const defaultMetadata: Metadata = {
+  metadataBase: new URL(baseUrl),
+  title: {
+    default: "HiringHub | Smart Hiring Management Platform",
+    template: "%s | HiringHub",
   },
-  default: {
-    title: 'Masjid As-Salam Jakasampurna',
-    description: 'A welcoming mosque in Bekasi, Indonesia, offering prayer services, community events, and religious programs.',
-    keywords: [
-      'Itikaf',
-      'Qurban',
-      'Dakwah Online',
-      'Mosque Bekasi',
-      'Religious Activities',
-      'Muslim Community',
-      'Islamic Education'
+  description:
+    "HiringHub helps companies and applicants streamline the hiring process — from job posting and dynamic form setup to candidate management and evaluation.",
+  keywords: [
+    "hiring platform",
+    "recruitment system",
+    "job management app",
+    "applicant tracking system",
+    "recruitment software",
+  ],
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: baseUrl,
+    siteName: "HiringHub",
+    title: "HiringHub | Smart Hiring Management Platform",
+    description:
+      "Streamline your recruitment process — post jobs, manage applicants, and hire smarter with dynamic, configurable workflows.",
+    images: [
+      {
+        url: `${baseUrl}/og-image.jpg`,
+        width: 1200,
+        height: 630,
+        alt: "HiringHub — Smart Hiring Management Platform",
+      },
     ],
-    openGraph: {
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/mosque-interior.jpg',
-          width: 800,
-          height: 600,
-          alt: 'Prayer Hall of Masjid As-Salam',
-        },
-      ],
-    },
   },
-  events: {
-    title: 'Community Events | Masjid As-Salam',
-    description: 'Join our upcoming community events and religious programs at Masjid As-Salam Jakasampurna.',
-    keywords: ['Mosque Events', 'Community Programs', 'Islamic Lectures', 'Religious Gatherings', 'Community Activities'],
-    openGraph: {
-      title: 'Community Events | Masjid As-Salam Jakasampurna',
-      description: 'Discover upcoming Islamic events, lectures, and community programs at our mosque in Bekasi.',
-      url: 'https://as-salamjs.online/events',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/events.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Community Events at Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/events',
-    },
+  twitter: {
+    card: "summary_large_image",
+    title: "HiringHub | Smart Hiring Management Platform",
+    description:
+      "Empowering recruiters and applicants with a modern, flexible hiring system — efficient, transparent, and customizable.",
+    images: [`${baseUrl}/og-image.jpg`],
   },
-  education: {
-    title: 'Islamic Education | Masjid As-Salam',
-    description: 'Quranic classes and Islamic education programs for all age groups at our Bekasi mosque.',
-    keywords: ['Quran Classes', 'Islamic Education', 'Tahfidz Program', 'Religious Studies', 'Children Education'],
-    openGraph: {
-      title: 'Islamic Education Programs | Masjid As-Salam',
-      description: 'Comprehensive Quranic education and Islamic studies for children, youth, and adults.',
-      url: 'https://as-salamjs.online/education',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/education.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Islamic Education at Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/education',
-    },
-  },
-  articles: {
-    title: 'Articles & News | Masjid As-Salam',
-    description: 'Read the latest Islamic articles, news, and updates from Masjid As-Salam Jakasampurna.',
-    keywords: ['Islamic Articles', 'Mosque News', 'Religious Updates', 'Community News', 'Islamic Knowledge'],
-    openGraph: {
-      title: 'Articles & Updates | Masjid As-Salam Jakasampurna',
-      description: 'Stay informed with articles about Islamic teachings, community updates, and mosque activities.',
-      url: 'https://as-salamjs.online/articles',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/articles.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Articles from Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/articles',
-    },
-  },
-  about: {
-    title: 'About Us | Masjid As-Salam',
-    description: 'Learn about the history, mission, and vision of Masjid As-Salam Jakasampurna.',
-    keywords: ['About Mosque', 'History', 'Mission', 'Vision', 'Community Service'],
-    openGraph: {
-      title: 'About Masjid As-Salam Jakasampurna',
-      description: 'Discover our mosque\'s history, mission to serve the community, and commitment to Islamic values.',
-      url: 'https://as-salamjs.online/about',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/about.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'About Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/about',
-    },
-  },
-  contact: {
-    title: 'Contact Us | Masjid As-Salam',
-    description: 'Get in touch with Masjid As-Salam Jakasampurna. Find our location, phone number, and contact information.',
-    keywords: ['Contact Mosque', 'Location', 'Phone Number', 'Address', 'Get Directions'],
-    openGraph: {
-      title: 'Contact Masjid As-Salam Jakasampurna',
-      description: 'Visit us or contact us for inquiries about prayer times, programs, or community services.',
-      url: 'https://as-salamjs.online/contact',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/contact.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Contact Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/contact',
-    },
-  },
-  services: {
-    title: 'Services | Masjid As-Salam',
-    description: 'Explore the various services offered by Masjid As-Salam including prayers, counseling, and community support.',
-    keywords: ['Mosque Services', 'Prayer Services', 'Marriage Services', 'Funeral Services', 'Counseling'],
-    openGraph: {
-      title: 'Services at Masjid As-Salam Jakasampurna',
-      description: 'We offer comprehensive Islamic services including daily prayers, marriage ceremonies, and community support.',
-      url: 'https://as-salamjs.online/services',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/services.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Services at Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/services',
-    },
-  },
-  prayerTimes: {
-    title: 'Prayer Times | Masjid As-Salam',
-    description: 'Check daily prayer times (Salah schedule) at Masjid As-Salam Jakasampurna in Bekasi.',
-    keywords: ['Prayer Times', 'Salah Schedule', 'Adhan Times', 'Fajr', 'Dhuhr', 'Asr', 'Maghrib', 'Isha'],
-    openGraph: {
-      title: 'Prayer Times | Masjid As-Salam Jakasampurna',
-      description: 'Find accurate daily prayer times for Fajr, Dhuhr, Asr, Maghrib, and Isha at our mosque.',
-      url: 'https://as-salamjs.online/prayer-times',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/prayer-times.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Prayer Times at Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/prayer-times',
-    },
-  },
-  donate: {
-    title: 'Donate | Masjid As-Salam',
-    description: 'Support Masjid As-Salam Jakasampurna through donations. Help us maintain our facilities and community programs.',
-    keywords: ['Donate', 'Sadaqah', 'Charity', 'Support Mosque', 'Zakat', 'Infaq'],
-    openGraph: {
-      title: 'Donate to Masjid As-Salam Jakasampurna',
-      description: 'Your donations help us serve the community better. Support our mosque and Islamic programs.',
-      url: 'https://as-salamjs.online/donate',
-      type: 'website',
-      images: [
-        {
-          url: 'https://as-salamjs.online/images/donate.jpg',
-          width: 1200,
-          height: 630,
-          alt: 'Support Masjid As-Salam',
-        },
-      ],
-    },
-    alternates: {
-      canonical: 'https://as-salamjs.online/donate',
+  alternates: {
+    canonical: baseUrl,
+    languages: {
+      "en-US": "/",
+      "id-ID": "/id",
     },
   },
 };
+
+export default defaultMetadata;

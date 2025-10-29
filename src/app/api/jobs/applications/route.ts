@@ -1,26 +1,12 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { auth } from "@/auth"
 
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    
+    const session = await auth()
+    const user = session?.user
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -30,7 +16,7 @@ export async function GET(request: NextRequest) {
     const jobId = searchParams.get("jobId")
     const role = searchParams.get("role") // "recruiter" or "job_seeker"
 
-    const where: any = {}
+    const where: Record<string, unknown> = {}
 
     if (role === "recruiter" && jobId) {
       where.job = {
@@ -41,7 +27,7 @@ export async function GET(request: NextRequest) {
       where.jobSeekerId = user.id
     }
 
-    const applications = await prisma.application.findMany({
+    const applications = await prisma.candidate.findMany({
       where,
       include: {
         job: {
@@ -49,9 +35,10 @@ export async function GET(request: NextRequest) {
             id: true,
             title: true,
             department: true,
-            recruiter: {
+            author: {
               select: {
-                recruiterProfile: {
+                fullName: true,
+                profile: {
                   select: {
                     companyName: true,
                   },
@@ -61,21 +48,9 @@ export async function GET(request: NextRequest) {
           },
         },
         jobSeeker: {
-          select: {
-            email: true,
-            jobSeekerProfile: {
-              select: {
-                fullName: true,
-                phone: true,
-                location: true,
-              },
-            },
-          },
-        },
-        applicationResponses: {
           include: {
-            field: true,
-          },
+            userInfo: true
+          }
         },
       },
       orderBy: { appliedAt: "desc" },
@@ -90,36 +65,22 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const session = await auth()
+    const user = session?.user
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
     const body = await request.json()
-    const { jobId, responses } = body
+    const { jobId } = body
 
     if (!jobId) {
       return NextResponse.json({ error: "Job ID is required" }, { status: 400 })
     }
 
     // Check if application already exists
-    const existingApplication = await prisma.application.findUnique({
+    const existingApplication = await prisma.candidate.findUnique({
       where: {
         jobId_jobSeekerId: {
           jobId,
@@ -133,25 +94,14 @@ export async function POST(request: NextRequest) {
     }
 
     // Create application with responses
-    const application = await prisma.application.create({
+    const application = await prisma.candidate.create({
       data: {
         jobId,
         jobSeekerId: user.id,
-        status: "pending",
-        applicationResponses: {
-          create: responses.map((response: any) => ({
-            fieldId: response.fieldId,
-            responseValue: response.responseValue,
-          })),
-        },
+        status: "PENDING",
       },
       include: {
         job: true,
-        applicationResponses: {
-          include: {
-            field: true,
-          },
-        },
       },
     })
 

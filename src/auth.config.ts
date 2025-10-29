@@ -1,18 +1,18 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { NextAuthConfig, User } from "next-auth"
 import type { JWT } from "next-auth/jwt"
-import CredentialsProvider from "next-auth/providers/credentials"
-import GoogleProvider from 'next-auth/providers/google'
-import EmailProvider from 'next-auth/providers/email'
+import Credentials from "next-auth/providers/credentials"
+import Google from 'next-auth/providers/google'
+import Email from 'next-auth/providers/nodemailer'
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma" // Assuming this is correct
+import { prisma } from "@/lib/prisma" 
 import { compare } from "bcryptjs"
-import type { UserRole } from "@prisma/client" // Assuming UserRole enum is defined
+import type { UserRole } from "@prisma/client" 
 
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma),
   providers: [
-    CredentialsProvider({
+    Credentials({
       id: "credentials",
       name: "Credentials",
       credentials: {
@@ -64,13 +64,11 @@ export const authConfig: NextAuthConfig = {
         }
       },
     }),
-    GoogleProvider({
+    Google({
       clientId: process.env.GOOGLE_CLIENT_ID as string,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
-      // You can keep or remove the 'authorization' block based on need, 
-      // but it's not strictly necessary for basic sign-in.
     }),
-    EmailProvider({
+    Email({
       server: {
         host: process.env.EMAIL_SERVER_HOST,
         port: Number(process.env.EMAIL_SERVER_PORT),

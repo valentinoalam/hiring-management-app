@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import type { QueryWithToastOptions } from "@/types/DTOs/global"
+import type { QueryWithToastOptions } from "@/types/global"
 import { type UseQueryResult, useQuery } from "@tanstack/react-query"
 import { toast } from "./use-toast"
 import { useQueryClient, QueryClient } from '@tanstack/react-query';

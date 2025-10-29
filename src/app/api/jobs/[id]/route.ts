@@ -1,7 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { auth } from "@/auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
@@ -10,22 +9,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     const job = await prisma.job.findUnique({
       where: { id },
       include: {
-        recruiter: {
+        author: {
           select: {
+            fullName: true,
             email: true,
-            recruiterProfile: {
+            profile: {
               select: {
                 companyName: true,
-                fullName: true,
               },
             },
           },
         },
         applicationFormFields: {
-          orderBy: { displayOrder: "asc" },
+          orderBy: { sortOrder: "asc" },
         },
         _count: {
-          select: { applications: true },
+          select: { candidates: true },
         },
       },
     })
@@ -44,22 +43,10 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
+    
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const session = await auth()
+    const user = session?.user
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -75,7 +62,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     }
 
     const body = await request.json()
-    const { title, description, department, location, salaryMin, salaryMax, employmentType, status } = body
+    const { title, description, department, location, salaryMin, salaryMax, salaryCurrency, employmentType, status } = body
 
     const updatedJob = await prisma.job.update({
       where: { id },
@@ -86,17 +73,18 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
         location,
         salaryMin: salaryMin ? Number.parseFloat(salaryMin) : null,
         salaryMax: salaryMax ? Number.parseFloat(salaryMax) : null,
+        salaryCurrency,
         employmentType,
         status,
       },
       include: {
-        recruiter: {
+        author: {
           select: {
+            fullName: true,
             email: true,
-            recruiterProfile: {
+            profile: {
               select: {
                 companyName: true,
-                fullName: true,
               },
             },
           },
@@ -114,22 +102,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    
+    const session = await auth()
+    const user = session?.user
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })

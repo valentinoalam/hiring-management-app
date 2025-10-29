@@ -1,68 +1,8 @@
-@import 'tailwindcss';
-@plugin 'tailwindcss-animate';
-@custom-variant dark (&:is(.dark *));
+@import "tailwindcss";
 
-@theme {
-  --color-border: hsl(var(--border));
-  --color-input: hsl(var(--input));
-  --color-ring: hsl(var(--ring));
-  --color-background: hsl(var(--background));
-  --color-foreground: hsl(var(--foreground));
-
-  --color-primary: hsl(var(--primary));
-  --color-primary-foreground: hsl(var(--primary-foreground));
-
-  --color-secondary: hsl(var(--secondary));
-  --color-secondary-foreground: hsl(var(--secondary-foreground));
-
-  --color-destructive: hsl(var(--destructive));
-  --color-destructive-foreground: hsl(var(--destructive-foreground));
-
-  --color-muted: hsl(var(--muted));
-  --color-muted-foreground: hsl(var(--muted-foreground));
-
-  --color-accent: hsl(var(--accent));
-  --color-accent-foreground: hsl(var(--accent-foreground));
-
-  --color-popover: hsl(var(--popover));
-  --color-popover-foreground: hsl(var(--popover-foreground));
-
-  --color-sidebar: hsl(var(--sidebar-background));
-  --color-sidebar-foreground: hsl(var(--sidebar-foreground));
-  --color-sidebar-primary: hsl(var(--sidebar-primary));
-  --color-sidebar-primary-foreground: hsl(var(--sidebar-primary-foreground));
-  --color-sidebar-accent: hsl(var(--sidebar-accent));
-  --color-sidebar-accent-foreground: hsl(var(--sidebar-accent-foreground));
-  --color-sidebar-border: hsl(var(--sidebar-border));
-  --color-sidebar-ring: hsl(var(--sidebar-ring));
-
-  --color-card: hsl(var(--card));
-  --color-card-foreground: hsl(var(--card-foreground));
-
-  --radius-lg: var(--radius);
-  --radius-md: calc(var(--radius) - 2px);
-  --radius-sm: calc(var(--radius) - 4px);
-
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
-
-  @keyframes accordion-down {
-    from {
-      height: 0;
-    }
-    to {
-      height: var(--radix-accordion-content-height);
-    }
-  }
-  @keyframes accordion-up {
-    from {
-      height: var(--radix-accordion-content-height);
-    }
-    to {
-      height: 0;
-    }
-  }
-}
+@plugin "tailwindcss-animate";
+@import "./base.css";
+@import "./theme.css";
 
 @utility container {
   margin-inline: auto;
@@ -74,178 +14,209 @@
     max-width: 1400px;
   }
 }
-@utility spriteContainer {
-  /* Ensure the container is the size of a single sprite frame */
-  overflow: hidden; /* Hide anything outside the current frame */
-  image-rendering: pixelated; /* Good for pixel art, prevents blurring on scaling */
-  /* You can add more styling here, e.g., borders, shadows */
-}
-
-@utility auth-loader-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background: linear-gradient(135deg, #1a2a6c, #2a3a7c);
-  color: white;
-    
-  .auth-loader {
-    position: relative;
-    width: 80px;
-    height: 80px;
-    margin-bottom: 20px;
-  }
-
-  .spinner-circle {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(2px);
-  }
-
-  .spinner-arc {
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    border: 3px solid transparent;
-    border-top-color: #4facfe;
-    border-right-color: #4facfe;
-    animation: spin 1.2s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
-  }
-
-  .auth-loading-text {
-    margin-top: 20px;
-    font-size: 1.2rem;
-    letter-spacing: 1px;
-    text-align: center;
-    max-width: 80%;
-    line-height: 1.5;
-    background: linear-gradient(to right, #a1c4fd, #c2e9fb);
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-    font-weight: 500;
-  }
-
-  @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-  }
-}
-
-/*
-  The default border color has changed to `currentcolor` in Tailwind CSS v4,
-  so we've added these compatibility styles to make sure everything still
-  looks the same as it did with Tailwind CSS v3.
-
-  If we ever want to remove these styles, we need to add an explicit border
-  color utility to any element that depends on these defaults.
-*/
-@layer base {
-  *,
-  ::after,
-  ::before,
-  ::backdrop,
-  ::file-selector-button {
-    border-color: var(--color-gray-200, currentcolor);
-  }
-}
 
 @utility text-balance {
   text-wrap: balance;
 }
 
-@layer utilities {
-  html {
-    scroll-behavior: smooth;
+@layer base {
+  /* Text XS */
+  .text-xs-regular {
+    @apply text-[10px] leading-4 font-normal;
   }
-  body {
-    font-family: Arial, Helvetica, sans-serif;
+  .text-xs-bold {
+    @apply text-[10px] leading-4 font-bold;
+  }
+
+  /* Text S */
+  .text-s-regular {
+    @apply text-[12px] leading-5 font-normal;
+  }
+  .text-s-bold {
+    @apply text-[12px] leading-5 font-bold;
+  }
+
+  /* Text M */
+  .text-m-regular {
+    @apply text-[14px] leading-6 font-normal;
+  }
+  .text-m-bold {
+    @apply text-[14px] leading-6 font-bold;
+  }
+
+  /* Text L */
+  .text-l-regular {
+    @apply text-[16px] leading-7 font-normal;
+  }
+  .text-l-bold {
+    @apply text-[16px] leading-7 font-bold;
+  }
+
+  /* Heading S */
+  .heading-s-regular {
+    @apply text-[20px] leading-8 font-normal;
+  }
+  .heading-s-bold {
+    @apply text-[20px] leading-8 font-bold;
+  }
+
+  /* Heading M */
+  .heading-m-regular {
+    @apply text-[24px] leading-9 font-normal;
+  }
+  .heading-m-bold {
+    @apply text-[24px] leading-9 font-bold;
+  }
+
+  /* Heading L */
+  .heading-l-regular {
+    @apply text-[32px] leading-11 font-normal;
+  }
+  .heading-l-bold {
+    @apply text-[32px] leading-11 font-bold;
   }
 }
-
 @layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 0 0% 3.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 3.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 3.9%;
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-    --secondary: 0 0% 96.1%;
-    --secondary-foreground: 0 0% 9%;
-    --muted: 0 0% 96.1%;
-    --muted-foreground: 0 0% 45.1%;
-    --accent: 0 0% 96.1%;
-    --accent-foreground: 0 0% 9%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 89.8%;
-    --input: 0 0% 89.8%;
-    --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 0 0% 98%;
-    --sidebar-foreground: 240 5.3% 26.1%;
-    --sidebar-primary: 240 5.9% 10%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 240 4.8% 95.9%;
-    --sidebar-accent-foreground: 240 5.9% 10%;
-    --sidebar-border: 220 13% 91%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-  .dark {
-    --background: 0 0% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 0 0% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 0 0% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 0 0% 98%;
-    --primary-foreground: 0 0% 9%;
-    --secondary: 0 0% 14.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 0 0% 14.9%;
-    --muted-foreground: 0 0% 63.9%;
-    --accent: 0 0% 14.9%;
-    --accent-foreground: 0 0% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 14.9%;
-    --input: 0 0% 14.9%;
-    --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
-  }
-}
+  /* ==================================== */
+  /* HEADINGS (Menggunakan style BOLD) */
+  /* ==================================== */
 
-@layer base {
-  * {
-    @apply border-border;
+  /* H1 (Mapping ke Heading L / Bold: 32px / 44px) */
+  h1 {
+    @apply text-[32px] leading-11 font-bold;
   }
+
+  /* H2 (Mapping ke Heading M / Bold: 24px / 36px) */
+  h2 {
+    @apply text-[24px] leading-9 font-bold;
+  }
+
+  /* H3 (Mapping ke Heading S / Bold: 20px / 32px) */
+  h3 {
+    @apply text-[20px] leading-8 font-bold;
+  }
+
+  /* H4 (Mapping ke Text L / Bold: 16px / 28px) */
+  h4 {
+    @apply text-[16px] leading-7 font-bold;
+  }
+
+  /* H5 (Mapping ke Text M / Bold: 14px / 24px) */
+  h5 {
+    @apply text-[14px] leading-6 font-bold;
+  }
+
+  /* H6 (Mapping ke Text S / Bold: 12px / 20px) */
+  h6 {
+    @apply text-[12px] leading-5 font-bold;
+  }
+
+  /* ==================================== */
+  /* TEXT DAN LINKS (Menggunakan style REGULAR) */
+  /* ==================================== */
+
+  /* Links (Mapping ke Text L / Regular: 16px / 28px) */
+  a {
+    @apply text-[16px] leading-7 font-normal;
+    /* Anda mungkin ingin menambahkan styling link khusus di sini, seperti text-decoration: underline; */
+  }
+
+  /* Paragraf (Mapping ke Text M / Regular: 14px / 24px) */
+  p {
+    @apply text-[14px] leading-6 font-normal;
+  }
+
+  /* ==================================== */
+  /* UTILITAS TAMBAHAN */
+  /* ==================================== */
+
+  /* Class utilitas untuk style terkecil (Text XS / Regular: 10px / 16px) */
+  .text-caption {
+    @apply text-[10px] leading-4 font-normal;
+  }
+
+  /* Class utilitas untuk style small (Text S / Regular: 12px / 20px) */
+  .text-small {
+    @apply text-[12px] leading-5 font-normal;
+  }
+
+  /* Class utilitas untuk emphasized text (Text L / Regular: 16px / 28px) */
+  .text-emphasized {
+    @apply text-[16px] leading-7 font-normal;
+  }
+
+  /* Class utilitas untuk headings regular weight */
+  .heading-regular {
+    @apply font-normal;
+  }
+
+  /* Base HTML Element Styling */
   body {
-    @apply bg-background text-foreground;
+    @apply bg-neutral-10 text-neutral-100;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply text-neutral-100;
+  }
+
+  p {
+    @apply text-neutral-90;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    @apply text-neutral-80;
+  }
+
+  /* Helper text and subtitles */
+  .helper-text,
+  .subtitle {
+    @apply text-neutral-70;
+  }
+
+  /* Table titles and captions */
+  table th,
+  caption {
+    @apply text-neutral-80;
+  }
+
+  /* Disabled states */
+  .disabled {
+    @apply bg-neutral-30 text-neutral-60;
+  }
+
+  input:disabled,
+  button:disabled,
+  select:disabled {
+    @apply bg-neutral-30 text-neutral-60 cursor-not-allowed;
+  }
+
+  /* Hover states */
+  .hover-bg-neutral-20:hover {
+    @apply bg-neutral-20;
+  }
+
+  /* Active/Pressed states */
+  .active-bg-neutral-30:active {
+    @apply bg-neutral-30;
+  }
+
+  /* Dividers */
+  .divider {
+    @apply border-neutral-40;
+  }
+
+  hr {
+    @apply border-neutral-40;
+  }
+
+  /* Cards and containers */
+  .card {
+    @apply bg-neutral-10 border border-neutral-40;
+  }
+
+  /* Secondary backgrounds */
+  .bg-secondary {
+    @apply bg-neutral-20;
   }
 }

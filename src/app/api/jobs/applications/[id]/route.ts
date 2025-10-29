@@ -1,26 +1,19 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
+import { auth } from "@/auth"
 
 export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
 
-    const application = await prisma.application.findUnique({
+    const application = await prisma.candidate.findUnique({
       where: { id },
       include: {
         job: true,
         jobSeeker: {
-          select: {
-            email: true,
-            jobSeekerProfile: true,
-          },
-        },
-        applicationResponses: {
           include: {
-            field: true,
-          },
+            userInfo: true
+          }
         },
       },
     })
@@ -39,22 +32,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
 export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
     const { id } = await params
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
+    const session = await auth()
+    const user = session?.user
 
     if (!user) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -64,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { status } = body
 
     // Verify recruiter owns the job
-    const application = await prisma.application.findUnique({
+    const application = await prisma.candidate.findUnique({
       where: { id },
       include: {
         job: {
@@ -77,21 +56,15 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized to update this application" }, { status: 403 })
     }
 
-    const updatedApplication = await prisma.application.update({
+    const updatedApplication = await prisma.candidate.update({
       where: { id },
       data: { status },
       include: {
         job: true,
         jobSeeker: {
-          select: {
-            email: true,
-            jobSeekerProfile: true,
-          },
-        },
-        applicationResponses: {
           include: {
-            field: true,
-          },
+            userInfo: true
+          }
         },
       },
     })

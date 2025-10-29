@@ -21,20 +21,6 @@ jest.mock("next/navigation", () => ({
   },
 }))
 
-// Mock Supabase
-jest.mock("@/lib/supabase/client", () => ({
-  createBrowserClient: jest.fn(() => ({
-    auth: {
-      getSession: jest.fn(),
-      onAuthStateChange: jest.fn(),
-      signInWithPassword: jest.fn(),
-      signUp: jest.fn(),
-      signOut: jest.fn(),
-    },
-    from: jest.fn(),
-  })),
-}))
-
 // Mock MediaPipe
 global.FilesetResolver = {
   forVisionTasks: jest.fn(),

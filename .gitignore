@@ -12,7 +12,7 @@
 
 # testing
 /coverage
-
+/tada
 # next.js
 /.next/
 /out/

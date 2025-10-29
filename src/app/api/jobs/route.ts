@@ -1,63 +1,55 @@
+// route.ts (Menggunakan Auth.js/Next.js Auth dan Prisma)
+
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
-import { createServerClient } from "@supabase/ssr"
-import { cookies } from "next/headers"
 
+// Asumsi: Import fungsi 'auth' yang disediakan oleh Next.js Auth (Auth.js)
+import { auth } from "@/auth" // Ganti dengan path yang benar ke konfigurasi Auth Anda
+
+// --- FUNGSI GET ---
 export async function GET(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
+    // 1. Cek apakah pengguna dikenali
+    const session = await auth()
+    const user = session?.user
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
+    // 2. Query Parameters
     const { searchParams } = new URL(request.url)
     const status = searchParams.get("status")
     const isActive = searchParams.get("isActive") === "true"
 
-    const where: any = {}
+    // 3. Bangun Objek 'where' Prisma
+    const where: Record<string, unknown> = {}
 
     if (isActive) {
-      where.status = "active"
-    } else {
+      where.status = "active" // Jika "isActive", hanya tampilkan yang berstatus 'active'
+    } else if (user && user.id) {
+      // Jika bukan "isActive" (mungkin untuk rekruter melihat lowongan mereka), filter berdasarkan ID pengguna
       where.recruiterId = user.id
     }
 
     if (status) {
+      // Menimpa status jika parameter 'status' spesifik diberikan
       where.status = status
     }
 
+    // 4. Akses Data: Gunakan Prisma
     const jobs = await prisma.job.findMany({
       where,
       include: {
-        recruiter: {
+        author: {
           select: {
             email: true,
-            recruiterProfile: {
+            fullName: true,
+            profile: {
               select: {
                 companyName: true,
-                fullName: true,
               },
             },
           },
         },
         _count: {
-          select: { applications: true },
+          select: { candidates: true },
         },
       },
       orderBy: { createdAt: "desc" },
@@ -70,36 +62,26 @@ export async function GET(request: NextRequest) {
   }
 }
 
+// --- FUNGSI POST ---
 export async function POST(request: NextRequest) {
   try {
-    const cookieStore = await cookies()
-    const supabase = createServerClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-      {
-        cookies: {
-          getAll() {
-            return cookieStore.getAll()
-          },
-        },
-      },
-    )
+    // 1. Otorisasi: Gunakan Auth.js/Next.js Auth untuk mendapatkan sesi pengguna
+    const session = await auth()
+    const user = session?.user
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser()
-
-    if (!user) {
+    if (!user || !user.id) { // Pastikan user ada dan memiliki ID
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // 2. Validasi Input
     const body = await request.json()
-    const { title, description, department, location, salaryMin, salaryMax, employmentType, status } = body
+    const { title, description, department, location, salaryMin, salaryMax, salaryCurrency, employmentType, status } = body
 
     if (!title) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
+    // 3. Akses Data: Gunakan Prisma untuk membuat data
     const job = await prisma.job.create({
       data: {
         title,
@@ -108,18 +90,22 @@ export async function POST(request: NextRequest) {
         location,
         salaryMin: salaryMin ? Number.parseFloat(salaryMin) : null,
         salaryMax: salaryMax ? Number.parseFloat(salaryMax) : null,
+        salaryCurrency,
         employmentType,
         status: status || "draft",
+        slug: title.toLowerCase().replace(/\s+/g, '-'),
+        // Gunakan ID pengguna dari Auth.js/Next.js Auth
+        authorId: user.id,
         recruiterId: user.id,
       },
       include: {
-        recruiter: {
+        author: {
           select: {
             email: true,
-            recruiterProfile: {
+            fullName: true,
+            profile: {
               select: {
                 companyName: true,
-                fullName: true,
               },
             },
           },
