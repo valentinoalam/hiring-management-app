@@ -1,4 +1,4 @@
-import type { SchemaBreadcrumb } from "#@/config/schemas_org/schema-types.ts"
+import type { SchemaBreadcrumb } from "@/config/schemas_org/schema-types"
 
 export interface BreadcrumbItem {
   name: string
