@@ -53,7 +53,7 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
     if (!searchTerm) return jobs;
     return jobs.filter((job: Job) =>
       job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      job.companyName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (job.companyName || "").toLowerCase().includes(searchTerm.toLowerCase()) ||
       (job.description || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [jobs, searchTerm]);
