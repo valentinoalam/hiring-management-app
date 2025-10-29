@@ -6,7 +6,7 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { MapPin, DollarSign, Briefcase, Search, Loader2 } from "lucide-react"
-import { useActiveJobs } from "@/hooks/queries/jobs"
+import { useActiveJobs } from "@/hooks/queries/job-queries"
 import { useUIStore } from "@/stores/ui-store"
 import { salaryDisplay } from "@/utils/formatters/salaryFormatter"
 
