@@ -3,7 +3,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-// Asumsi: Import fungsi 'auth' yang disediakan oleh Next.js Auth (Auth.js)
 import { auth } from "@/auth" // Ganti dengan path yang benar ke konfigurasi Auth Anda
 
 // --- FUNGSI GET ---
@@ -65,7 +64,6 @@ export async function GET(request: NextRequest) {
 // --- FUNGSI POST ---
 export async function POST(request: NextRequest) {
   try {
-    // 1. Otorisasi: Gunakan Auth.js/Next.js Auth untuk mendapatkan sesi pengguna
     const session = await auth()
     const user = session?.user
 
@@ -73,7 +71,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    // 2. Validasi Input
     const body = await request.json()
     const { title, description, department, location, salaryMin, salaryMax, salaryCurrency, employmentType, status } = body
 
@@ -81,7 +78,6 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Title is required" }, { status: 400 })
     }
 
-    // 3. Akses Data: Gunakan Prisma untuk membuat data
     const job = await prisma.job.create({
       data: {
         title,

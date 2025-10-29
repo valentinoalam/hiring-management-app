@@ -4,8 +4,14 @@ import { useJobDetail } from "@/hooks/queries/job-queries";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import Link from "next/link";
 
-export default function JobApplicantsPage({ params }: { params: { jobId: string } }) {
-  const { data: job, isLoading, isError } = useJobDetail(params.jobId);
+type JobApplicantsPageProps = {
+  params: {
+    jobId: string; // This matches your URL structure: app/jobs/[jobId]/...
+  };
+};
+export default function JobApplicantsPage({ params }: JobApplicantsPageProps) {
+  const jobId = params.jobId;
+  const { data: job, isLoading, isError } = useJobDetail(jobId);
 
   if (isLoading) {
     return (
