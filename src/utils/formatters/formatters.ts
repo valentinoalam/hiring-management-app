@@ -8,6 +8,17 @@ export const truncateString = (str: string, maxLength: number): string => {
   return str.slice(0, maxLength) + '...';
 };
 
+// Helper function to convert Decimal to number
+export const convertDecimalToNumber = (value: any): number | null => {
+  if (value === null || value === undefined) return null;
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') return parseFloat(value);
+  // Handle Prisma Decimal type
+  if (value && typeof value === 'object' && 'toNumber' in value) {
+    return value.toNumber();
+  }
+  return null;
+};
 
 export function convertToBoolean(value: any): boolean {
   if (typeof value === "boolean") return value

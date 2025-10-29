@@ -4,6 +4,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
 import { auth } from "@/auth" // Ganti dengan path yang benar ke konfigurasi Auth Anda
+import { JobStatus, Job as JobData } from "@prisma/client"
+import { Job, transformJobData } from "@/types/job"
 
 // --- FUNGSI GET ---
 export async function GET(request: NextRequest) {
@@ -32,12 +34,14 @@ export async function GET(request: NextRequest) {
       where.status = status
     }
 
+    
     // 4. Akses Data: Gunakan Prisma
     const jobs = await prisma.job.findMany({
       where,
       include: {
         author: {
           select: {
+            id: true,
             email: true,
             fullName: true,
             profile: {
@@ -52,9 +56,12 @@ export async function GET(request: NextRequest) {
         },
       },
       orderBy: { createdAt: "desc" },
-    })
+    });
 
-    return NextResponse.json(jobs)
+    // Transform the data before sending response
+    const transformedJobs = jobs.map(transformJobData);
+
+    return NextResponse.json(transformedJobs);
   } catch (error) {
     console.error("[v0] Error fetching jobs:", error)
     return NextResponse.json({ error: "Failed to fetch jobs" }, { status: 500 })

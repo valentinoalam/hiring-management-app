@@ -173,7 +173,8 @@ model Job {
   status          JobStatus       @default(DRAFT)  // Fixed: Using enum
   experienceLevel String?         // Added: "entry", "mid", "senior", "executive"
   educationLevel  String?         // Added: "high_school", "bachelor", "master", "phd"
-  
+  requirements    Json?          // Added: {minExperience, skills, education, etc.}
+
   // Metadata
   viewsCount      Int             @default(0)      // Added for popularity tracking
   applicationsCount Int           @default(0)      // Added for quick stats
