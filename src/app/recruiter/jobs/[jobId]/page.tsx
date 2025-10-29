@@ -1,3 +1,4 @@
+"use client"
 import ApplicantsTable from "@/components/recruiter/applicants-table";
 import { Button } from "@/components/ui/button";
 import { useJobDetail } from "@/hooks/queries/job-queries";
