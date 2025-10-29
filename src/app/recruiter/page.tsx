@@ -143,7 +143,7 @@ export default function RecruiterJobsPage() {
     active: jobs.filter(j => j.status === 'ACTIVE').length,
     draft: jobs.filter(j => j.status === 'DRAFT').length,
     inactive: jobs.filter(j => j.status === 'INACTIVE').length,
-    totalApplicants: jobs.reduce((sum, j) => sum + (j.candidatesCount || j._count!.applications), 0),
+    totalApplicants: jobs.reduce((sum, j) => sum + (j.candidatesCount || 0), 0),
   }), [jobs]);
 
   // --- Mutation Handler ---

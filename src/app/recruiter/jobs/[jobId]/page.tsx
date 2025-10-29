@@ -57,7 +57,7 @@ export default function JobApplicantsPage() {
               <span>•</span>
               <span>{job.employmentType}</span>
               <span>•</span>
-              <span>{job.candidatesCount || job._count?.applications} applicants</span>
+              <span>{job.candidatesCount || 0} applicants</span>
             </div>
           </div>
         </div>
