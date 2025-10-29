@@ -88,7 +88,7 @@ export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
     salaryCurrency: prismaJob.salaryCurrency!,
     employmentType: prismaJob.employmentType,
     status: prismaJob.status,
-    requirements: prismaJob.requirements,
+    requirements: prismaJob.requirements as unknown as JSON | undefined,
     createdAt: prismaJob.createdAt.toISOString(),
     updatedAt: prismaJob.updatedAt.toISOString(),
     recruiter: prismaJob.author ? {
