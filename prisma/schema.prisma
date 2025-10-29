@@ -162,7 +162,6 @@ model Job {
   recruiterId     String          @map("recruiter_id") @db.Uuid
   title           String
   description     String?         @db.Text  // Changed to Text for longer content
-  companyName     String
   department      String?
   location        String?
   remotePolicy    String?         @default("onsite") // Added: "remote", "hybrid", "onsite"

@@ -5,7 +5,6 @@ export interface Job {
   recruiterId: string
   title: string
   description: string | null
-  companyName: string; 
   department: string | null
   location: string | null
   salary: number | null
