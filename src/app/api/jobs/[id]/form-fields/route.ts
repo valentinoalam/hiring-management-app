@@ -60,7 +60,7 @@ export async function GET(
 // POST - Update form fields for a job
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     const session = await auth();
@@ -69,7 +69,7 @@ export async function POST(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const jobId = params.jobId;
+    const {jobId} = await params;
     const { formFields } = await request.json();
 
     if (!Array.isArray(formFields)) {
