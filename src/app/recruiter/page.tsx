@@ -16,8 +16,8 @@ import {
 import { useAllJobs, useCreateJob } from '@/hooks/queries/job-queries'; 
 import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
-import JobCard from '@/components/layout/recruiter/job-card';
-import JobList from '@/components/layout/recruiter/job-list';
+import JobCard from '@/components/recruiter/job-card';
+import JobList from '@/components/recruiter/job-list';
 
 // --- Helper Components ---
 

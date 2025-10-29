@@ -1,5 +1,5 @@
 
-import Header from '@/components/layout/recruiter/header';
+import Header from '@/components/recruiter/header';
 
 export default function DashboardLayout({
   children,
