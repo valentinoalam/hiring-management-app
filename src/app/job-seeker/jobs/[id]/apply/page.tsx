@@ -41,11 +41,11 @@ interface SubmissionState {
 
 export default function ApplyJobPage() {
   const params = useParams()
+  const jobId = params.id as string
   const router = useRouter()
   const { data: session } = useSession()
   const isJobSeeker = session?.user?.role === "APPLICANT"
   const user = session?.user // Get the user object from the session
-  const jobId = params.id as string
 
   const [job, setJob] = useState<Job | null>(null)
   const [formFields, setFormFields] = useState<FormField[]>([])
