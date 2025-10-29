@@ -1,25 +1,38 @@
 import React, { useState, useMemo, lazy, Suspense } from 'react';
-import { Search, Loader2 } from 'lucide-react'; // Using Lucide icons for aesthetics
+import { Search, Loader2, Briefcase } from 'lucide-react'; // Using Lucide icons for aesthetics
 import { Job } from '@/types/job';
 
+const LazyJobCard = lazy(() => import('./job-card'));
 
-// ScrollArea component moved outside render to avoid ESLint error
-const ScrollArea = ({ children, onScroll }: { children: React.ReactNode; onScroll: (e: React.UIEvent<HTMLDivElement>) => void }) => (
-  <div
-    className="overflow-y-auto h-full"
+const ScrollArea = ({ children, onScroll, className }: { children: React.ReactNode; onScroll: (e: React.UIEvent<HTMLDivElement>) => void, className: string }) => (
+<div
+    className={`overflow-y-auto h-full ${className}`}
     style={{
-      msOverflowStyle: 'none',
-      scrollbarWidth: 'none',
+      /* Hide scrollbar for IE, Edge and Firefox */
+      msOverflowStyle: 'none',  /* IE and Edge */
+      scrollbarWidth: 'none',  /* Firefox */
+      /* Hide scrollbar for Chrome, Safari and Opera */
       WebkitOverflowScrolling: 'touch',
-    } as React.CSSProperties}
+    }}
     onScroll={onScroll}
   >
     {children}
   </div>
 );
-
-const LazyJobCard = lazy(() => import('./job-card'));
-
+// --- Hero Content for No Jobs ---
+const NoJobsHero = ({onCreateJob}: {onCreateJob: () => void}) => (
+  <div className="flex flex-col items-center justify-center h-full p-16 bg-white rounded-xl shadow-lg border border-gray-100 text-center">
+      <Briefcase className="h-16 w-16 text-primary mb-4 opacity-70" />
+      <h2 className="text-xl font-bold text-gray-800 mb-2">There are no job listings right now.</h2>
+      <p className="text-gray-500 mb-6">Start by creating your first job post to attract top talent.</p>
+      <button 
+          className="flex h-10 items-center justify-center rounded-lg bg-primary px-6 py-2 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90"
+          onClick={onCreateJob}
+      >
+          Create Now
+      </button>
+  </div>
+);
 const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleJobsCount, setVisibleJobsCount] = useState(10); // Start with 10 jobs visible
@@ -44,6 +57,42 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
       (job.description || "").toLowerCase().includes(searchTerm.toLowerCase())
     );
   }, [jobs, searchTerm]);
+
+
+  // --- Conditional Rendered Content for Job Listings ---
+  const jobListContent = (
+    <ScrollArea onScroll={handleScroll} className="hide-scrollbar">
+        <div className="flex flex-col gap-4 pb-4">
+        {filteredJobs.slice(0, visibleJobsCount).map((job) => (
+            <Suspense 
+            key={job.id} 
+            fallback={
+                <div className="p-4 bg-gray-200 rounded-xl animate-pulse h-28">
+                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                <div className="h-3 bg-gray-300 rounded w-1/2 mt-2"></div>
+                <div className="h-4 bg-gray-300 rounded w-1/3 mt-4"></div>
+                </div>
+            }
+            >
+            <LazyJobCard job={job} />
+            </Suspense>
+        ))}
+        
+        {visibleJobsCount < filteredJobs.length && (
+            <div className="flex justify-center items-center p-4">
+            <Loader2 className="h-6 w-6 animate-spin text-primary" />
+            <span className="ml-2 text-sm text-gray-500">Loading more jobs...</span>
+            </div>
+        )}
+
+        {filteredJobs.length === 0 && searchTerm.length > 0 && (
+            <div className="text-center p-10 text-gray-500 bg-white rounded-xl shadow-lg">
+            No jobs match your search criteria. Try a different search term.
+            </div>
+        )}
+        </div>
+    </ScrollArea>
+  );
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
@@ -73,41 +122,8 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
               </div>
             </div>
             
-            {/* SHADCN-STYLE SCROLL AREA FOR LAZY LOADED JOBS */}
-            <ScrollArea onScroll={handleScroll}>
-              <div className="flex flex-col gap-4 pb-4">
-                {filteredJobs.slice(0, visibleJobsCount).map((job: Job) => (
-                  <Suspense 
-                    key={job.id} 
-                    fallback={
-                      <div className="p-4 bg-gray-200 rounded-xl animate-pulse h-28">
-                        <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                        <div className="h-3 bg-gray-300 rounded w-1/2 mt-2"></div>
-                        <div className="h-4 bg-gray-300 rounded w-1/3 mt-4"></div>
-                      </div>
-                    }
-                  >
-                    {/* Lazy loading the component */}
-                    <LazyJobCard job={job} />
-                  </Suspense>
-                ))}
-                
-                {/* Infinite scroll loading indicator */}
-                {visibleJobsCount < filteredJobs.length && (
-                  <div className="flex justify-center items-center p-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
-                    <span className="ml-2 text-sm text-gray-500">Loading more jobs...</span>
-                  </div>
-                )}
-
-                {/* No results message */}
-                {filteredJobs.length === 0 && (
-                  <div className="text-center p-10 text-gray-500 bg-white rounded-xl shadow-lg">
-                    No jobs match your search criteria.
-                  </div>
-                )}
-              </div>
-            </ScrollArea>
+             {/* Conditional Rendering of Job List or Hero Section */}
+            {jobs.length === 0 ? <NoJobsHero onCreateJob={onCreateJob} /> : jobListContent}
           </div>
 
           {/* RIGHT COLUMN: Sticky Aside Card */}
@@ -136,11 +152,10 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
                 </button>
               </div>
             </div>
-            {/* Add a secondary sticky card for better visual demonstration of stickiness */}
             <div className="sticky top-[150px] p-4 bg-white rounded-xl shadow-md border border-gray-100">
                 <p className="font-semibold text-gray-700">Analytics Summary</p>
-                <p className="text-2xl mt-1 text-primary">50</p>
-                <p className="text-sm text-gray-500">Active Listings</p>
+                <p className="text-2xl mt-1 text-primary">{jobs.length}</p>
+                <p className="text-sm text-gray-500">Total Listings</p>
             </div>
           </aside>
         </main>

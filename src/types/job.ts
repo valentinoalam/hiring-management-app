@@ -94,6 +94,7 @@ export interface NewJobData {
   location: string;
   salary_min: number | null;
   salary_max: number | null;
+  salary_currency: string;
   employment_type: string;
   status: "draft" | "active" | "inactive";
 }

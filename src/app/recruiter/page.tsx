@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { useSession } from 'next-auth/react';
 import { useToast } from '@/components/ui/use-toast';
 import { 
-  Briefcase, Plus, TrendingUp, Users, Clock, Edit, Trash2, Loader2, X,
+  Edit, Trash2, Loader2, X,
   MapPin, Calendar,
   Search
 } from 'lucide-react';
@@ -16,7 +16,6 @@ import {
 import { useAllJobs, useCreateJob } from '@/hooks/queries/job-queries'; 
 import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
-import JobCard from '@/components/recruiter/job-card';
 import JobList from '@/components/recruiter/job-list';
 
 // --- Helper Components ---
@@ -95,8 +94,6 @@ const JobRow = ({ job, onEdit }: { job: Job, onEdit: (id: string) => void }) => 
   );
 };
 
-// --- Component ---
-
 export default function RecruiterJobsPage() {
   const router = useRouter();
   const { toast } = useToast();
@@ -106,20 +103,19 @@ export default function RecruiterJobsPage() {
   const [formData, setFormData] = useState<NewJobData>({
     title: '',
     description: '',
-    salary: 60000,
+    salary_min: 60000,
+    salary_max: 120000,
+    salary_currency: 'USD',
     location: 'Remote',
-    employmentType: 'Full-time',
+    employment_type: 'Full-time',
+    department: '',
+    status: 'draft',
   });
 
   // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)
   // For a production app, we would ideally use a hook like useRecruiterJobs(session.user.id)
   const { 
     data: allJobs, 
-    isLoading, 
-    isError, 
-    error,
-    isFetching,
-    refetch 
   } = useAllJobs(); // Assuming this hook fetches the current user's jobs if they are a recruiter
 
   // 💡 TanStack Query: Mutation for creating a new job
@@ -171,7 +167,17 @@ export default function RecruiterJobsPage() {
         });
         setShowCreateModal(false);
         // Reset form data
-        setFormData({ title: '', description: '', salary: 60000, location: 'Remote', employmentType: 'Full-time' });
+        setFormData({ 
+          title: '', 
+          description: '', 
+          salary_min: 60000, 
+          salary_max: 120000, 
+          salary_currency: 'USD', 
+          location: 'Remote', 
+          employment_type: 'Full-time',
+          department: '',
+          status: 'draft'
+        });
         // The onSuccess in useCreateJob already invalidates the 'jobs' query, triggering an automatic refetch
       },
       onError: (err: Error) => {
@@ -272,7 +278,7 @@ export default function RecruiterJobsPage() {
                         <label htmlFor="employmentType" className="block text-sm font-medium text-card-foreground">Type</label>
                         <select
                             id="employmentType"
-                            value={formData.employmentType}
+                            value={formData.employment_type}
                             onChange={(e) => setFormData(prev => ({ ...prev, employmentType: e.target.value || 'Full-time' }))}
                             className="mt-1 block w-full border border-input rounded-md px-3 py-2 bg-card focus:ring-primary focus:border-primary transition-colors"
                         >
@@ -285,13 +291,13 @@ export default function RecruiterJobsPage() {
 
                 {/* Salary */}
                 <div>
-                  <label htmlFor="salary" className="block text-sm font-medium text-card-foreground">Annual Salary (USD)</label>
+                  <label htmlFor="salary_min" className="block text-sm font-medium text-card-foreground">Annual Salary (USD)</label>
                   <input
-                    id="salary"
+                    id="salary_min"
                     type="number"
                     required
-                    value={formData.salary}
-                    onChange={(e) => setFormData(prev => ({ ...prev, salary: parseInt(e.target.value) || 0 }))}
+                    value={formData.salary_min!}
+                    onChange={(e) => setFormData(prev => ({ ...prev, salary_min: parseInt(e.target.value) || 0 }))}
                     className="mt-1 block w-full border border-input rounded-md px-3 py-2 focus:ring-primary focus:border-primary transition-colors"
                   />
                 </div>

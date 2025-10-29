@@ -29,7 +29,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from "next/link"
 import Logo from "@/components/layout/logo"
 import { Separator } from "@/components/ui/separator"
-import { Mail, User, Lock, CheckCircle2 } from "lucide-react"
+import { Mail,  CheckCircle2 } from "lucide-react"
 
 const signUpSchema = z.object({
   fullName: z.string().min(2, {
