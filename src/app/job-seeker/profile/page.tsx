@@ -1,18 +1,19 @@
 "use client"
 
-import { useState, useEffect } from "react"
-import { createBrowserClient } from "@supabase/ssr"
+import { useState, useEffect, useCallback } from "react"
+import { useSession } from "next-auth/react"
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { useUser } from "@/lib/auth/hooks"
 import { Camera, Loader2 } from "lucide-react"
+import Image from "next/image"
 
 export default function JobSeekerProfilePage() {
-  const { user } = useUser()
+  const { data: session, status } = useSession()
+  const user = session?.user // Get the user object from the session
   const [profileImage, setProfileImage] = useState<string | null>(null)
   const [showGestureCapture, setShowGestureCapture] = useState(false)
   const [loading, setLoading] = useState(false)
@@ -23,24 +24,25 @@ export default function JobSeekerProfilePage() {
     location: "",
     bio: "",
   })
-
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-
-  useEffect(() => {
-    if (user?.id) {
-      fetchProfile()
-    }
-  }, [user?.id])
-
-  const fetchProfile = async () => {
+  const fetchProfile = useCallback(async () => {
     try {
       setLoading(true)
-      const { data, error } = await supabase.from("job_seeker_profiles").select("*").eq("id", user?.id).single()
+      
+      // 7. ✅ Replace Supabase call with a call to your protected API route
+      const response = await fetch(`/api/profile/${user?.id}`, {
+        method: "GET",
+      })
 
-      if (error && error.code !== "PGRST116") throw error
+      if (!response.ok) {
+        // Handle 404/not found by just initializing empty form
+        if (response.status === 404) {
+             console.log("Profile not found, starting fresh.");
+             return;
+        }
+        throw new Error(`Failed to fetch profile: ${response.statusText}`)
+      }
+
+      const data = await response.json()
 
       if (data) {
         setFormData({
@@ -58,47 +60,100 @@ export default function JobSeekerProfilePage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [user?.id])
 
+  useEffect(() => {
+    // Only fetch if authenticated and user ID is available
+    if (status === "authenticated" && user?.id) {
+      fetchProfile()
+    } else if (status === "unauthenticated") {
+      setLoading(false); // Stop loading if unauthenticated
+      // Optional: Redirect to login page here if needed
+    }
+  }, [fetchProfile, status, user?.id])
+
+
+
+  
   const handleImageSave = async (imageData: string) => {
+    if (status !== "authenticated") return;
+
     try {
       setSaving(true)
       setProfileImage(imageData)
       setShowGestureCapture(false)
 
-      // Save image to Supabase storage or as data URL
-      const { error } = await supabase
-        .from("job_seeker_profiles")
-        .update({ profile_image_url: imageData })
-        .eq("id", user?.id)
+      // 8. ✅ Replace Supabase call with a call to your protected API route
+      const response = await fetch(`/api/profile/${user?.id}/image`, {
+        method: "PUT",
+        body: JSON.stringify({ profile_image_url: imageData }),
+      })
 
-      if (error) throw error
+      if (!response.ok) {
+        throw new Error(`Failed to save image: ${response.statusText}`)
+      }
+      
     } catch (error) {
       console.error("Error saving profile image:", error)
+      // Optional: Revert profile image on error
     } finally {
       setSaving(false)
     }
   }
 
   const handleSaveProfile = async () => {
+    if (status !== "authenticated") return;
+
     try {
       setSaving(true)
-      const { error } = await supabase
-        .from("job_seeker_profiles")
-        .update({
-          full_name: formData.full_name,
-          phone: formData.phone,
-          location: formData.location,
-          bio: formData.bio,
-        })
-        .eq("id", user?.id)
 
-      if (error) throw error
+      // 9. ✅ Replace Supabase call with a call to your protected API route
+      const response = await fetch(`/api/profile/${user?.id}`, {
+        method: "PUT",
+        body: JSON.stringify(formData),
+      })
+
+      if (!response.ok) {
+        throw new Error(`Failed to save profile: ${response.statusText}`)
+      }
+      
+      // Successfully saved, no need to refetch immediately unless necessary
+      
     } catch (error) {
       console.error("Error saving profile:", error)
     } finally {
       setSaving(false)
     }
+  }
+
+  // 10. Handle unauthenticated state
+  if (status === "loading") {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+    );
+  }
+
+  if (status === "unauthenticated") {
+    // You should use a redirect here in a real app, e.g., router.push('/api/auth/signin')
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <Card className="p-8">
+                <p className="text-lg">Please sign in to manage your profile.</p>
+                {/* Add a sign-in button here */}
+            </Card>
+        </div>
+    );
+  }
+
+  // If loading the profile data, show a spinner
+  if (loading) {
+    return (
+        <div className="min-h-screen flex items-center justify-center">
+            <Loader2 className="w-8 h-8 animate-spin text-primary" />
+        </div>
+    );
   }
 
   return (
@@ -112,10 +167,10 @@ export default function JobSeekerProfilePage() {
 
           <div className="flex items-center gap-8">
             {/* Current Profile Picture */}
-            <div className="flex-shrink-0">
+            <div className="shrink-0">
               <div className="w-32 h-32 rounded-full bg-muted overflow-hidden flex items-center justify-center">
                 {profileImage ? (
-                  <img src={profileImage || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
+                  <Image fill src={profileImage || "/placeholder.svg"} alt="Profile" className="w-full h-full object-cover" />
                 ) : (
                   <Camera className="w-12 h-12 text-muted-foreground" />
                 )}

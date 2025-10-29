@@ -1,8 +1,8 @@
 "use client"
 
+import { User } from "next-auth"
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
-import type { User } from "@supabase/supabase-js"
 
 interface UserProfile {
   id: string

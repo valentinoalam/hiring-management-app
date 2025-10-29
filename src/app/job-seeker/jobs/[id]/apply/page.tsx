@@ -2,9 +2,9 @@
 
 import type React from "react"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useParams, useRouter } from "next/navigation"
-import { createBrowserClient } from "@supabase/ssr"
+import { useSession } from "next-auth/react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -12,7 +12,6 @@ import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { ApplicationFeedback } from "@/components/job/job-seeker/application-feedback"
-import { useUser } from "@/lib/auth/hooks"
 import { Loader2, ArrowLeft } from "lucide-react"
 
 interface Job {
@@ -43,7 +42,9 @@ interface SubmissionState {
 export default function ApplyJobPage() {
   const params = useParams()
   const router = useRouter()
-  const { user, isJobSeeker } = useUser()
+  const { data: session } = useSession()
+  const isJobSeeker = session?.user?.role === "APPLICANT"
+  const user = session?.user // Get the user object from the session
   const jobId = params.id as string
 
   const [job, setJob] = useState<Job | null>(null)
@@ -56,62 +57,57 @@ export default function ApplyJobPage() {
     errors: {},
   })
 
-  const supabase = createBrowserClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-  )
-
-  useEffect(() => {
-    if (!isJobSeeker) {
-      router.push("/job-seeker/dashboard")
-      return
-    }
-    fetchJobAndFormFields()
-  }, [isJobSeeker, router])
-
-  const fetchJobAndFormFields = async () => {
+    const fetchJobAndFormFields =  useCallback(async () => {
     try {
       setLoading(true)
 
-      // Fetch job
-      const { data: jobData, error: jobError } = await supabase
-        .from("jobs")
-        .select("*")
-        .eq("id", jobId)
-        .eq("status", "active")
-        .single()
+      const response = await fetch(`/api/jobs/${jobId}/application-data`, {
+        method: "GET",
+      })
 
-      if (jobError) throw jobError
+      if (!response.ok) {
+        // Handle the case where the job is not found or inactive (404/403)
+        if (response.status === 404 || response.status === 403) {
+          console.warn(`Job ${jobId} not found or inactive.`)
+          router.push("/job-seeker/jobs")
+          return
+        }
+        throw new Error(`API fetch failed with status: ${response.status}`)
+      }
+
+      const { jobData, fieldsData } = await response.json() // Server returns an object { jobData, fieldsData }
+
       if (!jobData) {
         router.push("/job-seeker/jobs")
         return
       }
 
       setJob(jobData)
-
-      // Fetch form fields
-      const { data: fieldsData, error: fieldsError } = await supabase
-        .from("application_form_fields")
-        .select("*")
-        .eq("job_id", jobId)
-        .order("display_order", { ascending: true })
-
-      if (fieldsError) throw fieldsError
       setFormFields(fieldsData || [])
 
-      // Initialize form data
+      // Initialize form data (Client-side logic remains the same)
       const initialFormData: FormData = {}
-      fieldsData?.forEach((field) => {
+      fieldsData?.forEach((field: { field_name: string }) => {
         initialFormData[field.field_name] = ""
       })
       setFormData(initialFormData)
     } catch (error) {
       console.error("Error fetching job and form fields:", error)
-      router.push("/job-seeker/jobs")
+      // Fallback redirect in case of network error or other unhandled API issues
+      router.push("/job-seeker/jobs") 
     } finally {
       setLoading(false)
     }
-  }
+  }, [jobId, router])
+
+  useEffect(() => {
+    if (!isJobSeeker) {
+      router.push("/job-seeker")
+      return
+    }
+    fetchJobAndFormFields()
+  }, [fetchJobAndFormFields, isJobSeeker, router])
+
 
   const validateForm = (): boolean => {
     const errors: Record<string, string> = {}
@@ -133,6 +129,8 @@ export default function ApplyJobPage() {
     return Object.keys(errors).length === 0
   }
 
+  // ---
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
 
@@ -144,6 +142,13 @@ export default function ApplyJobPage() {
       }))
       return
     }
+    
+    // Ensure user is defined before proceeding to make a request
+    if (!user?.id) {
+      console.error("User ID is missing. Cannot submit application.");
+      // Force sign-in or handle unauthenticated state
+      return;
+    }
 
     try {
       setSubmission((prev) => ({
@@ -152,31 +157,31 @@ export default function ApplyJobPage() {
         message: "",
       }))
 
-      // Create application record
-      const { data: applicationData, error: applicationError } = await supabase
-        .from("applications")
-        .insert({
-          job_id: jobId,
-          job_seeker_id: user?.id,
-          status: "pending",
-          applied_at: new Date().toISOString(),
-        })
-        .select()
-        .single()
+      // 2. ✅ Submit all application data (application record + responses) to a single API endpoint
+      // The server-side API will handle the two database inserts (applications, application_responses) atomically.
+      const submissionPayload = {
+        jobId: jobId,
+        jobSeekerId: user.id, // Passed explicitly, but the server should verify this against the token
+        formResponses: formFields.map((field) => ({
+          fieldName: field.field_name,
+          fieldType: field.field_type,
+          responseValue: formData[field.field_name] || "",
+        })),
+      }
 
-      if (applicationError) throw applicationError
+      const response = await fetch(`/api/jobs/apply`, {
+        method: "POST",
+        body: JSON.stringify(submissionPayload),
+      })
 
-      // Store form responses
-      const responses = formFields.map((field) => ({
-        application_id: applicationData.id,
-        field_name: field.field_name,
-        field_type: field.field_type,
-        response_value: formData[field.field_name] || "",
-      }))
-
-      const { error: responsesError } = await supabase.from("application_responses").insert(responses)
-
-      if (responsesError) throw responsesError
+      if (!response.ok) {
+        // The server API will return a 4xx or 5xx status on error
+        const errorData = await response.json();
+        throw new Error(errorData.message || "Failed to process application on server.");
+      }
+      
+      // Assuming the API returns the created application data (optional)
+      // const applicationResult = await response.json();
 
       setSubmission({
         status: "success",
@@ -188,11 +193,12 @@ export default function ApplyJobPage() {
       setTimeout(() => {
         router.push("/job-seeker/jobs")
       }, 2000)
+
     } catch (error) {
       console.error("Error submitting application:", error)
       setSubmission({
         status: "error",
-        message: "Failed to submit application. Please try again.",
+        message: (error as Error).message || "Failed to submit application. Please try again.",
         errors: {},
       })
     }
