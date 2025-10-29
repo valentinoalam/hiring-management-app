@@ -5,7 +5,7 @@ import { auth } from '@/auth';
 // GET - Get all form fields for a job
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     const session = await auth();
@@ -14,7 +14,7 @@ export async function GET(
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const jobId = params.jobId;
+    const {jobId} = await params;
 
     // Verify the job belongs to the current user
     const job = await prisma.job.findFirst({

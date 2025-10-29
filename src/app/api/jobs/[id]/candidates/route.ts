@@ -3,12 +3,13 @@ import { prisma } from '@/lib/prisma';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
+    const { jobId } = await params;
     const candidates = await prisma.candidate.findMany({
       where: {
-        jobId: params.jobId,
+        jobId: jobId,
       },
       include: {
         jobSeeker: {
