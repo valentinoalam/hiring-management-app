@@ -116,6 +116,7 @@ model Profile {
   userInfo     OtherUserInfo[]
 
   @@map("profiles")
+  Company Company[]
 }
 
 model OtherUserInfo {
@@ -134,7 +135,7 @@ model OtherUserInfo {
 model InfoField {
   id           String   @id @default(uuid()) @db.Uuid
   userId       String   @db.Uuid
-  key          String   // e.g., "years_experience", "skills"
+  key          String   @unique// e.g., "years_experience", "skills"
   label        String?
   value        String?  // Default value
   displayOrder Int?     @default(0)
@@ -155,7 +156,27 @@ model InfoField {
 // ======================================
 // JOB MANAGEMENT (Enhanced)
 // ======================================
+model Company {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  description String?
+  website     String?
+  logo        String?
+  industry    String?
+  size        String?  // "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"
+  
+  // Relations
+  profileId      String   @db.Uuid
+  user        Profile     @relation(fields: [profileId], references: [id])
+  jobs        Job[]
+  
+  // Timestamps
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
 
+  @@index([profileId])
+  @@map("companies")
+}
 model Job {
   id              String          @id @default(uuid()) @db.Uuid
   slug            String          @unique
@@ -173,8 +194,10 @@ model Job {
   status          JobStatus       @default(DRAFT)  // Fixed: Using enum
   experienceLevel String?         // Added: "entry", "mid", "senior", "executive"
   educationLevel  String?         // Added: "high_school", "bachelor", "master", "phd"
-  requirements    Json?          // Added: {minExperience, skills, education, etc.}
-
+  sections     Json               // Enhanced: {title, description, fields: [{key, type, validation, options}]}
+  settings     Json?              // Added: {autoReject: boolean, requireCoverLetter: boolean, etc.}
+  requirements Json?              // Added: {minExperience, skills, education, etc.}
+  numberOfCandidates Int
   // Metadata
   viewsCount      Int             @default(0)      // Added for popularity tracking
   applicationsCount Int           @default(0)      // Added for quick stats
@@ -194,7 +217,6 @@ model Job {
   authorId        String   @db.Uuid 
   author          User     @relation("JobAuthor", fields: [authorId], references: [id])
   
-  config          JobConfig?
   candidates      Candidate[]
   applicationFormFields AppFormField[]
 
@@ -203,24 +225,7 @@ model Job {
   @@index([createdAt])
   @@index([employmentType])
   @@map("jobs")
-}
-
-// ======================================
-// JOB CONFIGURATION (Enhanced)
-// ======================================
-
-model JobConfig {
-  id           String   @id @default(uuid()) @db.Uuid
-  jobId        String   @unique @db.Uuid
-  job          Job      @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  sections     Json     // Enhanced: {title, description, fields: [{key, type, validation, options}]}
-  settings     Json?    // Added: {autoReject: boolean, requireCoverLetter: boolean, etc.}
-  requirements Json?    // Added: {minExperience, skills, education, etc.}
-  
-  createdAt    DateTime @default(now()) @map("created_at")
-  updatedAt    DateTime @updatedAt @map("updated_at")
-  
-  @@map("job_configs")
+  Company Company[]
 }
 
 // ======================================

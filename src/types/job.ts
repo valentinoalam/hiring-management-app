@@ -155,10 +155,26 @@ export interface Applicant {
   resumeUrl?: string;
 };
 
+export interface ProfileField {
+  id: string;
+  label: string;
+  status: "mandatory" | "optional" | "off";
+}
+
+interface JobOpeningFormData {
+  jobName: string;
+  jobType: string;
+  jobDescription: string;
+  minSalary: string;
+  maxSalary: string;
+  profileFields: ProfileField[];
+}
+
 export interface NewJobData {
   title: string;
   description: string;
   department: string;
+  numberOfCandidates: string;
   location: string;
   salary_min: number | null;
   salary_max: number | null;

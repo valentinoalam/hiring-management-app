@@ -61,7 +61,7 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
 
   // --- Conditional Rendered Content for Job Listings ---
   const jobListContent = (
-    <ScrollArea onScroll={handleScroll} className="hide-scrollbar">
+    <ScrollArea onScroll={handleScroll} className="no-scrollbar">
         <div className="flex flex-col gap-4 pb-4">
         {filteredJobs.slice(0, visibleJobsCount).map((job) => (
             <Suspense 
@@ -96,14 +96,6 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
 
   return (
     <div className="min-h-screen bg-gray-50 font-sans">
-      {/* We need to include a style block to hide the Webkit scrollbar (Chrome/Safari) */}
-      <style>{`
-        /* Hide scrollbar for Chrome, Safari and Opera */
-        .hide-scrollbar::-webkit-scrollbar {
-          display: none;
-        }
-      `}</style>
-
       <div className="max-w-7xl mx-auto px-6 pt-4 h-full">
         <main className="flex gap-8 h-[calc(100vh-2rem)]"> {/* Set height for the main container */}
           

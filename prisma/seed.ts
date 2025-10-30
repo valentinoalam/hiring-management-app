@@ -16,6 +16,7 @@ async function main() {
   const users = await createUsers();
   console.log(`✅ Created ${users.length} users`);
 
+  
   // Create profiles for users
   await createProfiles(users);
   console.log(`✅ Created profiles for all users`);
@@ -37,6 +38,44 @@ async function main() {
   console.log(`✅ Created info fields`);
 
   console.log('🎉 Database seeding completed!');
+}
+
+async function addBasicInfofield() {
+  // Define the static list of InfoField data
+  // Assuming the InfoField model has: key (unique), label (display name), and type (data type)
+  const infoFields = [
+    { key: 'full_name', label: 'Full Name', fieldType: 'text', displayOrder: 1 },
+    { key: 'photo_profile', label: 'Photo Profile', fieldType: 'text', displayOrder: 2 },
+    { key: 'gender', label: 'Gender', fieldType: 'select', displayOrder: 3 },
+    { key: 'domicile', label: 'Domicile', fieldType: 'text', displayOrder: 4 },
+    { key: 'email', label: 'Email', fieldType: 'text', displayOrder: 5 },
+    { key: 'phone_number', label: 'Phone Number', fieldType: 'text', displayOrder: 6 },
+    { key: 'linkedin_url', label: 'LinkedIn URL', fieldType: 'text', displayOrder: 7 },
+    { key: 'date_of_birth', label: 'Date of Birth', fieldType: 'text', displayOrder: 8 },
+    { key: 'years_experience', label: 'Years of Experience', fieldType: 'text', displayOrder: 9 },
+    { key: 'skills', label: 'Skills', fieldType: 'textarea', displayOrder: 10 },
+    { key: 'education', label: 'Education', fieldType: 'textarea', displayOrder: 11 },
+    { key: 'cover_letter', label: 'Cover Letter', fieldType: 'textarea', displayOrder: 12 },
+    { key: 'portfolio_url', label: 'Portfolio URL', fieldType: 'text', displayOrder: 13 },
+    { key: 'resume', label: 'Resume', fieldType: 'text', displayOrder: 14 },
+  ]
+
+  for (const field of infoFields) {
+    const infoField = await prisma.infoField.upsert({
+      where: { key: field.key }, // Use the 'key' as the unique identifier
+      update: {
+        // Only update if the label or type changes
+        label: field.label,
+        type: field.type,
+      },
+      create: {
+        key: field.key,
+        label: field.label,
+        type: field.type,
+      },
+    })
+    console.log(`Upserted InfoField with key: ${infoField.key} (ID: ${infoField.id})`)
+  }
 }
 
 async function clearDatabase() {

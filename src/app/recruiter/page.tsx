@@ -17,6 +17,7 @@ import { useAllJobs, useCreateJob } from '@/hooks/queries/job-queries';
 import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/recruiter/job-list';
+import { JobOpeningFormInput, JobOpeningModal } from '@/components/recruiter/JobOpeningModal';
 
 // --- Helper Components ---
 
@@ -98,19 +99,7 @@ export default function RecruiterJobsPage() {
   const router = useRouter();
   const { toast } = useToast();
   const { data: session, status } = useSession();
-
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [formData, setFormData] = useState<NewJobData>({
-    title: '',
-    description: '',
-    salary_min: 60000,
-    salary_max: 120000,
-    salary_currency: 'USD',
-    location: 'Remote',
-    employment_type: 'Full-time',
-    department: '',
-    status: 'draft',
-  });
 
   // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)
   // For a production app, we would ideally use a hook like useRecruiterJobs(session.user.id)
@@ -147,8 +136,7 @@ export default function RecruiterJobsPage() {
   }), [jobs]);
 
   // --- Mutation Handler ---
-  const handleCreateJob = useCallback((e: React.FormEvent) => {
-    e.preventDefault();
+  const handleCreateJob = useCallback((formData: JobOpeningFormInput) => {
     if (!formData.title || !formData.location) {
       toast({
         title: "Missing Information",
@@ -166,18 +154,7 @@ export default function RecruiterJobsPage() {
           variant: "default",
         });
         setShowCreateModal(false);
-        // Reset form data
-        setFormData({ 
-          title: '', 
-          description: '', 
-          salary_min: 60000, 
-          salary_max: 120000, 
-          salary_currency: 'USD', 
-          location: 'Remote', 
-          employment_type: 'Full-time',
-          department: '',
-          status: 'draft'
-        });
+        
         // The onSuccess in useCreateJob already invalidates the 'jobs' query, triggering an automatic refetch
       },
       onError: (err: Error) => {
@@ -188,7 +165,7 @@ export default function RecruiterJobsPage() {
         });
       },
     });
-  }, [formData, createJob, toast]);
+  }, [createJob, toast]);
   
   // --- Role Check and Redirect ---
   const userRole = session?.user?.role;
@@ -218,118 +195,10 @@ export default function RecruiterJobsPage() {
     <div className="min-h-screen bg-muted/40 p-4 md:p-8">
       <JobList jobs={jobs} onCreateJob={() => setShowCreateModal(true) } />
       {/* --- Create Job Modal --- */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="bg-card rounded-xl shadow-2xl w-full max-w-lg p-6">
-            <div className="flex justify-between items-center border-b pb-3 mb-4">
-              <h2 className="text-2xl font-bold">Create New Job Posting</h2>
-              <button onClick={() => setShowCreateModal(false)} className="p-2 rounded-full hover:bg-secondary">
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleCreateJob}>
-              <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-3">
-                
-                {/* Job Title */}
-                <div>
-                  <label htmlFor="title" className="block text-sm font-medium text-card-foreground">Job Title</label>
-                  <input
-                    id="title"
-                    type="text"
-                    required
-                    value={formData.title}
-                    onChange={(e) => setFormData(prev => ({ ...prev, title: e.target.value }))}
-                    className="mt-1 block w-full border border-input rounded-md px-3 py-2 focus:ring-primary focus:border-primary transition-colors"
-                  />
-                </div>
-                
-                {/* Description */}
-                <div>
-                  <label htmlFor="description" className="block text-sm font-medium text-card-foreground">Description (Optional)</label>
-                  <textarea
-                    id="description"
-                    rows={4}
-                    value={formData.description}
-                    onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                    className="mt-1 block w-full border border-input rounded-md px-3 py-2 focus:ring-primary focus:border-primary transition-colors"
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                    {/* Location */}
-                    <div>
-                        <label htmlFor="location" className="block text-sm font-medium text-card-foreground">Location</label>
-                        <select
-                            id="location"
-                            value={formData.location}
-                            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                            className="mt-1 block w-full border border-input rounded-md px-3 py-2 bg-card focus:ring-primary focus:border-primary transition-colors"
-                        >
-                            <option value="Remote">Remote</option>
-                            <option value="New York, NY">New York, NY</option>
-                            <option value="Seattle, WA">Seattle, WA</option>
-                            <option value="London, UK">London, UK</option>
-                        </select>
-                    </div>
-
-                    {/* Employment Type */}
-                    <div>
-                        <label htmlFor="employmentType" className="block text-sm font-medium text-card-foreground">Type</label>
-                        <select
-                            id="employmentType"
-                            value={formData.employment_type}
-                            onChange={(e) => setFormData(prev => ({ ...prev, employmentType: e.target.value || 'Full-time' }))}
-                            className="mt-1 block w-full border border-input rounded-md px-3 py-2 bg-card focus:ring-primary focus:border-primary transition-colors"
-                        >
-                            <option value="Full-time">Full-time</option>
-                            <option value="Part-time">Part-time</option>
-                            <option value="Contract">Contract</option>
-                        </select>
-                    </div>
-                </div>
-
-                {/* Salary */}
-                <div>
-                  <label htmlFor="salary_min" className="block text-sm font-medium text-card-foreground">Annual Salary (USD)</label>
-                  <input
-                    id="salary_min"
-                    type="number"
-                    required
-                    value={formData.salary_min!}
-                    onChange={(e) => setFormData(prev => ({ ...prev, salary_min: parseInt(e.target.value) || 0 }))}
-                    className="mt-1 block w-full border border-input rounded-md px-3 py-2 focus:ring-primary focus:border-primary transition-colors"
-                  />
-                </div>
-
-              </div>
-
-              <div className="flex justify-end space-x-3 pt-6 border-t mt-4">
-                <button
-                  type="button"
-                  onClick={() => setShowCreateModal(false)}
-                  className="px-4 py-2 border border-input rounded-md text-sm font-medium text-muted-foreground hover:bg-secondary transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  disabled={isCreating}
-                  className="px-4 py-2 bg-primary text-primary-foreground rounded-md text-sm font-medium hover:bg-primary/90 disabled:opacity-50 transition-colors"
-                >
-                  {isCreating ? (
-                    <span className="flex items-center">
-                      <Loader2 className="w-4 h-4 mr-2 animate-spin" /> Posting...
-                    </span>
-                  ) : (
-                    "Create Job"
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      <JobOpeningModal 
+        open={showCreateModal} 
+        onOpenChange={setShowCreateModal } 
+        onSubmit={handleCreateJob} />
     </div>
   );
 }

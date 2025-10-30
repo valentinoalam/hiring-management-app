@@ -19,6 +19,17 @@
   text-wrap: balance;
 }
 
+@utility no-scrollbar {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+  /* Hide scrollbar for IE, Edge and Firefox */
+  -ms-overflow-style: none; /* IE and Edge */
+  scrollbar-width: none; /* Firefox */
+}
+
+
 @layer base {
   /* Text XS */
   .text-xs-regular {
@@ -219,4 +230,18 @@
   .bg-secondary {
     @apply bg-neutral-20;
   }
+
+  input[type="text"],
+  input[type="email"],
+  input[type="password"],
+  input[type="number"]
+  input[type="search"]
+  {
+    @apply rounded-xl;
+  }
+
+  input[type="checkbox"] {
+    @apply rounded-lg
+  }
+
 }
