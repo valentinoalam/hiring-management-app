@@ -8,8 +8,8 @@ import { Loader2, Briefcase, MapPin, Filter, X, Heart, AlertCircle, Frown } from
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import { Job } from '@/types/job';
 import Drawer from '@/components/custom-ui/drawer';
-import JobDetail from '@/components/JobDetail';
-import JobCard from '@/components/JobCard';
+import JobDetail from '@/components/job/job-seeker/JobDetail';
+import JobCard from '@/components/job/job-seeker/JobCard';
 
 // --- Type Definitions ---
 

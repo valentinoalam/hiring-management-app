@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
 import { Job, UpdateJobData } from '@/types/job';
-import { JobFormData } from '@/components/recruiter/JobOpeningModal';
+import { JobFormData } from '@/components/job/recruiter/JobOpeningModal';
 import { apiFetch } from '@/lib/api';
 
 // API functions for Jobs

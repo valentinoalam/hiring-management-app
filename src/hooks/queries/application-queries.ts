@@ -15,7 +15,7 @@ const submitJobApplication = async ({
   jobId: string;
   applicationData: {
     formResponse: JSON;
-    profileUpdates: Profile;
+    profileUpdates: Partial<Profile>;
     userInfoUpdates: Array<{
       id?: string;
       fieldId: string;
@@ -38,7 +38,7 @@ const updateUserProfile = async ({
   profileData,
 }: {
   userId: string;
-  profileData: Profile;
+  profileData: Partial<Profile>;
 }): Promise<Profile> => {
   return apiFetch(`/api/profiles/user/${userId}`, {
     method: 'PUT',
