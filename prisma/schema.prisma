@@ -112,7 +112,7 @@ model Profile {
 
   // Relations (Fixed)
   user        User       @relation(fields: [userId], references: [id])
-  applications Candidate[]
+  applications Application[]
   userInfo     OtherUserInfo[]
 
   @@map("profiles")
@@ -217,7 +217,7 @@ model Job {
   authorId        String   @db.Uuid 
   author          User     @relation("JobAuthor", fields: [authorId], references: [id])
   
-  candidates      Candidate[]
+  candidates      Application[]
   applicationFormFields AppFormField[]
 
   @@index([recruiterId])
@@ -254,12 +254,12 @@ model AppFormField {
 // CANDIDATES & APPLICATIONS (Enhanced)
 // ======================================
 
-model Candidate {
+model Application {
   id           String            @id @default(uuid()) @db.Uuid
   jobId        String            @db.Uuid
   jobSeekerId  String            @db.Uuid
   status       ApplicationStatus @default(PENDING)
-  
+  formResponse Json
   // Application content
   coverLetter  String?           @db.Text    // Added cover letter support
   source       String?           @default("direct") // "referral", "linkedin", etc.
@@ -301,7 +301,7 @@ model ApplicationNote {
   createdAt    DateTime @default(now()) @map("created_at")
   updatedAt    DateTime @updatedAt @map("updated_at")
   
-  application Candidate @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   author      User      @relation(fields: [authorId], references: [id])
   
   @@index([applicationId])
@@ -322,7 +322,7 @@ model Interview {
   createdAt      DateTime @default(now()) @map("created_at")
   updatedAt      DateTime @updatedAt @map("updated_at")
   
-  application    Candidate @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  application    Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
   
   @@index([applicationId])
   @@index([scheduledAt])

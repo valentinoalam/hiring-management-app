@@ -38,7 +38,7 @@ const jobFormSchema = z.object({
   description: z.string().min(1, "Job description is required").nullable(),
   department: z.string().optional(),
   location: z.string().optional(),
-  remotePolicy: z.enum(["onsite", "remote", "hybrid"]).default("onsite").optional(),
+  remotePolicy: z.enum(["onsite", "remote", "hybrid"]),
   employmentType: z.enum(["FULL_TIME", "PART_TIME", "CONTRACT", "INTERNSHIP"]).optional(),
   experienceLevel: z.enum(["entry", "mid", "senior", "executive"]).optional(),
   educationLevel: z.enum(["high_school", "bachelor", "master", "phd"]).optional(),
