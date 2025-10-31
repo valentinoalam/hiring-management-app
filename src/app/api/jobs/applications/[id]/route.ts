@@ -6,11 +6,11 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   try {
     const { id } = await params
 
-    const application = await prisma.candidate.findUnique({
+    const application = await prisma.application.findUnique({
       where: { id },
       include: {
         job: true,
-        jobSeeker: {
+        applicant: {
           include: {
             userInfo: true
           }
@@ -43,7 +43,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
     const { status } = body
 
     // Verify recruiter owns the job
-    const application = await prisma.candidate.findUnique({
+    const application = await prisma.application.findUnique({
       where: { id },
       include: {
         job: {
@@ -56,12 +56,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       return NextResponse.json({ error: "Unauthorized to update this application" }, { status: 403 })
     }
 
-    const updatedApplication = await prisma.candidate.update({
+    const updatedApplication = await prisma.application.update({
       where: { id },
       data: { status },
       include: {
         job: true,
-        jobSeeker: {
+        applicant: {
           include: {
             userInfo: true
           }

@@ -31,7 +31,6 @@ export async function GET(
             sortOrder: 'asc',
           },
         },
-        config: true,
       },
     });
 
@@ -46,7 +45,6 @@ export async function GET(
         status: job.status,
       },
       formFields: job.applicationFormFields,
-      config: job.config,
     });
   } catch (error) {
     console.error('Error fetching form fields:', error);
