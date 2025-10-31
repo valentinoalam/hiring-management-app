@@ -61,14 +61,11 @@ import {
   GripVertical,
   Linkedin,
 } from 'lucide-react';
-import {
-  useJobApplicants,
-  useApplicationFormFields,
-  useUpdateApplicantStatus,
-  useBulkActionApplicants,
-} from '@/hooks/queries/job-queries';
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ApplicationStatus, Applicant, ApplicantData } from '@/types/job';
+import { useBulkActionApplicants, useJobApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
+import { useApplicationFormFields } from '@/hooks/queries/application-queries';
 
 interface ApplicantsTableProps {
   jobId: string;
@@ -240,7 +237,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
             <Checkbox
               checked={selectedApplicants.includes(applicant.id)}
               onCheckedChange={() => toggleApplicantSelection(applicant.id)}
-              aria-label={`Select ${applicant.fullname}`}
+              aria-label={`Select ${applicant.fullName}`}
             />
           );
         },
@@ -256,12 +253,12 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
           return (
             <div className="flex items-center space-x-3">
               <Avatar>
-                <AvatarImage src={applicant.avatarUrl} alt={applicant.fullname} />
-                <AvatarFallback>{applicant.fullname.charAt(0)}</AvatarFallback>
+                <AvatarImage src={applicant.avatarUrl} alt={applicant.fullName} />
+                <AvatarFallback>{applicant.fullName.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="font-medium text-gray-900">
-                  {applicant.fullname}
+                  {applicant.fullName}
                 </div>
                 <div className="text-sm text-gray-500 flex items-center">
                   <Mail className="h-3 w-3 mr-1" />
