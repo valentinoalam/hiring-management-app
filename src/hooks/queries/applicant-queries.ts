@@ -50,7 +50,7 @@ const bulkActionApplicants = async ({
 const transformApplicantData = (applicantData: ApplicantData): Applicant => {
   return {
     id: applicantData.id,
-    fullname: applicantData.profile.user.fullName,
+    fullName: applicantData.profile.user.fullName,
     email: applicantData.profile.user.email,
     appliedAt: applicantData.appliedAt,
     status: applicantData.status,
