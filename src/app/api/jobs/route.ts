@@ -1,11 +1,8 @@
-// route.ts (Menggunakan Auth.js/Next.js Auth dan Prisma)
-
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 
-import { auth } from "@/auth" // Ganti dengan path yang benar ke konfigurasi Auth Anda
-import { JobStatus } from "@prisma/client"
-import { Job, transformJobData } from "@/types/job"
+import { auth } from "@/auth" 
+import { transformJobData } from "@/types/job"
 
 // --- FUNGSI GET ---
 export async function GET(request: NextRequest) {
@@ -127,8 +124,8 @@ export async function POST(request: NextRequest) {
         description,
         department,
         location,
-        salaryMin: salaryMin ? Number.parseFloat(salaryMin) : null,
-        salaryMax: salaryMax ? Number.parseFloat(salaryMax) : null,
+        salaryMin: Number.parseFloat(salaryMin),
+        salaryMax: salaryMax ? Number.parseFloat(salaryMax) : salaryMin,
         salaryCurrency: salaryCurrency || "USD",
         employmentType,
         status: status || "draft",
