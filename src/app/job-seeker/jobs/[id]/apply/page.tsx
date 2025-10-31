@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+"use client"
 import { useParams, useRouter } from 'next/navigation';
 import JobApplicationForm from '@/components/job/job-seeker/apply-form';
 import { useJobDetail } from '@/hooks/queries/job-queries';
