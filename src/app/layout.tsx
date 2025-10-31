@@ -40,7 +40,7 @@ export default async function RootLayout({
             <NextAuthProvider session={session}>  
               <div className="flex-1 grow flex flex-col min-w-0 relative">
                 <Header />
-                <main className="flex flex-1 flex-col overflow-auto gap-4 md:p-4">
+                <main className="relative flex flex-1 flex-col overflow-auto gap-4 md:p-4">
                   {children}
                 </main>
               </div>

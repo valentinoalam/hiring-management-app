@@ -1,11 +1,15 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAllJobs } from '@/hooks/queries/job-queries';
-import { Loader2, Briefcase, MapPin, Filter, X, Heart, AlertCircle, Frown, PanelLeft } from 'lucide-react';
+import { Loader2, Briefcase, MapPin, Filter, X, Heart, AlertCircle, Frown } from 'lucide-react';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import { Job } from '@/types/job';
+import Drawer from '@/components/custom-ui/drawer';
+import JobDetail from '@/components/JobDetail';
+import JobCard from '@/components/JobCard';
 
 // --- Type Definitions ---
 
@@ -106,37 +110,6 @@ export default function JobsPage() {
   const toggleDrawer = () => {
     setIsOpen(!isOpen);
   };
-
-  // --- Button Classes (The "Bubble Gum" Sticky Trigger) ---
-
-  // Base classes for the fixed, half-rounded button
-  const buttonBaseClasses =
-    'fixed z-[100] p-3 text-white shadow-lg transition-all duration-300 ease-in-out cursor-pointer ' +
-    'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800';
-
-  // Desktop (lg+) position and shape: Sticky left side, rounded on the right
-  const buttonDesktopClasses = 
-    'hidden lg:block lg:left-0 lg:top-1/3 lg:transform lg:-translate-y-1/2 lg:rounded-r-xl';
-
-  // Mobile (sm/md) position and shape: Sticky top center, rounded on the bottom
-  const buttonMobileClasses = 
-    'block lg:hidden top-0 left-1/2 transform -translate-x-1/2 rounded-b-xl';
-
-  // --- Drawer Classes (The Sliding Panel) ---
-
-  // Base classes for the fixed, full-screen overlay/drawer
-  const drawerBaseClasses =
-    'fixed bg-white shadow-2xl z-50 transition-transform duration-300 ease-in-out overflow-y-auto';
-
-  // Desktop (lg+) drawer size and animation: Slides from the left
-  const drawerDesktopClasses =
-    'hidden lg:block h-full w-80 top-0 left-0';
-  const drawerDesktopTransform = isOpen ? 'translate-x-0' : '-translate-x-full';
-
-  // Mobile (sm/md) drawer size and animation: Slides from the top
-  const drawerMobileClasses =
-    'block lg:hidden w-full h-3/5 top-0 left-0 rounded-b-2xl';
-  const drawerMobileTransform = isOpen ? 'translate-y-0' : '-translate-y-full';
 
   // Derive state from URL parameters
   const activeFilters = useMemo<Filters>(() => {
@@ -313,7 +286,8 @@ export default function JobsPage() {
   );
 
   const renderJobList = () => (
-    <div className="w-full lg:w-96 xl:w-[400px] space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
+    <div className="w-full lg:w-96 xl:w-[400px] flex flex-col gap-6 space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
+      <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-2 ">
       {/* {isFetching && (
         <div className="p-4 bg-yellow-500/10 text-yellow-700 rounded-lg flex items-center gap-2 text-sm sticky top-0 z-10">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -329,31 +303,42 @@ export default function JobsPage() {
         </div>
       ) : (
         filteredJobs.map(job => (
-          <div
+          // <div
+          //   key={job.id}
+          //   className={`p-4 rounded-xl cursor-pointer transition-all border ${
+          //     selectedJobId === job.id
+          //       ? 'bg-primary/10 border-primary shadow-lg'
+          //       : 'bg-card border-border hover:shadow-md hover:border-primary/50'
+          //   }`}
+          //   onClick={() => handleJobSelect(job.id)}
+          // >
+          //   <div className="flex justify-between items-start">
+          //     <h3 className="text-lg font-bold text-card-foreground line-clamp-1">{job.title}</h3>
+          //     <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
+          //   </div>
+          //   <p className="text-sm text-muted-foreground mb-2">{job.companyName}</p>
+          //   <div className="text-sm space-y-1 mt-2">
+          //     <span className="flex items-center text-sm text-gray-600">
+          //       <MapPin className="w-4 h-4 mr-2" />{job.location} ({job.employmentType})
+          //     </span>
+          //     <span className="flex items-center text-sm text-gray-600">
+          //       {salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)} / year
+          //     </span>
+          //   </div>
+          // </div>
+          <JobCard
             key={job.id}
-            className={`p-4 rounded-xl cursor-pointer transition-all border ${
-              selectedJobId === job.id
-                ? 'bg-primary/10 border-primary shadow-lg'
-                : 'bg-card border-border hover:shadow-md hover:border-primary/50'
-            }`}
+            title={job.title}
+            company={job.companyName || ""}
+            location={job.location || ""}
+            salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency) || ""}
+            logo={'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'}
+            isActive={selectedJobId === job.id}
             onClick={() => handleJobSelect(job.id)}
-          >
-            <div className="flex justify-between items-start">
-              <h3 className="text-lg font-bold text-card-foreground line-clamp-1">{job.title}</h3>
-              <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
-            </div>
-            <p className="text-sm text-muted-foreground mb-2">{job.companyName}</p>
-            <div className="text-sm space-y-1 mt-2">
-              <span className="flex items-center text-sm text-gray-600">
-                <MapPin className="w-4 h-4 mr-2" />{job.location} ({job.employmentType})
-              </span>
-              <span className="flex items-center text-sm text-gray-600">
-                {salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)} / year
-              </span>
-            </div>
-          </div>
+          />
         ))
       )}
+      </div>
     </div>
   );
 
@@ -418,59 +403,11 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-muted/40 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="max-w-7xl mx-auto flex-1 flex flex-col lg:flex-row gap-4 lg:gap-6 px-4 py-6 lg:py-10">
         {/* 1. Filter Sidebar */}
-        {/* 1. Backdrop Overlay (Visible only when open on mobile/small screens) */}
-        {isOpen && (
-          <div
-            className="fixed inset-0 bg-black opacity-40 z-40 lg:hidden"
-            onClick={toggleDrawer}
-          ></div>
-        )}
-
-        {/* 2. Responsive Toggle Button (Bubble Gum Stick) */}
-        <div 
-          onClick={toggleDrawer} 
-          aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
-          className={`${buttonBaseClasses} ${buttonDesktopClasses}`}
-        >
-          {isOpen ? <X size={24} /> : <PanelLeft size={24} />}
-        </div>
-        
-        <div 
-          onClick={toggleDrawer} 
-          aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
-          className={`${buttonBaseClasses} ${buttonMobileClasses}`}
-        >
-          {isOpen ? <X size={24} /> : <PanelLeft size={24} />}
-        </div>
-
-        {/* 3. Responsive Drawer Panel */}
-
-        {/* Desktop Drawer */}
-        <div 
-          className={`${drawerBaseClasses} ${drawerDesktopClasses} transform ${drawerDesktopTransform}`}
-        >
-          <div className="flex justify-end p-2 lg:hidden">
-              <button onClick={toggleDrawer} className="text-gray-500 hover:text-gray-700">
-                  <X size={24} />
-              </button>
-          </div>
+        <Drawer isOpen={isOpen} toggleDrawer={toggleDrawer}>
           {renderSidebar()}
-        </div>
-
-        {/* Mobile Drawer */}
-        <div 
-          className={`${drawerBaseClasses} ${drawerMobileClasses} transform ${drawerMobileTransform}`}
-        >
-          <div className="flex justify-end p-4">
-              <button onClick={toggleDrawer} className="text-gray-500 hover:text-gray-700">
-                  <X size={24} />
-              </button>
-          </div>
-          {renderSidebar()}
-        </div>
-
+        </Drawer>
 
         {/* 2. Job List */}
         <div className="col-span-1">
@@ -479,7 +416,14 @@ export default function JobsPage() {
 
         {/* 3. Job Detail */}
         <div className="col-span-1 lg:col-span-1 xl:col-span-1 hidden md:block">
-          {renderJobDetail()}
+          {/* {renderJobDetail()} */}
+          <JobDetail
+            title={selectedJob?.title || ""}
+            company={selectedJob?.companyName || ""}
+            logo={""}
+            type={selectedJob?.employmentType || ""}
+            description={selectedJob?.description || ""}
+          />
         </div>
       </div>
     </div>
