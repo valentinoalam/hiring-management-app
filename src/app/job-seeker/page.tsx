@@ -1,9 +1,9 @@
 'use client';
 
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useMemo, useCallback, useEffect } from 'react';
+import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAllJobs } from '@/hooks/queries/job-queries';
-import { Loader2, Briefcase, MapPin, Filter, X, Heart, AlertCircle, Frown } from 'lucide-react';
+import { Loader2, Briefcase, MapPin, Filter, X, Heart, AlertCircle, Frown, PanelLeft } from 'lucide-react';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import { Job } from '@/types/job';
 
@@ -95,14 +95,49 @@ const FullViewEmptyState = () => (
 export default function JobsPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  
   // 💡 TanStack Query: Fetch all jobs
   const { 
     data: allJobs, 
     isLoading, 
     isError, 
   } = useAllJobs();
-  
+  const [isOpen, setIsOpen] = useState(false);
+
+  const toggleDrawer = () => {
+    setIsOpen(!isOpen);
+  };
+
+  // --- Button Classes (The "Bubble Gum" Sticky Trigger) ---
+
+  // Base classes for the fixed, half-rounded button
+  const buttonBaseClasses =
+    'fixed z-[100] p-3 text-white shadow-lg transition-all duration-300 ease-in-out cursor-pointer ' +
+    'bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800';
+
+  // Desktop (lg+) position and shape: Sticky left side, rounded on the right
+  const buttonDesktopClasses = 
+    'hidden lg:block lg:left-0 lg:top-1/3 lg:transform lg:-translate-y-1/2 lg:rounded-r-xl';
+
+  // Mobile (sm/md) position and shape: Sticky top center, rounded on the bottom
+  const buttonMobileClasses = 
+    'block lg:hidden top-0 left-1/2 transform -translate-x-1/2 rounded-b-xl';
+
+  // --- Drawer Classes (The Sliding Panel) ---
+
+  // Base classes for the fixed, full-screen overlay/drawer
+  const drawerBaseClasses =
+    'fixed bg-white shadow-2xl z-50 transition-transform duration-300 ease-in-out overflow-y-auto';
+
+  // Desktop (lg+) drawer size and animation: Slides from the left
+  const drawerDesktopClasses =
+    'hidden lg:block h-full w-80 top-0 left-0';
+  const drawerDesktopTransform = isOpen ? 'translate-x-0' : '-translate-x-full';
+
+  // Mobile (sm/md) drawer size and animation: Slides from the top
+  const drawerMobileClasses =
+    'block lg:hidden w-full h-3/5 top-0 left-0 rounded-b-2xl';
+  const drawerMobileTransform = isOpen ? 'translate-y-0' : '-translate-y-full';
+
   // Derive state from URL parameters
   const activeFilters = useMemo<Filters>(() => {
     const locs = searchParams.get('locations')?.split(',') || [];
@@ -278,7 +313,7 @@ export default function JobsPage() {
   );
 
   const renderJobList = () => (
-    <div className="w-full lg:w-96 xl:w-[400px] space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)]">
+    <div className="w-full lg:w-96 xl:w-[400px] space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
       {/* {isFetching && (
         <div className="p-4 bg-yellow-500/10 text-yellow-700 rounded-lg flex items-center gap-2 text-sm sticky top-0 z-10">
           <Loader2 className="h-4 w-4 animate-spin" />
@@ -334,7 +369,7 @@ export default function JobsPage() {
     }
     
     return (
-      <div className="w-full p-6 bg-card rounded-xl shadow-lg overflow-y-auto max-h-[calc(100vh-100px)] sticky top-20">
+      <div className="w-full p-6 bg-card rounded-xl shadow-lg overflow-y-auto max-h-[calc(100vh-100px)] sticky top-20 no-scrollbar">
         <h1 className="text-3xl font-extrabold text-primary mb-2">{selectedJob.title}</h1>
         <p className="text-xl text-muted-foreground mb-4">{selectedJob.companyName}</p>
         
@@ -383,11 +418,59 @@ export default function JobsPage() {
 
   return (
     <div className="min-h-screen bg-muted/40 p-4 md:p-8">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-[250px_1fr] xl:grid-cols-[300px_1fr_2fr] gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* 1. Filter Sidebar */}
-        <div className="col-span-1 hidden lg:block">
+        {/* 1. Backdrop Overlay (Visible only when open on mobile/small screens) */}
+        {isOpen && (
+          <div
+            className="fixed inset-0 bg-black opacity-40 z-40 lg:hidden"
+            onClick={toggleDrawer}
+          ></div>
+        )}
+
+        {/* 2. Responsive Toggle Button (Bubble Gum Stick) */}
+        <div 
+          onClick={toggleDrawer} 
+          aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
+          className={`${buttonBaseClasses} ${buttonDesktopClasses}`}
+        >
+          {isOpen ? <X size={24} /> : <PanelLeft size={24} />}
+        </div>
+        
+        <div 
+          onClick={toggleDrawer} 
+          aria-label={isOpen ? "Close Sidebar" : "Open Sidebar"}
+          className={`${buttonBaseClasses} ${buttonMobileClasses}`}
+        >
+          {isOpen ? <X size={24} /> : <PanelLeft size={24} />}
+        </div>
+
+        {/* 3. Responsive Drawer Panel */}
+
+        {/* Desktop Drawer */}
+        <div 
+          className={`${drawerBaseClasses} ${drawerDesktopClasses} transform ${drawerDesktopTransform}`}
+        >
+          <div className="flex justify-end p-2 lg:hidden">
+              <button onClick={toggleDrawer} className="text-gray-500 hover:text-gray-700">
+                  <X size={24} />
+              </button>
+          </div>
           {renderSidebar()}
         </div>
+
+        {/* Mobile Drawer */}
+        <div 
+          className={`${drawerBaseClasses} ${drawerMobileClasses} transform ${drawerMobileTransform}`}
+        >
+          <div className="flex justify-end p-4">
+              <button onClick={toggleDrawer} className="text-gray-500 hover:text-gray-700">
+                  <X size={24} />
+              </button>
+          </div>
+          {renderSidebar()}
+        </div>
+
 
         {/* 2. Job List */}
         <div className="col-span-1">

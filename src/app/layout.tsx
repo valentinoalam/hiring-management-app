@@ -9,6 +9,7 @@ import { NextAuthProvider } from "@/components/layout/providers/next-auth-provid
 import { QueryProvider } from "@/components/layout/providers/query-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { auth } from '@/auth'
+import Header from "@/components/layout/header"
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] })
 
@@ -37,7 +38,12 @@ export default async function RootLayout({
         <ThemeProvider attribute="class" defaultTheme="light" enableSystem disableTransitionOnChange>
           <QueryProvider> 
             <NextAuthProvider session={session}>  
-            {children}
+              <div className="flex-1 grow flex flex-col min-w-0 relative">
+                <Header />
+                <main className="flex flex-1 flex-col overflow-auto gap-4 md:p-4">
+                  {children}
+                </main>
+              </div>
             </NextAuthProvider>
           </QueryProvider>
           <Analytics />

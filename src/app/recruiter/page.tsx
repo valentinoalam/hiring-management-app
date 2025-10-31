@@ -17,7 +17,7 @@ import { useAllJobs, useCreateJob } from '@/hooks/queries/job-queries';
 import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/recruiter/job-list';
-import { JobOpeningFormInput, JobOpeningModal } from '@/components/recruiter/JobOpeningModal';
+import { JobFormData, JobOpeningModal } from '@/components/recruiter/JobOpeningModal';
 
 // --- Helper Components ---
 
@@ -136,7 +136,7 @@ export default function RecruiterJobsPage() {
   }), [jobs]);
 
   // --- Mutation Handler ---
-  const handleCreateJob = useCallback((formData: JobOpeningFormInput) => {
+  const handleCreateJob = useCallback((formData: JobFormData) => {
     if (!formData.title || !formData.location) {
       toast({
         title: "Missing Information",

@@ -161,7 +161,7 @@ export interface ProfileField {
   status: "mandatory" | "optional" | "off";
 }
 
-interface JobOpeningFormData {
+export interface JobOpeningFormData {
   jobName: string;
   jobType: string;
   jobDescription: string;

@@ -57,7 +57,7 @@ const jobFormSchema = z.object({
   })),
 });
 
-type JobFormData = z.infer<typeof jobFormSchema>;
+export type JobFormData = z.infer<typeof jobFormSchema>;
 
 interface InfoField {
   id: string;

@@ -4,7 +4,8 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
-import { Job, NewJobData, UpdateJobData, Applicant, ApplicationStatus, ApplicantData } from '@/types/job';
+import { Job, UpdateJobData, Applicant, ApplicationStatus, ApplicantData } from '@/types/job';
+import { JobFormData } from '@/components/recruiter/JobOpeningModal';
 
 // Helper function for API calls
 const apiFetch = async (url: string, options?: RequestInit) => {
@@ -41,7 +42,7 @@ const fetchActiveJobs = async (): Promise<Job[]> => {
   return apiFetch('/api/jobs?isActive=true');
 };
 
-const createJob = async (newJob: NewJobData): Promise<Job> => {
+const createJob = async (newJob: JobFormData): Promise<Job> => {
   return apiFetch('/api/jobs', {
     method: 'POST',
     body: JSON.stringify(newJob),
@@ -161,7 +162,7 @@ export const useActiveJobs = () => {
 export const useCreateJob = () => {
   const queryClient = useQueryClient();
 
-  return useMutation<Job, Error, NewJobData>({
+  return useMutation<Job, Error, JobFormData>({
     mutationFn: createJob,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.all });
