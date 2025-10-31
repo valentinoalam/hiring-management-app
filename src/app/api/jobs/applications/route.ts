@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
         recruiterId: user.id,
       }
     } else if (role === "job_seeker") {
-      where.jobSeekerId = user.id
+      where.applicantId = user.id
     }
 
     const applications = await prisma.candidate.findMany({
@@ -82,9 +82,9 @@ export async function POST(request: NextRequest) {
     // Check if application already exists
     const existingApplication = await prisma.candidate.findUnique({
       where: {
-        jobId_jobSeekerId: {
+        jobId_applicantId: {
           jobId,
-          jobSeekerId: user.id,
+          applicantId: user.id,
         },
       },
     })
@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     const application = await prisma.candidate.create({
       data: {
         jobId,
-        jobSeekerId: user.id,
+        applicantId: user.id,
         status: "PENDING",
       },
       include: {

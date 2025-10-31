@@ -1,3 +1,4 @@
+"use client"
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Upload, Calendar, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";

@@ -286,7 +286,7 @@ export default function JobsPage() {
   );
 
   const renderJobList = () => (
-    <div className="w-full lg:w-96 xl:w-[400px] flex flex-col gap-6 space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar">
+    <div className="w-full lg:w-96 xl:w-[400px] flex flex-col gap-6 space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar scrollbar-thin">
       <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-2 ">
       {/* {isFetching && (
         <div className="p-4 bg-yellow-500/10 text-yellow-700 rounded-lg flex items-center gap-2 text-sm sticky top-0 z-10">

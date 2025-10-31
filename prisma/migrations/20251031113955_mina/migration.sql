@@ -11,6 +11,26 @@ CREATE TYPE "ApplicationStatus" AS ENUM ('PENDING', 'UNDER_REVIEW', 'SHORTLISTED
 CREATE TYPE "EmploymentType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE');
 
 -- CreateTable
+CREATE TABLE "verification_tokens" (
+    "id" TEXT NOT NULL,
+    "identifier" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "verification_tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "password_reset_tokens" (
+    "id" TEXT NOT NULL,
+    "email" TEXT NOT NULL,
+    "token" TEXT NOT NULL,
+    "expires" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "password_reset_tokens_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
@@ -29,6 +49,7 @@ CREATE TABLE "users" (
 CREATE TABLE "profiles" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
+    "companyId" UUID,
     "bio" TEXT,
     "phone" TEXT,
     "location" TEXT,
@@ -58,7 +79,7 @@ CREATE TABLE "other_user_info" (
 -- CreateTable
 CREATE TABLE "info_fields" (
     "id" UUID NOT NULL,
-    "userId" UUID NOT NULL,
+    "user_id" UUID NOT NULL,
     "key" TEXT NOT NULL,
     "label" TEXT,
     "value" TEXT,
@@ -72,9 +93,26 @@ CREATE TABLE "info_fields" (
 );
 
 -- CreateTable
+CREATE TABLE "companies" (
+    "id" UUID NOT NULL,
+    "name" TEXT NOT NULL,
+    "description" TEXT,
+    "website" TEXT,
+    "logo" TEXT,
+    "industry" TEXT,
+    "size" TEXT,
+    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updated_at" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "companies_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "jobs" (
     "id" UUID NOT NULL,
     "slug" TEXT NOT NULL,
+    "author_id" UUID NOT NULL,
+    "company_id" UUID NOT NULL,
     "recruiter_id" UUID NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
@@ -89,6 +127,10 @@ CREATE TABLE "jobs" (
     "status" "JobStatus" NOT NULL DEFAULT 'DRAFT',
     "experienceLevel" TEXT,
     "educationLevel" TEXT,
+    "sections" JSONB NOT NULL,
+    "settings" JSONB,
+    "requirements" JSONB,
+    "numberOfCandidates" INTEGER NOT NULL,
     "viewsCount" INTEGER NOT NULL DEFAULT 0,
     "applicationsCount" INTEGER NOT NULL DEFAULT 0,
     "expires_at" TIMESTAMP(3),
@@ -98,22 +140,8 @@ CREATE TABLE "jobs" (
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updated_at" TIMESTAMP(3) NOT NULL,
     "published_at" TIMESTAMP(3),
-    "authorId" UUID NOT NULL,
 
     CONSTRAINT "jobs_pkey" PRIMARY KEY ("id")
-);
-
--- CreateTable
-CREATE TABLE "job_configs" (
-    "id" UUID NOT NULL,
-    "jobId" UUID NOT NULL,
-    "sections" JSONB NOT NULL,
-    "settings" JSONB,
-    "requirements" JSONB,
-    "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "job_configs_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
@@ -132,8 +160,9 @@ CREATE TABLE "application_form_fields" (
 CREATE TABLE "applications" (
     "id" UUID NOT NULL,
     "jobId" UUID NOT NULL,
-    "jobSeekerId" UUID NOT NULL,
+    "applicantId" UUID NOT NULL,
     "status" "ApplicationStatus" NOT NULL DEFAULT 'PENDING',
+    "formResponse" JSONB NOT NULL,
     "coverLetter" TEXT,
     "source" TEXT DEFAULT 'direct',
     "applied_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -176,6 +205,12 @@ CREATE TABLE "interviews" (
 );
 
 -- CreateIndex
+CREATE UNIQUE INDEX "verification_tokens_token_key" ON "verification_tokens"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
 
 -- CreateIndex
@@ -188,10 +223,19 @@ CREATE INDEX "users_createdAt_idx" ON "users"("createdAt");
 CREATE UNIQUE INDEX "profiles_userId_key" ON "profiles"("userId");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "profiles_companyId_key" ON "profiles"("companyId");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "other_user_info_fieldId_profileId_key" ON "other_user_info"("fieldId", "profileId");
 
 -- CreateIndex
-CREATE INDEX "info_fields_userId_key_idx" ON "info_fields"("userId", "key");
+CREATE UNIQUE INDEX "info_fields_key_key" ON "info_fields"("key");
+
+-- CreateIndex
+CREATE INDEX "info_fields_displayOrder_key_idx" ON "info_fields"("displayOrder", "key");
+
+-- CreateIndex
+CREATE INDEX "companies_created_at_idx" ON "companies"("created_at");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "jobs_slug_key" ON "jobs"("slug");
@@ -209,9 +253,6 @@ CREATE INDEX "jobs_created_at_idx" ON "jobs"("created_at");
 CREATE INDEX "jobs_employmentType_idx" ON "jobs"("employmentType");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "job_configs_jobId_key" ON "job_configs"("jobId");
-
--- CreateIndex
 CREATE INDEX "application_form_fields_jobId_idx" ON "application_form_fields"("jobId");
 
 -- CreateIndex
@@ -224,7 +265,7 @@ CREATE UNIQUE INDEX "application_form_fields_jobId_fieldId_key" ON "application_
 CREATE INDEX "applications_jobId_idx" ON "applications"("jobId");
 
 -- CreateIndex
-CREATE INDEX "applications_jobSeekerId_idx" ON "applications"("jobSeekerId");
+CREATE INDEX "applications_applicantId_idx" ON "applications"("applicantId");
 
 -- CreateIndex
 CREATE INDEX "applications_status_idx" ON "applications"("status");
@@ -233,7 +274,7 @@ CREATE INDEX "applications_status_idx" ON "applications"("status");
 CREATE INDEX "applications_applied_at_idx" ON "applications"("applied_at");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "applications_jobId_jobSeekerId_key" ON "applications"("jobId", "jobSeekerId");
+CREATE UNIQUE INDEX "applications_jobId_applicantId_key" ON "applications"("jobId", "applicantId");
 
 -- CreateIndex
 CREATE INDEX "application_notes_applicationId_idx" ON "application_notes"("applicationId");
@@ -248,16 +289,22 @@ CREATE INDEX "interviews_scheduled_at_idx" ON "interviews"("scheduled_at");
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE "profiles" ADD CONSTRAINT "profiles_companyId_fkey" FOREIGN KEY ("companyId") REFERENCES "companies"("id") ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE "other_user_info" ADD CONSTRAINT "other_user_info_profileId_fkey" FOREIGN KEY ("profileId") REFERENCES "profiles"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "other_user_info" ADD CONSTRAINT "other_user_info_fieldId_fkey" FOREIGN KEY ("fieldId") REFERENCES "info_fields"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "jobs" ADD CONSTRAINT "jobs_authorId_fkey" FOREIGN KEY ("authorId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE "info_fields" ADD CONSTRAINT "info_fields_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "job_configs" ADD CONSTRAINT "job_configs_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_author_id_fkey" FOREIGN KEY ("author_id") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "jobs" ADD CONSTRAINT "jobs_company_id_fkey" FOREIGN KEY ("company_id") REFERENCES "companies"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "application_form_fields" ADD CONSTRAINT "application_form_fields_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
@@ -269,7 +316,7 @@ ALTER TABLE "application_form_fields" ADD CONSTRAINT "application_form_fields_fi
 ALTER TABLE "applications" ADD CONSTRAINT "applications_jobId_fkey" FOREIGN KEY ("jobId") REFERENCES "jobs"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE "applications" ADD CONSTRAINT "applications_jobSeekerId_fkey" FOREIGN KEY ("jobSeekerId") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "applications" ADD CONSTRAINT "applications_applicantId_fkey" FOREIGN KEY ("applicantId") REFERENCES "profiles"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "application_notes" ADD CONSTRAINT "application_notes_applicationId_fkey" FOREIGN KEY ("applicationId") REFERENCES "applications"("id") ON DELETE CASCADE ON UPDATE CASCADE;

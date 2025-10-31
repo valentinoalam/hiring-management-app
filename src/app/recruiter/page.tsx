@@ -13,7 +13,7 @@ import {
 } from 'lucide-react';
 
 // 💡 Import TanStack Query hooks
-import { useAllJobs, useCreateJob } from '@/hooks/queries/job-queries'; 
+import { useAllJobs, useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
 import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/recruiter/job-list';
@@ -100,12 +100,14 @@ export default function RecruiterJobsPage() {
   const { toast } = useToast();
   const { data: session, status } = useSession();
   const [showCreateModal, setShowCreateModal] = useState(false);
-
+  if(!session) {
+    router.push('/login');
+  }
   // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)
   // For a production app, we would ideally use a hook like useRecruiterJobs(session.user.id)
   const { 
     data: allJobs, 
-  } = useAllJobs(); // Assuming this hook fetches the current user's jobs if they are a recruiter
+  } = useRecruiterJobs(); // Assuming this hook fetches the current user's jobs if they are a recruiter
 
   // 💡 TanStack Query: Mutation for creating a new job
   const { 

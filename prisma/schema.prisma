@@ -87,16 +87,17 @@ model User {
   // Relations
   jobs        Job[]         @relation("JobAuthor")
   profile     Profile?
-  
+  customField    InfoField[]
+  applicationNote ApplicationNote[]
   @@map("users")
   @@index([email])
   @@index([createdAt])
-  ApplicationNote ApplicationNote[]
 }
 
 model Profile {
   id           String   @id @default(uuid()) @db.Uuid
   userId       String   @unique @db.Uuid
+  companyId    String?   @unique @db.Uuid
   bio          String?  
   phone        String?
   location     String?
@@ -112,11 +113,10 @@ model Profile {
 
   // Relations (Fixed)
   user        User       @relation(fields: [userId], references: [id])
+  company     Company?    @relation(fields: [companyId], references: [id])
   applications Application[]
   userInfo     OtherUserInfo[]
-
   @@map("profiles")
-  Company Company[]
 }
 
 model OtherUserInfo {
@@ -134,7 +134,7 @@ model OtherUserInfo {
 
 model InfoField {
   id           String   @id @default(uuid()) @db.Uuid
-  userId       String   @db.Uuid
+  authorId       String   @map("user_id") @db.Uuid 
   key          String   @unique// e.g., "years_experience", "skills"
   label        String?
   value        String?  // Default value
@@ -148,8 +148,8 @@ model InfoField {
   // Relations (Fixed)
   applicationFields AppFormField[]
   userAnswers      OtherUserInfo[]
-  
-  @@index([userId, key])
+  author          User          @relation(fields: [authorId], references: [id])  
+  @@index([displayOrder, key])
   @@map("info_fields")
 }
 
@@ -166,27 +166,28 @@ model Company {
   size        String?  // "1-10", "11-50", "51-200", "201-500", "501-1000", "1000+"
   
   // Relations
-  profileId      String   @db.Uuid
-  user        Profile     @relation(fields: [profileId], references: [id])
+  recruiter   Profile[]
   jobs        Job[]
   
   // Timestamps
   createdAt   DateTime @default(now()) @map("created_at")
   updatedAt   DateTime @updatedAt @map("updated_at")
 
-  @@index([profileId])
+  @@index([createdAt])
   @@map("companies")
 }
 model Job {
   id              String          @id @default(uuid()) @db.Uuid
   slug            String          @unique
+  authorId        String          @map("author_id") @db.Uuid 
+  companyId       String          @map("company_id") @db.Uuid
   recruiterId     String          @map("recruiter_id") @db.Uuid
   title           String
   description     String?         @db.Text  // Changed to Text for longer content
   department      String?
   location        String?
   remotePolicy    String?         @default("onsite") // Added: "remote", "hybrid", "onsite"
-  salaryMin       Decimal?        @map("salary_min") @db.Decimal(12, 2)  // Increased precision
+  salaryMin       Decimal         @map("salary_min") @db.Decimal(12, 2)  // Increased precision
   salaryMax       Decimal?        @map("salary_max") @db.Decimal(12, 2)
   salaryCurrency  String?         @default("IDR")
   salaryDisplay   String?
@@ -214,9 +215,10 @@ model Job {
   publishedAt     DateTime?       @map("published_at") // Added for job lifecycle
   
   // Relations
-  authorId        String   @db.Uuid 
+
   author          User     @relation("JobAuthor", fields: [authorId], references: [id])
-  
+  company         Company   @relation(fields: [companyId], references: [id])
+
   candidates      Application[]
   applicationFormFields AppFormField[]
 
@@ -225,7 +227,7 @@ model Job {
   @@index([createdAt])
   @@index([employmentType])
   @@map("jobs")
-  Company Company[]
+
 }
 
 // ======================================
@@ -257,7 +259,7 @@ model AppFormField {
 model Application {
   id           String            @id @default(uuid()) @db.Uuid
   jobId        String            @db.Uuid
-  jobSeekerId  String            @db.Uuid
+  applicantId  String            @db.Uuid
   status       ApplicationStatus @default(PENDING)
   formResponse Json
   // Application content
@@ -273,15 +275,15 @@ model Application {
 
   // Relations
   job         Job     @relation(fields: [jobId], references: [id], onDelete: Cascade)
-  jobSeeker   Profile @relation(fields: [jobSeekerId], references: [id], onDelete: Cascade)
+  applicant   Profile @relation(fields: [applicantId], references: [id], onDelete: Cascade)
   
   // New relations for enhanced tracking
   notes       ApplicationNote[]
   interviews  Interview[]
 
-  @@unique([jobId, jobSeekerId])
+  @@unique([jobId, applicantId])
   @@index([jobId])
-  @@index([jobSeekerId])
+  @@index([applicantId])
   @@index([status])
   @@index([appliedAt])
   @@map("applications")

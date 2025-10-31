@@ -7,12 +7,12 @@ export async function GET(
 ) {
   try {
     const { jobId } = await params;
-    const candidates = await prisma.candidate.findMany({
+    const candidates = await prisma.application.findMany({
       where: {
         jobId: jobId,
       },
       include: {
-        jobSeeker: {
+        applicant: {
           include: {
             user: {
               select: {

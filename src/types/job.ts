@@ -13,7 +13,7 @@ export interface JobData {
   salaryCurrency: string;
   employmentType: string | null;
   status: JobStatus;
-  requirements?: JSON; // JSON type
+  requirements?: object; // JSON type
   createdAt: string;
   updatedAt: string;
   author?: {
@@ -103,7 +103,7 @@ export type ApplicationStatus = 'PENDING' | 'REVIEWED' | 'INTERVIEW' | 'REJECTED
 export interface ApplicantData {
   id: string;
   jobId: string;
-  jobSeekerId: string;
+  applicantId: string;
   status: ApplicationStatus;
   coverLetter?: string;
   source?: string;
@@ -155,6 +155,16 @@ export interface Applicant {
   resumeUrl?: string;
 };
 
+export interface FormField {
+  id: string
+  jobId: string
+  fieldName: string
+  fieldType: string
+  fieldState: "mandatory" | "optional" | "off"
+  displayOrder: number
+  createdAt: string
+  updatedAt: string
+}
 export interface ProfileField {
   id: string;
   label: string;

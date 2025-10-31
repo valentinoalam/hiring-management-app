@@ -31,8 +31,10 @@ export const queryKeys = {
     documents: (applicantId: string) => [...queryKeys.applicants.detail(applicantId), 'documents'] as const,
     byJob: (jobId: string) => [...queryKeys.jobs.detail(jobId), 'applicants'] as const,
   },
-  
-  
+  profile: {
+    all: ['profile'] as const,
+    user: (userId: string) => ['profile', 'user', userId] as const,
+  },
   // User and Profile
   user: {
     all: ['user'] as const,
