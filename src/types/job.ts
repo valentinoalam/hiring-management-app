@@ -131,6 +131,7 @@ export interface ApplicantData {
   jobId: string;
   applicantId: string;
   status: ApplicationStatus;
+  formResponse: object;
   coverLetter?: string;
   source?: string;
   appliedAt: string;

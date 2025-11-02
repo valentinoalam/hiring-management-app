@@ -31,7 +31,7 @@ export async function PUT(
     const job = await prisma.job.findFirst({
       where: {
         id: jobId,
-        recruiterId: user.id,
+        authorId: user.id,
       },
     });
 

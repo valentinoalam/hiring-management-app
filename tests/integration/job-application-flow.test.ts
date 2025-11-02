@@ -456,7 +456,7 @@ describe('Job Application Flow', () => {
       });
 
       expect(result.current.isSuccess).toBe(true);
-      expect(result.current.data!.application.formResponse).toEqual(minimalApplicationData.formResponses);
+      expect(result.current.data!.application?.formResponse).toEqual(minimalApplicationData.formResponses);
     });
   });
 
