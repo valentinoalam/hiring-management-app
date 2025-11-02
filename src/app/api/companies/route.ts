@@ -15,16 +15,13 @@ export async function GET(request: NextRequest) {
     // Get companies where user is owner or member
     const companies = await prisma.company.findMany({
       where: {
-        OR: [
-          { ownerId: user.id },
-          { members: { some: { userId: user.id } } },
-        ],
+        recruiter: { some: { userId: user.id } } 
       },
       include: {
         _count: {
           select: {
             jobs: {
-              where: { status: "active" }
+              where: { status: "ACTIVE" }
             },
           },
         },
