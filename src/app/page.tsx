@@ -6,6 +6,6 @@ export default async function Home() {
 
   if (user && user.role === "RECRUITER") {
     redirect("/recruiter")
-  } else redirect("/job-seeker")
+  } else redirect("/jobs")
   
 }

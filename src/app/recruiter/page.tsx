@@ -5,7 +5,7 @@ import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { 
   Edit, Trash2, Loader2, X,
   MapPin, Calendar,
@@ -18,6 +18,7 @@ import { Job, NewJobData } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/job/recruiter/job-list';
 import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal';
+import { toast } from 'sonner';
 
 // --- Helper Components ---
 
@@ -97,7 +98,6 @@ const JobRow = ({ job, onEdit }: { job: Job, onEdit: (id: string) => void }) => 
 
 export default function RecruiterJobsPage() {
   const router = useRouter();
-  const { toast } = useToast();
   const { data: session, status } = useSession();
   const [showCreateModal, setShowCreateModal] = useState(false);
   if(!session) {
@@ -106,9 +106,9 @@ export default function RecruiterJobsPage() {
   // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)
   // For a production app, we would ideally use a hook like useRecruiterJobs(session.user.id)
   const { 
-    data: allJobs, 
+    data, 
   } = useRecruiterJobs(); // Assuming this hook fetches the current user's jobs if they are a recruiter
-
+  const allJobs = data?.jobs;
   // 💡 TanStack Query: Mutation for creating a new job
   const { 
     mutate: createJob, 
@@ -140,34 +140,28 @@ export default function RecruiterJobsPage() {
   // --- Mutation Handler ---
   const handleCreateJob = useCallback((formData: JobFormData) => {
     if (!formData.title || !formData.location) {
-      toast({
-        title: "Missing Information",
-        description: "Please fill in the job title and location.",
-        variant: "destructive",
-      });
+      toast.info('Missing Information', {
+        description: 'Please fill in the job title and location.',
+      })
       return;
     }
 
     createJob(formData, {
       onSuccess: () => {
-        toast({
-          title: "Job Created!",
+        toast.success("Job Created!", {
           description: `The job "${formData.title}" has been posted.`,
-          variant: "default",
         });
         setShowCreateModal(false);
         
         // The onSuccess in useCreateJob already invalidates the 'jobs' query, triggering an automatic refetch
       },
       onError: (err: Error) => {
-        toast({
-          title: "Creation Failed",
+        toast.error("Creation Failed",{
           description: `Could not post job: ${err.message}`,
-          variant: "destructive",
         });
       },
     });
-  }, [createJob, toast]);
+  }, [createJob]);
   
   // --- Role Check and Redirect ---
   const userRole = session?.user?.role;

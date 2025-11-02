@@ -10,11 +10,24 @@ export const queryKeys = {
     list: (filters: string) => [...queryKeys.jobs.lists(), { filters }] as const,
     details: () => [...queryKeys.jobs.all, 'detail'] as const,
     detail: (id: string) => [...queryKeys.jobs.details(), id] as const,
-    recruiter: ['jobs', 'recruiter'] as const,
+    recruiter: (filters?: { status?: string; search?: string }) => 
+    [...queryKeys.jobs.all, 'recruiter', filters] as const,
+    public: (filters?: { search?: string; employmentType?: string; department?: string; location?: string }) => 
+    [...queryKeys.jobs.all, 'public', filters] as const,
     active: ['jobs', 'active'] as const,
+    analytics: (jobId: string) => [...queryKeys.jobs.all, 'analytics', jobId] as const,
     applicantsByJob: (jobId: string) => [...queryKeys.jobs.detail(jobId), 'applicants'] as const,
   },
-  
+  companies: {
+    all: ['companies'] as const,
+    lists: () => [...queryKeys.companies.all, 'list'] as const,
+    list: (filters?: { search?: string; industry?: string }) => 
+      [...queryKeys.companies.lists(), filters] as const,
+    details: () => [...queryKeys.companies.all, 'detail'] as const,
+    detail: (id: string) => [...queryKeys.companies.details(), id] as const,
+    myCompanies: () => [...queryKeys.companies.all, 'my-companies'] as const,
+    jobs: (companyId: string) => [...queryKeys.companies.all, 'jobs', companyId] as const,
+  },
   // Applicants
   applicants: {
     all: ['applicants'] as const,
@@ -29,7 +42,10 @@ export const queryKeys = {
     search: (jobId: string, searchTerm: string) => ['applicants', 'search', jobId, searchTerm] as const,
     status: (applicantId: string) => [...queryKeys.applicants.detail(applicantId), 'status'] as const,
     documents: (applicantId: string) => [...queryKeys.applicants.detail(applicantId), 'documents'] as const,
-    byJob: (jobId: string) => [...queryKeys.jobs.detail(jobId), 'applicants'] as const,
+    byJob: (jobId: string, filters?: { status?: string; search?: string; source?: string }) => 
+    [...queryKeys.applicants.all, 'by-job', jobId, filters] as const,
+    notes: (applicationId: string) => 
+    [...queryKeys.applicants.all, 'notes', applicationId] as const,
   },
   profile: {
     all: ['profile'] as const,

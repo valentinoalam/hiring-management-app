@@ -1,6 +1,4 @@
-"use client"
-
-import { FormField } from "@/types/job"
+import { ApplicantData, ApplicationData, FormField } from "@/types/job"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
@@ -13,17 +11,9 @@ const submitJobApplication = async ({
   applicationData,
 }: {
   jobId: string;
-  applicationData: {
-    formResponse: JSON;
-    profileUpdates: Partial<Profile>;
-    userInfoUpdates: Array<{
-      id?: string;
-      fieldId: string;
-      infoFieldAnswer: string;
-    }>;
-  };
-}): Promise<{ application: Application; profile: Profile }> => {
-  return apiFetch(`/api/jobs/${jobId}/apply`, {
+  applicationData: ApplicationData;
+}): Promise<{ application: ApplicantData }> => {
+  return apiFetch(`/api/jobs/${jobId}/applications`, {
     method: 'POST',
     body: JSON.stringify(applicationData),
   });
@@ -143,25 +133,33 @@ export const useUpdateProfile = () => {
   });
 };
 
-export const useSubmitJobApplication = () => {
+export const useSubmitJobApplication = (jobId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: submitJobApplication,
-    onSuccess: (result, variables) => {
+    mutationFn: (applicationData: ApplicationData) => submitJobApplication({ jobId, applicationData }),
+    onSuccess: (result) => {
+      console.log(result)
       // Update profile cache with new data
-      queryClient.setQueryData(queryKeys.profile.user(result.profile.userId), result.profile);
+      queryClient.setQueryData(queryKeys.profile.user(result.application?.applicant.userId), result.application?.applicant);
       
       // Invalidate applicants list for this job
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.applicants.byJob(variables.jobId) 
+        queryKey: queryKeys.applicants.byJob(result.application?.jobId) 
       });
       
       // Invalidate job applications count
       queryClient.invalidateQueries({ 
-        queryKey: queryKeys.jobs.detail(variables.jobId) 
+        queryKey: queryKeys.jobs.detail(result.application?.jobId) 
       });
-
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.jobs.analytics(jobId) 
+      });
+      
+      // Invalidate user's applications list
+      queryClient.invalidateQueries({ 
+        queryKey: queryKeys.currentUser.applications() 
+      });
       toast.success('Application submitted successfully!');
     },
     onError: (error: Error) => {
@@ -186,15 +184,31 @@ export const useApplicationFormFields = (jobId: string) => {
 
 // Combined hook for job application flow
 export const useJobApplicationFlow = (jobId: string, userId: string) => {
-  const { data: appFormFields, isLoading: loadingFields } = useApplicationFormFields(jobId);
-  const { data: userProfile, isLoading: loadingProfile } = useUserProfile(userId);
-  const submitApplication = useSubmitJobApplication();
+  const { data: appFormFields, isLoading: loadingFields, error: fieldsError } = useApplicationFormFields(jobId);
+  const { data: userProfile, isLoading: loadingProfile, error: profileError } = useUserProfile(userId);
+  const submitApplication = useSubmitJobApplication(jobId);
 
   return {
     appFormFields,
     userProfile,
     isLoading: loadingFields || loadingProfile,
+    error: fieldsError || profileError,
     submitApplication: submitApplication.mutateAsync,
     isSubmitting: submitApplication.isPending,
+    submitError: submitApplication.error,
   };
+};
+
+
+// Hook for user's applications
+const fetchUserApplications = async (): Promise<Application[]> => {
+  return apiFetch('/api/applications/my-applications');
+};
+
+export const useUserApplications = () => {
+  return useQuery<Application[], Error>({
+    queryKey: queryKeys.currentUser.applications(),
+    queryFn: fetchUserApplications,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
 };

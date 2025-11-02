@@ -124,7 +124,7 @@ export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
   };
 };
 
-export type ApplicationStatus = 'PENDING' | 'REVIEWED' | 'INTERVIEW' | 'REJECTED' | 'HIRED';
+export type ApplicationStatus = 'PENDING' | 'UNDER_REVIEW' | 'SHORTLISTED' | 'REJECTED' | 'ACCEPTED' | 'WITHDRAWN';
 
 export interface ApplicantData {
   id: string;
@@ -145,8 +145,9 @@ export interface ApplicantData {
       logo?: string | null;
     };
   };
-  profile: {
+  applicant: {
     id: string;
+    userId: string;
     user: {
       id: string;
       email: string;
@@ -173,24 +174,29 @@ export interface ApplicantData {
 }
 
 export interface Applicant {
+  // Core application info
   id: string;
-  fullName: string;
-  email: string;
-  appliedAt: string;
+  applicantId: string;
+  jobId: string;
   status: ApplicationStatus;
   coverLetter?: string;
   source?: string;
+  appliedAt: string;
   viewedAt?: string;
   statusUpdatedAt?: string;
+
+  // Profile info (flattened)
+  fullName: string;
+  email: string;
   phone?: string;
   location?: string;
   gender: string;
   linkedin: string;
   avatarUrl?: string;
   resumeUrl?: string;
-  jobId?: string;
-  applicantId?: string;
-  job?: { // Added job info with company
+
+  // Related job info
+  job?: {
     id: string;
     title: string;
     company?: {
@@ -199,8 +205,31 @@ export interface Applicant {
       logo?: string | null;
     };
   };
+
+  // Custom applicant fields (converted from profile.userInfo)
+  userInfo?: {
+    [fieldKey: string]: {
+      [fieldLabel: string]: string; // e.g. "Education": "text"
+      answer: string;
+    };
+  };
 }
 
+
+export interface ApplicationSummary {
+  id: string;
+  jobTitle: string;
+  companyName: string;
+  status: 'SUBMITTED' | 'REVIEW' | 'INTERVIEW' | 'REJECTED' | 'HIRED';
+  appliedDate: string;
+}
+
+export interface RecruiterJobSummary {
+    id: string;
+    title: string;
+    status: 'ACTIVE' | 'DRAFT';
+    applicantsCount: number;
+}
 export interface FormField {
   id: string;
   jobId: string;
@@ -267,7 +296,7 @@ export interface ApplicationData {
   resumeUrl: string;
   coverLetter: string;
   source?: string;
-  applicantInfo?: Record<string, unknown>;
+  applicantInfo?: JSON;
 }
 
 // New interfaces for company relations
@@ -299,23 +328,34 @@ export interface JobFilters {
   companyId?: string[]; // Added company filter
   search?: string;
 }
-
-export interface JobListResponse {
-  jobs: Job[];
+export interface Pagination {
+  hasNextPage?: boolean;
+  hasPrevPage?: boolean;
+  totalCount: number;  
   total: number;
   page: number;
   limit: number;
   totalPages: number;
+}
+export interface JobListResponse {
+  jobs: Job[];
+  pagination: Pagination;
+
 }
 
 export interface ApplicantListResponse {
   applicants: Applicant[];
-  total: number;
-  page: number;
-  limit: number;
-  totalPages: number;
+  pagination: Pagination;
 }
-
+export interface ApplicantListData {
+  applicants: ApplicantData[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
 // Utility types for API responses
 export type ApiResponse<T> = {
   success: boolean;

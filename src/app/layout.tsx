@@ -3,13 +3,13 @@ import type { Viewport } from "next"
 import { Nunito_Sans } from "next/font/google"
 import "@/styles/globals.css"
 import { ThemeProvider } from "@/components/layout/providers/theme-provider"
-import { Toaster } from "@/components/ui/toaster"
 import { generateMetaData } from "@/config/metadata"
 import { NextAuthProvider } from "@/components/layout/providers/next-auth-provider"
 import { QueryProvider } from "@/components/layout/providers/query-provider"
 import { Analytics } from "@vercel/analytics/next"
 import { auth } from '@/auth'
 import Header from "@/components/layout/header"
+import { Toaster } from "@/components/ui/sonner"
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] })
 

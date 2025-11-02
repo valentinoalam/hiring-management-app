@@ -381,12 +381,10 @@ async function createProfiles(users: User[]) {
 
 async function createJobs(users: User[]): Promise<Job[]> {
   const jobs = [];
-  const companies: CompanyWithRecruiters[] = await prisma.company.findMany({
-    include: { recruiter: true },
-  });
-  const recruiterUsers = users.filter(
-    (user) => user.role === UserRole.RECRUITER
-  );
+  const [companies, infoFields] = await Promise.all([
+        prisma.company.findMany({ include: { recruiter: true } }),
+        prisma.infoField.findMany(),
+    ]);
 
   const jobTitles = [
     "Senior Frontend Developer",
@@ -434,9 +432,9 @@ async function createJobs(users: User[]): Promise<Job[]> {
     "Hybrid",
   ];
   const remotePolicies = ["onsite", "remote", "hybrid"];
-
-  // Get all info fields for application form configuration
-  const infoFields = await prisma.infoField.findMany();
+  const recruiterUsers = users.filter(
+    (user) => user.role === UserRole.RECRUITER
+  );
   // Filter out system fields that shouldn't be in job applications
   const applicableInfoFields = infoFields.filter(
     (field) =>
@@ -448,7 +446,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
       "❌ No applicable info fields found! Creating jobs without application form fields."
     );
   }
-  for (let i = 0; i < 35; i++) {
+  const jobCreationPromises = Array.from({ length: 35 }).map(async (_, i) => {
     const recruiter = faker.helpers.arrayElement(recruiterUsers);
     const jobTitle = faker.helpers.arrayElement(jobTitles);
     const slug =
@@ -561,7 +559,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
       expiresAt: faker.date.future({ years: 1 }),
     };
 
-    const job = await prisma.job.create({
+    return await prisma.job.create({
       data: {
         ...jobData, 
         applicationFormFields: {
@@ -569,12 +567,10 @@ async function createJobs(users: User[]): Promise<Job[]> {
         },
       }
     });
-    
-    jobs.push(job);
-    console.log(`Created job: ${job.title} with ${applicationFormFields.filter(f => f.fieldState !== 'off').length} application fields`);
-  }
-
-  return jobs;
+  })
+  const createdJobs = await Promise.all(jobCreationPromises);
+  console.log(`✅ Successfully created ${createdJobs.length} jobs in parallel.`);
+  return createdJobs;
 }
 
 async function createApplications(users: User[], jobs: Job[]) {

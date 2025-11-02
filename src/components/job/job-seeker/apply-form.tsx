@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Upload, Calendar, ChevronDown } from "lucide-react";
@@ -14,6 +15,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useApplicationFormFields, useUserProfile } from "@/hooks/queries/application-queries";
+import { Application, OtherUserInfo } from "@prisma/client";
 
 // Dynamic schema based on AppFormField configuration
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
@@ -68,6 +71,9 @@ interface AppFormField {
 }
 
 interface Profile {
+  linkedin: string;
+  fullName: string;
+  gender: string;
   id: string;
   userId: string;
   bio?: string;
@@ -116,39 +122,29 @@ export default function JobApplicationForm({
   onCancel,
   userId,
 }: JobApplicationFormProps) {
-  const [appFormFields, setAppFormFields] = useState<AppFormField[]>([]);
+  // const [appFormFields, setAppFormFields] = useState<AppFormField[]>([]);
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [avatarPreview, setAvatarPreview] = useState("");
-
-  const fetchApplicationData = useCallback(async () => {
-    try {
-      setLoading(true);
-      
-      // Fetch job application form configuration
-      const [fieldsResponse, profileResponse] = await Promise.all([
-        fetch(`/api/jobs/${jobId}/application-fields`),
-        fetch(`/api/profiles/user/${userId}`),
-      ]);
-
-      const fieldsData = await fieldsResponse.json();
-      const profileData = await profileResponse.json();
-
-      setAppFormFields(fieldsData);
-      setProfile(profileData);
-      setAvatarPreview(profileData.avatarUrl || "");
-
-    } catch (error) {
-      console.error('Error fetching application data:', error);
-    } finally {
-      setLoading(false);
-    }
-  }, [jobId, userId]);
-  // Fetch application form configuration and user profile
+  const [avatarPreview, setAvatarPreview] = useState(profile?.avatarUrl || "");
+  const { 
+    data: formFieldsData, 
+    isLoading: loadingFields, 
+    error: fieldsError 
+  } = useApplicationFormFields(jobId);
+    const { 
+    data: profileData, 
+    isLoading: loadingProfile, 
+    error: profileError 
+  } = useUserProfile(userId);
   useEffect(() => {
-    fetchApplicationData();
-  }, [fetchApplicationData, jobId, userId]);
+    if (profileData) {
+      setProfile(profileData);
+    }
+  }, [profileData]);// Combined loading state
+  const isLoading = loadingFields || loadingProfile;
+  const error = fieldsError || profileError;
 
+  // Extract form fields from the response
+  const appFormFields = formFieldsData?.formFields || [];
 
   // Create form with dynamic schema
   const formSchema = createApplicationSchema(appFormFields);
@@ -156,24 +152,27 @@ export default function JobApplicationForm({
     register,
     handleSubmit,
     setValue,
+    watch,
     formState: { errors, isSubmitting },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(formSchema),
+    mode: 'onChange', // Validate on change for better UX
   });
 
-  // Pre-fill form with existing profile data
+  // Watch form values for real-time validation
+  const formValues = watch();
+  // Pre-fill form with existing profile data when both profile and form fields are loaded
   useEffect(() => {
     if (profile && appFormFields.length > 0) {
-      // Map profile data to form fields
       const fieldValues: ApplicationFormData = {};
 
-      appFormFields.forEach((appField) => {
+      appFormFields.forEach((appField: AppFormField) => {
         if (appField.fieldState !== "off") {
           const fieldKey = appField.field.key;
           
-          // Try to get value from userInfo first
-          const userInfo = profile.userInfo.find(
-            info => info.field.id === appField.field.id
+          // Try to get value from userInfo first (OtherUserInfo records)
+          const userInfo = profile.userInfo?.find(
+            (info: Partial<OtherUserInfo>) => info.fieldId === appField.field.id
           );
           
           if (userInfo) {
@@ -188,12 +187,17 @@ export default function JobApplicationForm({
                 fieldValues[fieldKey] = profile.location || "";
                 break;
               case 'linkedin_url':
-                fieldValues[fieldKey] = profile.linkedinUrl || "";
+                fieldValues[fieldKey] = profile.linkedin || "";
                 break;
               case 'email':
-                // Email would typically come from User model, not Profile
-                // You might need to fetch this separately
+                // Email typically comes from User model, not Profile
                 fieldValues[fieldKey] = "";
+                break;
+              case 'full_name':
+                fieldValues[fieldKey] = profile.fullName || "";
+                break;
+              case 'gender':
+                fieldValues[fieldKey] = profile.gender || "";
                 break;
               default:
                 fieldValues[fieldKey] = "";
@@ -204,46 +208,76 @@ export default function JobApplicationForm({
 
       // Set all values at once
       Object.entries(fieldValues).forEach(([key, value]) => {
-        setValue(key as keyof ApplicationFormData, value);
+        setValue(key as keyof ApplicationFormData, value, { 
+          shouldValidate: false, // Don't validate on initial set
+          shouldDirty: false     // Don't mark as dirty
+        });
       });
+
+      // Set avatar preview
+      if (profile.avatarUrl) {
+        setAvatarPreview(profile.avatarUrl);
+      }
     }
   }, [profile, appFormFields, setValue]);
+
+  // Handle file uploads (avatar, resume, etc.)
+  const handleFileChange = (fieldName: string, file: File | null) => {
+    setValue(fieldName, file ? file.name : undefined);
+    
+    if (fieldName === 'avatar' && file) {
+      // Create preview for avatar
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setAvatarPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleFormSubmit = async (formData: ApplicationFormData) => {
     if (!profile) return;
 
-    // Prepare data for submission
-    const submissionData = {
-      // 1. Form response for Application model
-      formResponse: formData as unknown as JSON,
-      
-      // 2. Profile updates
-      profileUpdates: {
-        phone: formData.phone_number || profile.phone,
-        location: formData.domicile || profile.location,
-        linkedinUrl: formData.linkedin_url || profile.linkedinUrl,
-        avatarUrl: avatarPreview || profile.avatarUrl,
-        // Add other profile fields that might be updated
-      } as Partial<Profile>,
-      
-      // 3. UserInfo updates (for OtherUserInfo records)
-      userInfoUpdates: appFormFields
-        .filter(appField => appField.fieldState !== "off")
-        .map(appField => {
-          const fieldKey = appField.field.key;
-          const existingUserInfo = profile.userInfo.find(
-            info => info.field.id === appField.field.id
-          );
-          
-          return {
-            id: existingUserInfo?.id, // for updates
-            fieldId: appField.field.id,
-            infoFieldAnswer: formData[fieldKey] as string || "",
-          };
-        }),
-    };
+    try {
+      // Prepare data for submission
+      const submissionData = {
+        // 1. Form response for Application model
+        formResponse: formData as unknown as JSON,
+        
+        // 2. Profile updates
+        profileUpdates: {
+          phone: formData.phone_number as string || profile.phone,
+          location: formData.domicile as string || profile.location,
+          linkedin: formData.linkedin_url as string || profile.linkedin,
+          avatarUrl: avatarPreview || profile.avatarUrl,
+          fullName: formData.full_name as string || profile.fullName,
+          gender: formData.gender as string || profile.gender,
+          // Add resume if uploaded
+          ...(formData.resume && { resumeUrl: formData.resume as string }),
+        } as Partial<Profile>,
+        
+        // 3. UserInfo updates (for OtherUserInfo records)
+        userInfoUpdates: appFormFields
+          .filter((appField: AppFormField) => appField.fieldState !== "off")
+          .map((appField: AppFormField) => {
+            const fieldKey = appField.field.key;
+            const existingUserInfo = profile.userInfo?.find(
+              (info) => info.fieldId === appField.field.id
+            );
+            
+            return {
+              id: existingUserInfo?.id, // for updates
+              fieldId: appField.field.id,
+              infoFieldAnswer: formData[fieldKey] as string || "",
+            };
+          }),
+      };
 
-    await onSubmit(submissionData);
+      await onSubmit(submissionData);
+    } catch (error) {
+      console.error('Error submitting application:', error);
+      throw error; // Re-throw to let parent component handle
+    }
   };
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -491,19 +525,49 @@ export default function JobApplicationForm({
     }
   };
 
-  if (loading) {
+
+  // Render loading state
+  if (isLoading) {
     return (
-      <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-neutral-90">Loading application form...</p>
-        </div>
+      <div className="flex justify-center items-center p-8">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+        <span className="ml-3 text-lg">Loading application form...</span>
       </div>
     );
   }
 
-  const visibleFields = appFormFields.filter(field => field.fieldState !== "off");
-  const photoProfileField = appFormFields.find(f => f.field.key === 'photo_profile');
+  // Render error state
+  if (error) {
+    return (
+      <div className="text-center p-8 text-red-600">
+        <h3 className="text-lg font-semibold mb-2">Failed to load application form</h3>
+        <p className="text-sm text-muted-foreground">
+          {error.message || 'Please try refreshing the page'}
+        </p>
+        <button 
+          onClick={() => window.location.reload()}
+          className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+        >
+          Retry
+        </button>
+      </div>
+    );
+  }
+
+  // Render empty state if no form fields
+  if (appFormFields.length === 0) {
+    return (
+      <div className="text-center p-8">
+        <h3 className="text-lg font-semibold mb-2">No application form available</h3>
+        <p className="text-sm text-muted-foreground">
+          This job is not currently accepting applications.
+        </p>
+      </div>
+    );
+  }
+
+  const visibleFields = appFormFields.filter((field: AppFormField ) => field.fieldState !== "off");
+  const photoProfileField = appFormFields.find((f: AppFormField ) => f.field.key === 'photo_profile');
 
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">
