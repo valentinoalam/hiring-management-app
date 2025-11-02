@@ -58,7 +58,7 @@ export async function GET(
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ jobId: string; appId: string }> }
 ) {
   try {
     const session = await auth();
@@ -68,7 +68,7 @@ export async function POST(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: applicationId } = await params;
+    const { jobId, appId: id } = await params;
     const body = await request.json();
 
     const { content, isInternal = true } = body;
@@ -83,10 +83,8 @@ export async function POST(
     // Verify application access
     const application = await prisma.application.findFirst({
       where: {
-        id: applicationId,
-        job: {
-          recruiterId: user.id,
-        },
+        id,
+        jobId,
       },
     });
 
@@ -102,7 +100,7 @@ export async function POST(
         content,
         isInternal,
         authorId: user.id,
-        applicationId,
+        applicationId: id,
       },
       include: {
         author: {
