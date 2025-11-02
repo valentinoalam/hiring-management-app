@@ -262,7 +262,6 @@ export async function POST(request: NextRequest) {
         requirements: requirements,
         // Relations
         authorId: session.user.id,
-        authorId: session.user.id,
         companyId: companyId,
         // Application form fields
         applicationFormFields: applicationFormFields ? {
