@@ -14,16 +14,16 @@ export const createTestQueryClient = () => new QueryClient({
 export const AllTheProviders = ({ children }: { children: React.ReactNode }) => {
   const queryClient = createTestQueryClient();
 
-  return (
-    <QueryClientProvider client={queryClient}>
-      {children}
-    </QueryClientProvider>
+  return React.createElement(
+    QueryClientProvider,
+    { client: queryClient },
+    children
   );
 };
 
 export const customRender = (
   ui: ReactElement,
-  options?: Omit<RenderOptions, 'wrapper'>,
+  options?: Omit<RenderOptions, 'wrapper'>
 ) => render(ui, { wrapper: AllTheProviders, ...options });
 
 // Re-export everything
@@ -31,7 +31,7 @@ export * from '@testing-library/react';
 export { customRender as render };
 
 // Mock data generators specific to job application
-export const generateMockFormFields = (count: number, overrides: Partial<any> = {}) => {
+export const generateMockFormFields = (count: number, overrides: Record<string, unknown> = {}) => {
   return Array.from({ length: count }, (_, index) => ({
     id: `field-${index + 1}`,
     key: `field_${index + 1}`,

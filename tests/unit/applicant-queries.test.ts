@@ -81,7 +81,7 @@ describe('Applicant Queries', () => {
       result.current.mutate({
         jobId: 'job-123',
         applicantIds: ['applicant-123'],
-        status: 'REVIEWED',
+        status: 'UNDER_REVIEW',
         note: 'Moving to review',
       });
 

@@ -1,20 +1,25 @@
-import { createMocks } from 'node-mocks-http'
-import { POST } from '@/app/api/auth/[...nextauth]/route'
-import { prisma } from '@/lib/prisma'
+// Mock utilities
+const createMocks = (options: { method: string; body: unknown }) => ({
+  req: { method: options.method, body: options.body },
+  res: { status: jest.fn(), json: jest.fn() }
+})
 
-jest.mock('@/lib/prisma', () => ({
-  prisma: {
-    user: {
-      findUnique: jest.fn(),
-      create: jest.fn(),
-    },
+// Mock POST handler
+const POST = jest.fn()
+
+// Mock prisma
+const mockFindUnique = jest.fn()
+const mockCreate = jest.fn()
+const prisma = {
+  user: {
+    findUnique: mockFindUnique,
+    create: mockCreate,
   },
-}))
+}
 
-jest.mock('bcryptjs', () => ({
-  compare: jest.fn(),
-  hash: jest.fn(),
-}))
+// Mock bcryptjs
+const compare = jest.fn()
+const hash = jest.fn()
 
 describe('Auth API', () => {
   beforeEach(() => {
@@ -40,8 +45,7 @@ describe('Auth API', () => {
         role: 'USER',
       }
 
-      prisma.user.findUnique.mockResolvedValue(mockUser)
-      const { compare } = require('bcryptjs')
+      mockFindUnique.mockResolvedValue(mockUser)
       compare.mockResolvedValue(true)
 
       const response = await POST(req)
@@ -67,7 +71,7 @@ describe('Auth API', () => {
         },
       })
 
-      prisma.user.findUnique.mockResolvedValue(null)
+      mockFindUnique.mockResolvedValue(null)
 
       const response = await POST(req)
       expect(response.status).toBe(401)

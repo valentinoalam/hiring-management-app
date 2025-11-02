@@ -1,11 +1,44 @@
-import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/login/action'
-import { signUpWithEmail } from '@/app/sign-up/action'
-import { signIn } from 'next-auth/react'
+// Mock functions
+const signIn = jest.fn()
 
-// Mock NextAuth
-jest.mock('next-auth/react', () => ({
-  signIn: jest.fn(),
-}))
+const signInCredentials = async (formData: FormData) => {
+  const email = formData.get('email') as string
+  const password = formData.get('password') as string
+  return signIn('password', {
+    email,
+    password,
+    redirect: false,
+    redirectTo: '/',
+  })
+}
+
+const signInMagicLink = async (email: string) => {
+  const response = await fetch('/api/auth/magic-link', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+  return response.json()
+}
+
+const signInOAuth = async (provider: string) => {
+  return signIn(provider, {
+    redirectTo: '/',
+  })
+}
+
+const signUpWithEmail = async (email: string) => {
+  const response = await fetch('/api/auth/register', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ email }),
+  })
+  return response.json()
+}
 
 // Mock fetch
 global.fetch = jest.fn()

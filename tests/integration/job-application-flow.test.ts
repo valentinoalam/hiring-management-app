@@ -150,7 +150,7 @@ describe('Job Application Flow', () => {
     const mockApplicationData = {
       coverLetter: 'I am very interested in this Senior Frontend Developer position. I have 5 years of experience with React and TypeScript, and I believe my skills align perfectly with your requirements. I am particularly excited about the opportunity to work on your innovative product suite.',
       source: 'company-website',
-      formResponses: {
+      formResponse: {
         fullName: 'John David Smith',
         email: 'john.smith@example.com',
         experience: '5',
@@ -164,7 +164,7 @@ describe('Job Application Flow', () => {
         noticePeriod: '30',
         relocation: 'yes',
         visaSponsorship: 'no'
-      },
+      } as unknown as JSON,
       resumeUrl: 'https://example.com/resumes/john-smith-resume.pdf',
       linkedin: 'https://linkedin.com/in/johnsmith',
       phone: '+1-555-0123',
@@ -183,7 +183,7 @@ describe('Job Application Flow', () => {
         appliedAt: '2024-01-15T10:30:00.000Z',
         viewedAt: null,
         statusUpdatedAt: null,
-        formResponse: mockApplicationData.formResponses,
+        formResponse: mockApplicationData.formResponse,
         job: {
           id: 'job-123',
           title: 'Senior Frontend Developer',
@@ -210,7 +210,7 @@ describe('Job Application Flow', () => {
       });
 
       await act(async () => {
-        result.current.mutate(mockApplicationData);
+        result.current.mutate(mockApplicationData as unknown as ApplicationData);
       });
 
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
@@ -224,7 +224,7 @@ describe('Job Application Flow', () => {
       // Verify response data
       expect(result.current.data).toEqual(mockApplicationResponse);
       expect(result.current.data?.application!.status).toBe('PENDING');
-      expect(result.current.data?.application!.formResponse).toEqual(mockApplicationData.formResponses);
+      expect(result.current.data?.application!.formResponse).toEqual(mockApplicationData.formResponse);
     });
 
     it('should handle missing required fields error', async () => {
@@ -271,7 +271,7 @@ describe('Job Application Flow', () => {
       });
 
       await act(async () => {
-        result.current.mutate(mockApplicationData as ApplicationData);
+        result.current.mutate(mockApplicationData as unknown as ApplicationData);
       });
 
       await waitFor(() => expect(result.current.isError).toBe(true));
@@ -395,7 +395,7 @@ describe('Job Application Flow', () => {
       });
 
       await act(async () => {
-        await submitResult.current.mutateAsync(applicationData as ApplicationData);
+        await submitResult.current.mutateAsync(applicationData as unknown as ApplicationData);
       });
 
       // Verify submission was successful

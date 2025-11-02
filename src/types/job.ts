@@ -3,7 +3,7 @@ import { JobStatus, Prisma } from "@prisma/client";
 
 export interface JobData {
   id: string;
-  recruiterId: string;
+  authorId: string;
   companyId: string; // Added company relation
   title: string;
   description: string | null;
@@ -62,7 +62,7 @@ export type JobWithAuthorAndCount = Prisma.JobGetPayload<typeof jobWithAuthorAnd
 
 export interface Job {
   id: string;
-  recruiterId: string;
+  authorId: string;
   companyId: string; // Added companyId
   title: string;
   description: string | null;
@@ -94,7 +94,7 @@ export interface Job {
 export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
   return {
     id: prismaJob.id,
-    recruiterId: prismaJob.recruiterId,
+    authorId: prismaJob.authorId,
     companyId: prismaJob.companyId, // Added companyId
     title: prismaJob.title,
     description: prismaJob.description,

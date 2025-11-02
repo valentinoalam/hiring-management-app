@@ -510,7 +510,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
 
     const jobData = {
       slug,
-      recruiterId: recruiter.id,
+      authorId: recruiter.id,
       title: jobTitle,
       description: faker.lorem.paragraphs(faker.number.int({ min: 2, max: 4 })),
       department: faker.helpers.arrayElement(departments),
@@ -552,7 +552,6 @@ async function createJobs(users: User[]): Promise<Job[]> {
         experience: faker.number.int({ min: 0, max: 5 }),
       },
       companyId: company?.id || "",
-      authorId: recruiter.id,
       listBadge: faker.helpers.arrayElement(['Active', 'New', 'Popular', 'Urgent', 'Featured', null]),
       startedOnText: `Started on ${faker.date.recent({ days: 30 }).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}`,
       ctaText: faker.helpers.arrayElement(['Apply Now', 'View Details', 'Quick Apply', 'Learn More']),

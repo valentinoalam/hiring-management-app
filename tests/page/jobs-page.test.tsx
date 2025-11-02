@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // __tests__/jobs-page.test.tsx
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
@@ -22,7 +23,7 @@ jest.mock('@/components/custom-ui/drawer', () => {
 });
 
 jest.mock('@/components/job/job-seeker/JobDetail', () => {
-  return function MockJobDetail({ title, company, type, description }: any) {
+  return function MockJobDetail({ title, company, type, description }: { title: string; company: string; type: string; description: string }) {
     return (
       <div data-testid="job-detail">
         <h2>{title}</h2>
@@ -35,7 +36,7 @@ jest.mock('@/components/job/job-seeker/JobDetail', () => {
 });
 
 jest.mock('@/components/job/job-seeker/JobCard', () => {
-  return function MockJobCard({ title, company, location, salary, isActive, onClick }: any) {
+  return function MockJobCard({ title, company, location, salary, isActive, onClick }: { title: string; company: string; location: string; salary: string; isActive: boolean; onClick: () => void }) {
     return (
       <div 
         data-testid="job-card" 
@@ -93,9 +94,10 @@ const mockJobs = [
   },
 ];
 
+const mockPush = jest.fn();
+const mockGet = jest.fn();
+
 describe('JobsPage', () => {
-  const mockPush = jest.fn();
-  const mockGet = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -371,7 +373,7 @@ describe('JobsPage Utilities', () => {
       isError: false,
     });
 
-    mockGet.mockImplementation((key) => null);
+    mockGet.mockImplementation((_key: string) => null);
 
     render(<JobsPage />);
 

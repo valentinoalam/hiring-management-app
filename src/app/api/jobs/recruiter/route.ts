@@ -43,13 +43,13 @@ export async function GET(request: NextRequest) {
 
     // Build where clause
     const where: Prisma.JobWhereInput = {
-      recruiterId: session.user.id,
+      authorId: session.user.id,
     };
 
     if (isActive) {
       where.status = "ACTIVE" // Jika "isActive", hanya tampilkan yang berstatus 'active'
     } else if (user && user.id) {
-      where.recruiterId = user.id
+      where.authorId = user.id
     }
 
     // Filter by status if provided
@@ -261,7 +261,7 @@ export async function POST(request: NextRequest) {
         settings: settings,
         requirements: requirements,
         // Relations
-        recruiterId: session.user.id,
+        authorId: session.user.id,
         authorId: session.user.id,
         companyId: companyId,
         // Application form fields
@@ -370,7 +370,7 @@ export async function PUT(request: NextRequest) {
     const existingJob = await prisma.job.findFirst({
       where: {
         id,
-        recruiterId: user.id
+        authorId: user.id
       }
     })
 

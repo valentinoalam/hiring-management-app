@@ -46,7 +46,7 @@ export async function GET(
     if (role === "RECRUITER" && jobId) {
       where.job = {
         id: jobId,
-        recruiterId: user.id,
+        authorId: user.id,
       }
     } else if (role === "APPLICANT") {
       where.applicantId = user.id

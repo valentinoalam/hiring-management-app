@@ -34,7 +34,19 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   disconnect: jest.fn(),
 }));
 // --- Mocks ---
-
+// Mock next/font
+jest.mock('next/font/local', () => ({
+  __esModule: true,
+  default: () => ({
+    className: 'mock-font-class',
+  }),
+}))
+// Mock next/font/google
+jest.mock('next/font/google', () => ({
+  Inter: () => ({
+    className: 'mock-font-class',
+  }),
+}))
 // Mock next/navigation
 jest.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -92,7 +104,7 @@ export const createMockJob = (overrides = {}) => ({
   employmentType: 'FULL_TIME',
   status: 'active' as const,
   companyId: 'company-123',
-  recruiterId: 'user-456',
+  authorId: 'user-456',
   createdAt: '2024-01-01T00:00:00.000Z',
   updatedAt: '2024-01-01T00:00:00.000Z',
   company: {
