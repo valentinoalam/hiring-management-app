@@ -10,7 +10,7 @@ import { Profile } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 import { ApplicationData } from '@/types/job';
 
-export default function JobApplyPage() {
+export default function JobApplicationPage() {
   const params = useParams();
   const router = useRouter();
   const jobId = params.id as string;
@@ -33,22 +33,14 @@ export default function JobApplyPage() {
     isSubmitting 
   } = useJobApplicationFlow(jobId, userId || '');
 
-  const handleSubmit = async (applicationData: {
-    formResponse: JSON;
-    profileUpdates:  Partial<Profile>;
-    userInfoUpdates: Array<{
-      id?: string;
-      fieldId: string;
-      infoFieldAnswer: string;
-    }>;
-  }) => {
+  const handleSubmit = async (applicationData: ApplicationData) => {
     try {
       await submitApplication({
         jobId,
-        resumeUrl: applicationData.profileUpdates.resumeUrl || '',
-        coverLetter: applicationData.formResponse.coverLetter || '',
-        source: applicationData.formResponse.source,
-        applicantInfo: applicationData.formResponse,
+        resumeUrl: applicationData.resumeUrl || '',
+        coverLetter: applicationData.coverLetter || '',
+        source: applicationData.source,
+        applicantInfo: applicationData.applicantInfo,
       } as ApplicationData);
       
       // Redirect to success page or show success message

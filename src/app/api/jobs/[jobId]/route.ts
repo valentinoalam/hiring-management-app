@@ -55,10 +55,10 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
 
     const job = await prisma.job.findUnique({
       where: { id },
-      select: { recruiterId: true },
+      select: { authorId: true },
     })
 
-    if (!job || job.recruiterId !== user.id) {
+    if (!job || job.authorId !== user.id) {
       return NextResponse.json({ error: "Unauthorized to update this job" }, { status: 403 })
     }
 

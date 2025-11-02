@@ -294,6 +294,7 @@ export interface UpdateJobData {
 
 export interface ApplicationData {
   jobId: string;
+  formResponse:JSON
   resumeUrl: string;
   coverLetter: string;
   source?: string;
