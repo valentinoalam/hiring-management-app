@@ -2,8 +2,6 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
-import { ApplicantData, ApplicationData } from "@/types/job";
-
 
 export async function GET(
   request: NextRequest,
