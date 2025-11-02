@@ -48,12 +48,12 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       where: { id },
       include: {
         job: {
-          select: { recruiterId: true },
+          select: { authorId: true },
         },
       },
     })
 
-    if (!application || application.job.recruiterId !== user.id) {
+    if (!application || application.job.authorId !== user.id) {
       return NextResponse.json({ error: "Unauthorized to update this application" }, { status: 403 })
     }
 
