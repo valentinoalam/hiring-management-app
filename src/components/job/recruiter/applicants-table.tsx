@@ -73,21 +73,23 @@ interface ApplicantsTableProps {
 
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
-  REVIEWED: 'bg-blue-100 text-blue-800 border-blue-200',
-  INTERVIEW: 'bg-purple-100 text-purple-800 border-purple-200',
+  UNDER_REVIEW: 'bg-blue-100 text-blue-800 border-blue-200',
+  SHORTLISTED: 'bg-purple-100 text-purple-800 border-purple-200',
   REJECTED: 'bg-red-100 text-red-800 border-red-200',
-  HIRED: 'bg-green-100 text-green-800 border-green-200',
+  ACCEPTED: 'bg-green-100 text-green-800 border-green-200',
+  WITHDRAWN: ''
 };
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
   PENDING: 'Pending',
-  REVIEWED: 'Reviewed',
-  INTERVIEW: 'Interview',
+  UNDER_REVIEW: 'Reviewed',
+  SHORTLISTED: 'Interview',
   REJECTED: 'Rejected',
-  HIRED: 'Hired',
+  ACCEPTED: 'Hired',
+  WITHDRAWN: 'Withdrawn'
 };
 
-const MOCK_STATUSES: ApplicationStatus[] = ['PENDING', 'REVIEWED', 'INTERVIEW', 'REJECTED', 'HIRED'];
+const MOCK_STATUSES: ApplicationStatus[] = ['PENDING', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED'];
 
 // Sortable Table Header Component
 function SortableTableHeader({ header, children }: { header: { column: { id: string }; colSpan?: number }; children: React.ReactNode }) {
@@ -142,7 +144,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
     isError: isFormFieldsError,
   } = useApplicationFormFields(jobId);
 
-  const updateStatusMutation = useUpdateApplicantStatus();
+  const updateStatusMutation = useUpdateApplicantStatus(jobId);
   const bulkActionMutation = useBulkActionApplicants();
 
 
@@ -155,8 +157,9 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
 
   // Filter applicants by status
   const filteredApplicants = useMemo(() => {
-    if (statusFilter === 'ALL') return applicants;
-    return applicants.filter(applicant => applicant.status === statusFilter);
+    const applicantArray = Array.isArray(applicants) ? applicants : [];
+    if (statusFilter === 'ALL') return applicantArray;
+    return applicantArray.filter((applicant: Applicant) => applicant.status === statusFilter);
   }, [applicants, statusFilter]);
   
   const handleStatusFilterChange = (status: ApplicationStatus | 'ALL') => {
@@ -168,7 +171,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
     if (selectedApplicants.length === filteredApplicants.length) {
       setSelectedApplicants([]);
     } else {
-      setSelectedApplicants(filteredApplicants.map(applicant => applicant.id));
+      setSelectedApplicants(filteredApplicants.map((applicant: Applicant) => applicant.id));
     }
   },[filteredApplicants, selectedApplicants.length]);
 
@@ -200,8 +203,8 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
       const applicantData = applicantDataMap.get(applicant.id);
       
       if (applicantData) {
-        const userInfo = applicantData.profile.userInfo.find(
-          info => info.field.key === fieldKey
+        const userInfo = applicantData.applicant.userInfo?.find(
+          (info: any) => info.field.key === fieldKey
         );
         return userInfo?.infoFieldAnswer || '-';
       }
@@ -462,6 +465,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
   // Handle status change for selected applicants
   const handleStatusChange = (newStatus: ApplicationStatus) => {
     updateStatusMutation.mutate({
+      jobId,
       applicantIds: selectedApplicants,
       status: newStatus,
     });
@@ -682,10 +686,10 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
                         <Mail className="h-12 w-12 mx-auto" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {applicants.length === 0 ? 'No applicants found' : 'No applicants match your filters'}
+                        {(Array.isArray(applicants) ? applicants.length : 0) === 0 ? 'No applicants found' : 'No applicants match your filters'}
                       </h3>
                       <p className="text-gray-500 max-w-sm mx-auto">
-                        {applicants.length === 0 
+                        {(Array.isArray(applicants) ? applicants.length : 0) === 0 
                           ? "No applicants have applied for this job yet."
                           : `No applicants with status "${STATUS_LABELS[statusFilter as ApplicationStatus]}" found.`
                         }
@@ -710,7 +714,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
       <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Showing {filteredApplicants.length} of {applicants.length} applicants
+            Showing {filteredApplicants.length} of {Array.isArray(applicants) ? applicants.length : 0} applicants
           </div>
           <div className="text-sm text-gray-500">
             Updated just now
