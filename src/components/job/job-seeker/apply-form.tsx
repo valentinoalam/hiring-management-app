@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useCallback, useMemo } from "react";
-import { ArrowLeft, Upload, Calendar, ChevronDown, FileText, X } from "lucide-react";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { ArrowLeft, Upload, Calendar, ChevronDown, FileText, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   Field,
@@ -12,12 +12,15 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm } from "react-hook-form";
+import { Card } from "@/components/ui/card";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useApplicationFormFields, useUserProfile } from "@/hooks/queries/application-queries";
 import { OtherUserInfo } from "@prisma/client";
 import { ApplicationData } from "@/types/job";
+import Image from "next/image";
+import React from "react";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -44,6 +47,9 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
           break;
         case 'linkedin_url':
           fieldValidator = z.string().url("Must be a valid URL");
+          break;
+        case 'date_of_birth':
+          fieldValidator = z.string().min(1, "Date of birth is required");
           break;
         default:
           fieldValidator = z.string().min(1, `${fieldConfig.label} is required`);
@@ -83,7 +89,17 @@ interface AppFormField {
     label: string;
     fieldType: string;
     options?: string;
+    description?: string;
+    placeholder?: string;
+    validation?: {
+      min?: number;
+      max?: number;
+      minDate?: string;
+      maxDate?: string;
+      fileTypes?: string[];
+    };
   };
+  sortOrder?: number;
 }
 
 interface Profile {
@@ -122,6 +138,140 @@ interface JobApplicationFormProps {
   userId: string;
 }
 
+// Gesture Profile Capture Component
+function GestureProfileCapture({ 
+  onSave, 
+  onClose 
+}: { 
+  onSave?: (imageData: string) => void; 
+  onClose?: () => void;
+}) {
+  const videoRef = useRef<HTMLVideoElement | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const [capturedImage, setCapturedImage] = useState<string | null>(null);
+  const [cameraActive, setCameraActive] = useState(false);
+  const [message, setMessage] = useState<string>("");
+
+  const startCamera = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "user" },
+      });
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream;
+        setCameraActive(true);
+        setMessage("Show your hand to capture profile picture");
+      }
+    } catch (err) {
+      console.error("Camera access error:", err);
+      setMessage("Unable to access camera. Please check permissions.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (videoRef.current && videoRef.current.srcObject) {
+      const stream = videoRef.current.srcObject as MediaStream;
+      stream.getTracks().forEach((track) => track.stop());
+      setCameraActive(false);
+    }
+  };
+
+  const capturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const context = canvasRef.current.getContext("2d");
+    if (context) {
+      canvasRef.current.width = videoRef.current.videoWidth;
+      canvasRef.current.height = videoRef.current.videoHeight;
+      context.drawImage(videoRef.current, 0, 0);
+      const imageData = canvasRef.current.toDataURL("image/jpeg");
+      setCapturedImage(imageData);
+      setMessage("✓ Photo captured! Review and save.");
+      stopCamera();
+    }
+  };
+
+  const handleSave = () => {
+    if (capturedImage && onSave) {
+      onSave(capturedImage);
+      setMessage("✓ Profile picture saved!");
+    }
+  };
+
+  const handleReset = () => {
+    setCapturedImage(null);
+    setMessage("");
+    startCamera();
+  };
+
+  return (
+    <Card className="w-full max-w-md mx-auto p-6 bg-white">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-2xl font-bold text-gray-900">Capture Profile Picture</h2>
+        {onClose && (
+          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
+            <X className="w-5 h-5" />
+          </button>
+        )}
+      </div>
+
+      <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden mb-4">
+        {!capturedImage ? (
+          <video 
+            ref={videoRef} 
+            autoPlay 
+            playsInline 
+            className="w-full h-full object-cover" 
+          />
+        ) : (
+          <Image 
+            width={300} 
+            height={300}
+            src={capturedImage || "/placeholder.svg"}
+            alt="Captured profile"
+            className="w-full h-full object-cover"
+          />
+        )}
+      </div>
+
+      <canvas ref={canvasRef} className="hidden" />
+
+      {message && <p className="text-center text-sm font-medium mb-4 text-blue-600">{message}</p>}
+
+      <div className="flex gap-3">
+        {!cameraActive && !capturedImage ? (
+          <Button onClick={startCamera} className="flex-1 gap-2">
+            <Camera className="w-4 h-4" />
+            Start Camera
+          </Button>
+        ) : cameraActive ? (
+          <>
+            <Button onClick={stopCamera} variant="outline" className="flex-1 gap-2">
+              <X className="w-4 h-4" />
+              Cancel
+            </Button>
+            <Button onClick={capturePhoto} className="flex-1 gap-2">
+              <Camera className="w-4 h-4" />
+              Capture
+            </Button>
+          </>
+        ) : (
+          <>
+            <Button onClick={handleReset} variant="outline" className="flex-1 gap-2">
+              <X className="w-4 h-4" />
+              Retake
+            </Button>
+            <Button onClick={handleSave} className="flex-1 gap-2">
+              <Upload className="w-4 h-4" />
+              Save
+            </Button>
+          </>
+        )}
+      </div>
+    </Card>
+  );
+}
+
 export default function JobApplicationForm({
   jobId,
   jobTitle,
@@ -130,11 +280,11 @@ export default function JobApplicationForm({
   onCancel,
   userId,
 }: JobApplicationFormProps) {
-  const [profile, setProfile] = useState<Profile | null>(null);
   const [avatarPreview, setAvatarPreview] = useState("");
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [coverLetterMode, setCoverLetterMode] = useState<'text' | 'file'>('text');
+  const [showGestureCapture, setShowGestureCapture] = useState(false);
   
   const { 
     data: formFieldsData, 
@@ -148,12 +298,14 @@ export default function JobApplicationForm({
     error: profileError 
   } = useUserProfile(userId);
 
-  useEffect(() => {
-    if (profileData) {
-      setProfile(profileData);
-      setAvatarPreview(profileData.avatarUrl || "");
+  const profile = profileData;
+  
+  // Set initial avatar preview when profile loads
+  React.useEffect(() => {
+    if (profileData?.avatarUrl && !avatarPreview) {
+      setAvatarPreview(profileData.avatarUrl);
     }
-  }, [profileData]);
+  }, [profileData?.avatarUrl, avatarPreview]);
 
   const isLoading = loadingFields || loadingProfile;
   const error = fieldsError || profileError;
@@ -165,15 +317,13 @@ export default function JobApplicationForm({
     register,
     handleSubmit,
     setValue,
-    watch,
-    formState: { errors, isSubmitting },
+    control,
+    formState: { errors, isSubmitting, isValid },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
   });
-
-
-
+  const formValues = useWatch({ control });
   // Pre-fill form with existing profile data
   useEffect(() => {
     if (profile && appFormFields.length > 0) {
@@ -230,12 +380,10 @@ export default function JobApplicationForm({
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
         alert("Please upload a valid image file (JPG, PNG, or WebP)");
         return;
       }
-      // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         alert("Image size must be less than 5MB");
         return;
@@ -245,15 +393,18 @@ export default function JobApplicationForm({
     }
   };
 
+  const handleGestureCaptureSave = (imageData: string) => {
+    setAvatarPreview(imageData);
+    setShowGestureCapture(false);
+  };
+
   const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!ACCEPTED_RESUME_TYPES.includes(file.type)) {
         alert("Please upload a PDF or Word document");
         return;
       }
-      // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         alert("Resume file size must be less than 5MB");
         return;
@@ -266,12 +417,10 @@ export default function JobApplicationForm({
   const handleCoverLetterFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      // Validate file type
       if (!ACCEPTED_RESUME_TYPES.includes(file.type)) {
         alert("Please upload a PDF or Word document");
         return;
       }
-      // Validate file size
       if (file.size > MAX_FILE_SIZE) {
         alert("Cover letter file size must be less than 5MB");
         return;
@@ -296,7 +445,6 @@ export default function JobApplicationForm({
     if (!profile) return;
 
     try {
-      // Get cover letter content based on mode
       const coverLetterContent = coverLetterMode === 'text' 
         ? formData.coverLetter 
         : coverLetterFile?.name || '';
@@ -322,7 +470,7 @@ export default function JobApplicationForm({
           .map((appField: AppFormField) => {
             const fieldKey = appField.field.key;
             const existingUserInfo = profile.userInfo?.find(
-              (info) => info.fieldId === appField.field.id
+              (info: { fieldId: string }) => info.fieldId === appField.field.id
             );
             
             return {
@@ -340,13 +488,20 @@ export default function JobApplicationForm({
     }
   };
 
-  const renderField = (appField: AppFormField) => {
+  const renderFormField = (appField: AppFormField) => {
     const { field, fieldState } = appField;
     const isRequired = fieldState === "mandatory";
     const error = errors[field.key as keyof ApplicationFormData];
 
-    switch (field.key) {
-      case 'full_name':
+    const commonProps = {
+      ...register(field.key as keyof ApplicationFormData),
+      className: "h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent",
+    };
+
+    switch (field.fieldType) {
+      case 'text':
+      case 'email':
+      case 'url':
         return (
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
@@ -354,10 +509,15 @@ export default function JobApplicationForm({
               {isRequired && <span className="text-danger-main">*</span>}
             </FieldLabel>
             <Input
-              {...register(field.key as keyof ApplicationFormData)}
-              placeholder="Enter your full name"
-              className="h-10 border-2 border-neutral-40 bg-neutral-10"
+              type={field.fieldType}
+              {...commonProps}
+              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
             />
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -366,7 +526,96 @@ export default function JobApplicationForm({
           </Field>
         );
 
-      case 'date_of_birth':
+      case 'textarea':
+        return (
+          <Field key={field.id}>
+            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+              {field.label}
+              {isRequired && <span className="text-danger-main">*</span>}
+            </FieldLabel>
+            <Textarea
+              {...commonProps}
+              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
+              className="min-h-20 border-2 border-neutral-40 bg-neutral-10 resize-y"
+              rows={4}
+            />
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
+            {error && (
+              <FieldDescription className="text-danger-main">
+                {error.message}
+              </FieldDescription>
+            )}
+          </Field>
+        );
+
+      case 'number':
+        return (
+          <Field key={field.id}>
+            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+              {field.label}
+              {isRequired && <span className="text-danger-main">*</span>}
+            </FieldLabel>
+            <Input
+              type="number"
+              {...commonProps}
+              min={field.validation?.min}
+              max={field.validation?.max}
+              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
+            />
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
+            {error && (
+              <FieldDescription className="text-danger-main">
+                {error.message}
+              </FieldDescription>
+            )}
+          </Field>
+        );
+
+      case 'select':
+        return (
+          <Field key={field.id}>
+            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+              {field.label}
+              {isRequired && <span className="text-danger-main">*</span>}
+            </FieldLabel>
+            <div className="relative">
+              <select
+                {...commonProps}
+                className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
+              >
+                <option value="">Select an option</option>
+                {field.options?.split(',').map((option: string) => (
+                  <option key={option.trim()} value={option.trim()}>
+                    {option.trim()}
+                  </option>
+                ))}
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
+              </div>
+            </div>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
+            {error && (
+              <FieldDescription className="text-danger-main">
+                {error.message}
+              </FieldDescription>
+            )}
+          </Field>
+        );
+
+      case 'date':
         return (
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
@@ -379,13 +628,20 @@ export default function JobApplicationForm({
               </div>
               <Input
                 type="date"
-                {...register(field.key as keyof ApplicationFormData)}
+                {...commonProps}
                 className="w-full h-10 pl-12 pr-12 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
+                min={field.validation?.minDate}
+                max={field.validation?.maxDate}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <ChevronDown className="w-4 h-4 text-neutral-100" />
               </div>
             </div>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -394,6 +650,69 @@ export default function JobApplicationForm({
           </Field>
         );
 
+      case 'radio':
+        return (
+          <Field key={field.id}>
+            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+              {field.label}
+              {isRequired && <span className="text-danger-main">*</span>}
+            </FieldLabel>
+            <FieldGroup className="flex flex-col gap-3">
+              {field.options?.split(',').map((option: string) => (
+                <label key={option.trim()} className="flex items-center gap-2 cursor-pointer">
+                  <input
+                    type="radio"
+                    value={option.trim()}
+                    {...register(field.key as keyof ApplicationFormData)}
+                    className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
+                  />
+                  <span className="text-sm leading-6 text-neutral-90 font-sans">
+                    {option.trim()}
+                  </span>
+                </label>
+              ))}
+            </FieldGroup>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
+            {error && (
+              <FieldDescription className="text-danger-main">
+                {error.message}
+              </FieldDescription>
+            )}
+          </Field>
+        );
+
+      case 'checkbox':
+        return (
+          <Field key={field.id}>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                {...register(field.key as keyof ApplicationFormData)}
+                className="w-6 h-6 border-2 border-neutral-90 rounded checked:bg-neutral-90 cursor-pointer"
+              />
+              <span className="text-sm leading-6 text-neutral-90 font-sans">
+                {field.label}
+                {isRequired && <span className="text-danger-main">*</span>}
+              </span>
+            </label>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1 ml-8">
+                {field.description}
+              </FieldDescription>
+            )}
+            {error && (
+              <FieldDescription className="text-danger-main">
+                {error.message}
+              </FieldDescription>
+            )}
+          </Field>
+        );
+
+      // Special field cases from first form
       case 'gender':
         return (
           <Field key={field.id}>
@@ -425,38 +744,6 @@ export default function JobApplicationForm({
                 </span>
               </label>
             </FieldGroup>
-            {error && (
-              <FieldDescription className="text-danger-main">
-                {error.message}
-              </FieldDescription>
-            )}
-          </Field>
-        );
-
-      case 'domicile':
-        return (
-          <Field key={field.id}>
-            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
-            </FieldLabel>
-            <div className="relative">
-              <select
-                {...register(field.key as keyof ApplicationFormData)}
-                className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
-              >
-                <option value="">Choose your domicile</option>
-                <option value="jakarta">Jakarta</option>
-                <option value="bandung">Bandung</option>
-                <option value="surabaya">Surabaya</option>
-                <option value="yogyakarta">Yogyakarta</option>
-                <option value="bali">Bali</option>
-                <option value="medan">Medan</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
-              </div>
-            </div>
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -501,40 +788,30 @@ export default function JobApplicationForm({
           </Field>
         );
 
-      case 'email':
+      case 'domicile':
         return (
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
               {isRequired && <span className="text-danger-main">*</span>}
             </FieldLabel>
-            <Input
-              type="email"
-              {...register(field.key as keyof ApplicationFormData)}
-              placeholder="Enter your email address"
-              className="h-10 border-2 border-neutral-40 bg-neutral-10"
-            />
-            {error && (
-              <FieldDescription className="text-danger-main">
-                {error.message}
-              </FieldDescription>
-            )}
-          </Field>
-        );
-
-      case 'linkedin_url':
-        return (
-          <Field key={field.id}>
-            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
-            </FieldLabel>
-            <Input
-              type="url"
-              {...register(field.key as keyof ApplicationFormData)}
-              placeholder="https://linkedin.com/in/username"
-              className="h-10 border-2 border-neutral-40 bg-neutral-10"
-            />
+            <div className="relative">
+              <select
+                {...register(field.key as keyof ApplicationFormData)}
+                className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
+              >
+                <option value="">Choose your domicile</option>
+                <option value="jakarta">Jakarta</option>
+                <option value="bandung">Bandung</option>
+                <option value="surabaya">Surabaya</option>
+                <option value="yogyakarta">Yogyakarta</option>
+                <option value="bali">Bali</option>
+                <option value="medan">Medan</option>
+              </select>
+              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
+              </div>
+            </div>
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -553,15 +830,20 @@ export default function JobApplicationForm({
             {field.fieldType === 'textarea' ? (
               <Textarea
                 {...register(field.key as keyof ApplicationFormData)}
-                placeholder={`Enter your ${field.label.toLowerCase()}`}
+                placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
                 className="min-h-20 border-2 border-neutral-40 bg-neutral-10"
               />
             ) : (
               <Input
                 {...register(field.key as keyof ApplicationFormData)}
-                placeholder={`Enter your ${field.label.toLowerCase()}`}
+                placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
                 className="h-10 border-2 border-neutral-40 bg-neutral-10"
               />
+            )}
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
             )}
             {error && (
               <FieldDescription className="text-danger-main">
@@ -610,8 +892,22 @@ export default function JobApplicationForm({
     );
   }
 
-  const visibleFields = appFormFields.filter((field: AppFormField) => field.fieldState !== "off");
+  const visibleFields = appFormFields
+    .filter((field: AppFormField) => field.fieldState !== "off")
+    .sort((a: { sortOrder: number; }, b: { sortOrder: number; }) => (a.sortOrder || 0) - (b.sortOrder || 0));
+
   const photoProfileField = appFormFields.find((f: AppFormField) => f.field.key === 'photo_profile');
+
+  if (showGestureCapture) {
+    return (
+      <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4">
+        <GestureProfileCapture
+          onSave={handleGestureCaptureSave}
+          onClose={() => setShowGestureCapture(false)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">
@@ -645,7 +941,7 @@ export default function JobApplicationForm({
                 * Required
               </p>
 
-              {/* Photo Profile Field */}
+              {/* Photo Profile Field with Gesture Capture */}
               {photoProfileField && photoProfileField.fieldState !== 'off' && (
                 <FieldSet>
                   <FieldLabel className="text-xs font-bold leading-5 text-neutral-90 font-sans">
@@ -661,62 +957,48 @@ export default function JobApplicationForm({
                           : "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Ccircle cx=%2264%22 cy=%2264%22 r=%2264%22 fill=%22%23B8E6E6%22/%3E%3Cpath d=%22M64 70c-11 0-20-9-20-20s9-20 20-20 20 9 20 20-9 20-20 20z%22 fill=%22%23666%22/%3E%3Cpath d=%22M30 110c0-20 15-35 34-35s34 15 34 35%22 fill=%22%23047C7C%22/%3E%3C/svg%3E')",
                       }}
                     />
-                    <input
-                      type="file"
-                      id="avatar"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="avatar"
-                      className="inline-flex items-center justify-center gap-1 px-4 py-1 border border-neutral-40 bg-neutral-10 rounded-lg shadow-sm hover:bg-gray-50 transition-colors w-fit cursor-pointer"
-                    >
-                      <Upload className="w-4 h-4 text-neutral-100" strokeWidth={2} />
-                      <span className="text-sm font-bold leading-6 text-neutral-100 font-sans">
+                    <div className="flex gap-2">
+                      <input
+                        type="file"
+                        id="avatar"
+                        accept="image/*"
+                        onChange={handleAvatarChange}
+                        className="hidden"
+                      />
+                      <label
+                        htmlFor="avatar"
+                        className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <Upload className="w-4 h-4" />
                         Upload Photo
-                      </span>
-                    </label>
-                    <p className="text-xs text-neutral-60">
-                      Max 5MB. Accepted formats: JPG, PNG, WebP
-                    </p>
+                      </label>
+                      <Button
+                        type="button"
+                        onClick={() => setShowGestureCapture(true)}
+                        className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
+                      >
+                        <Camera className="w-4 h-4" />
+                        Take Photo
+                      </Button>
+                    </div>
                   </div>
                 </FieldSet>
               )}
 
-              {/* Render all visible fields */}
-              {visibleFields.map(renderField)}
+              {/* Dynamic Form Fields */}
+              {visibleFields
+                .filter((field: AppFormField) => field.field.key !== 'photo_profile')
+                .map((appField: AppFormField) => renderFormField(appField))}
 
-              {/* Resume Upload Field */}
-              <FieldSet>
-                <FieldLabel className="text-xs font-bold leading-5 text-neutral-90 font-sans">
-                  Resume / CV
+              {/* Resume Upload */}
+              <Field>
+                <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                  Resume
                   <span className="text-danger-main">*</span>
                 </FieldLabel>
-                <div className="flex flex-col gap-3">
-                  {resumeFile ? (
-                    <div className="flex items-center justify-between p-3 border-2 border-neutral-40 bg-neutral-10 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-neutral-100" />
-                        <div className="flex flex-col">
-                          <span className="text-sm font-medium text-neutral-100">
-                            {resumeFile.name}
-                          </span>
-                          <span className="text-xs text-neutral-60">
-                            {(resumeFile.size / 1024 / 1024).toFixed(2)} MB
-                          </span>
-                        </div>
-                      </div>
-                      <button
-                        type="button"
-                        onClick={removeResumeFile}
-                        className="p-1 hover:bg-neutral-40 rounded transition-colors"
-                      >
-                        <X className="w-4 h-4 text-neutral-100" />
-                      </button>
-                    </div>
-                  ) : (
-                    <>
+                <div className="flex flex-col gap-2">
+                  {!resumeFile && !profile?.resumeUrl ? (
+                    <div className="flex flex-col gap-2">
                       <input
                         type="file"
                         id="resume"
@@ -726,109 +1008,90 @@ export default function JobApplicationForm({
                       />
                       <label
                         htmlFor="resume"
-                        className="inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-neutral-40 bg-neutral-10 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                        className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
                       >
-                        <Upload className="w-5 h-5 text-neutral-100" strokeWidth={2} />
-                        <span className="text-sm font-medium text-neutral-100 font-sans">
-                          Upload Resume / CV
-                        </span>
+                        <FileText className="w-4 h-4" />
+                        Upload Resume
                       </label>
-                    </>
-                  )}
-                  <p className="text-xs text-neutral-60">
-                    Max 5MB. Accepted formats: PDF, DOC, DOCX
-                  </p>
-                  {errors.resume && (
-                    <FieldDescription className="text-danger-main">
-                      {errors.resume.message as string}
-                    </FieldDescription>
+                      <p className="text-xs text-neutral-60">
+                        Accepted file types: PDF, DOC, DOCX (Max 5MB)
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2 p-3 border border-neutral-40 bg-neutral-10 rounded-lg">
+                      <FileText className="w-5 h-5 text-neutral-100" />
+                      <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
+                        {resumeFile ? resumeFile.name : 'Resume from profile'}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={removeResumeFile}
+                        className="p-1 hover:bg-gray-100 rounded"
+                      >
+                        <X className="w-4 h-4 text-neutral-100" />
+                      </button>
+                    </div>
                   )}
                 </div>
-              </FieldSet>
+                {errors.resume && (
+                  <FieldDescription className="text-danger-main">
+                    {errors.resume.message}
+                  </FieldDescription>
+                )}
+              </Field>
 
-              {/* Cover Letter Field */}
-              <FieldSet>
-                <FieldLabel className="text-xs font-bold leading-5 text-neutral-90 font-sans">
+              {/* Cover Letter */}
+              <Field>
+                <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                   Cover Letter
                 </FieldLabel>
                 
-                {/* Toggle between text and file upload */}
-                <div className="flex gap-2 mb-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCoverLetterMode('text');
-                      setCoverLetterFile(null);
-                      setValue('coverLetterFile', undefined);
-                    }}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      coverLetterMode === 'text'
-                        ? 'bg-neutral-100 text-neutral-10'
-                        : 'bg-neutral-10 text-neutral-100 border border-neutral-40 hover:bg-gray-50'
-                    }`}
-                  >
-                    Write Text
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setCoverLetterMode('file');
-                      setValue('coverLetter', '');
-                    }}
-                    className={`px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
-                      coverLetterMode === 'file'
-                        ? 'bg-neutral-100 text-neutral-10'
-                        : 'bg-neutral-10 text-neutral-100 border border-neutral-40 hover:bg-gray-50'
-                    }`}
-                  >
-                    Upload File
-                  </button>
+                {/* Cover Letter Mode Toggle */}
+                <div className="flex gap-4 mb-4">
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="text"
+                      checked={coverLetterMode === 'text'}
+                      onChange={() => {
+                        setCoverLetterMode('text');
+                        setCoverLetterFile(null);
+                        setValue('coverLetterFile', undefined, { shouldValidate: true });
+                      }}
+                      className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
+                    />
+                    <span className="text-sm leading-6 text-neutral-90 font-sans">
+                      Write Cover Letter
+                    </span>
+                  </label>
+                  <label className="flex items-center gap-2 cursor-pointer">
+                    <input
+                      type="radio"
+                      value="file"
+                      checked={coverLetterMode === 'file'}
+                      onChange={() => {
+                        setCoverLetterMode('file');
+                        setValue('coverLetter', '', { shouldValidate: true });
+                      }}
+                      className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
+                    />
+                    <span className="text-sm leading-6 text-neutral-90 font-sans">
+                      Upload Cover Letter
+                    </span>
+                  </label>
                 </div>
 
                 {coverLetterMode === 'text' ? (
-                  <div className="flex flex-col gap-2">
-                    <Textarea
-                      {...register('coverLetter')}
-                      placeholder="Write your cover letter here... (minimum 50 characters)"
-                      className="min-h-32 border-2 border-neutral-40 bg-neutral-10 resize-y"
-                      rows={6}
-                    />
-                    <div className="flex justify-between items-center">
-                      <p className="text-xs text-neutral-60">
-                        {(watch('coverLetter') as string)?.length || 0} characters
-                      </p>
-                      {errors.coverLetter && (
-                        <FieldDescription className="text-danger-main">
-                          {errors.coverLetter.message as string}
-                        </FieldDescription>
-                      )}
-                    </div>
-                  </div>
+                  <Textarea
+                    {...register('coverLetter')}
+                    placeholder="Write your cover letter here..."
+                    className="min-h-32 border-2 border-neutral-40 bg-neutral-10 resize-y"
+                    rows={6}
+                  />
                 ) : (
-                  <div className="flex flex-col gap-3">
-                    {coverLetterFile ? (
-                      <div className="flex items-center justify-between p-3 border-2 border-neutral-40 bg-neutral-10 rounded-lg">
-                        <div className="flex items-center gap-2">
-                          <FileText className="w-5 h-5 text-neutral-100" />
-                          <div className="flex flex-col">
-                            <span className="text-sm font-medium text-neutral-100">
-                              {coverLetterFile.name}
-                            </span>
-                            <span className="text-xs text-neutral-60">
-                              {(coverLetterFile.size / 1024 / 1024).toFixed(2)} MB
-                            </span>
-                          </div>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={removeCoverLetterFile}
-                          className="p-1 hover:bg-neutral-40 rounded transition-colors"
-                        >
-                          <X className="w-4 h-4 text-neutral-100" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
+                  <div className="flex flex-col gap-2">
+                    {!coverLetterFile ? (
+                      <div className="flex flex-col gap-2">
                         <input
                           type="file"
                           id="coverLetterFile"
@@ -838,25 +1101,42 @@ export default function JobApplicationForm({
                         />
                         <label
                           htmlFor="coverLetterFile"
-                          className="inline-flex items-center justify-center gap-2 px-4 py-3 border-2 border-dashed border-neutral-40 bg-neutral-10 rounded-lg hover:bg-gray-50 transition-colors cursor-pointer"
+                          className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
                         >
-                          <Upload className="w-5 h-5 text-neutral-100" strokeWidth={2} />
-                          <span className="text-sm font-medium text-neutral-100 font-sans">
-                            Upload Cover Letter
-                          </span>
+                          <FileText className="w-4 h-4" />
+                          Upload Cover Letter
                         </label>
-                      </>
+                        <p className="text-xs text-neutral-60">
+                          Accepted file types: PDF, DOC, DOCX (Max 5MB)
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 p-3 border border-neutral-40 bg-neutral-10 rounded-lg">
+                        <FileText className="w-5 h-5 text-neutral-100" />
+                        <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
+                          {coverLetterFile.name}
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeCoverLetterFile}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <X className="w-4 h-4 text-neutral-100" />
+                        </button>
+                      </div>
                     )}
-                    <p className="text-xs text-neutral-60">
-                      Max 5MB. Accepted formats: PDF, DOC, DOCX
-                    </p>
                   </div>
                 )}
-              </FieldSet>
+                {errors.coverLetter && (
+                  <FieldDescription className="text-danger-main">
+                    {errors.coverLetter.message}
+                  </FieldDescription>
+                )}
+              </Field>
 
-              {/* Source Field */}
-              <FieldSet>
-                <FieldLabel className="text-xs font-bold leading-5 text-neutral-90 font-sans">
+              {/* Source */}
+              <Field>
+                <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                   How did you hear about this position?
                   <span className="text-danger-main">*</span>
                 </FieldLabel>
@@ -865,14 +1145,11 @@ export default function JobApplicationForm({
                     {...register('source')}
                     className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
                   >
-                    <option value="">Select source</option>
+                    <option value="">Select an option</option>
                     <option value="linkedin">LinkedIn</option>
-                    <option value="company_website">Company Website</option>
-                    <option value="job_board">Job Board (Indeed, Glassdoor, etc.)</option>
-                    <option value="referral">Employee Referral</option>
-                    <option value="social_media">Social Media</option>
-                    <option value="university">University/Career Center</option>
-                    <option value="recruiter">Recruiter</option>
+                    <option value="job-board">Job Board</option>
+                    <option value="company-website">Company Website</option>
+                    <option value="referral">Referral</option>
                     <option value="other">Other</option>
                   </select>
                   <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -881,30 +1158,22 @@ export default function JobApplicationForm({
                 </div>
                 {errors.source && (
                   <FieldDescription className="text-danger-main">
-                    {errors.source.message as string}
+                    {errors.source.message}
                   </FieldDescription>
                 )}
-              </FieldSet>
-            </FieldGroup>
+              </Field>
 
-            {/* Submit Button */}
-            <div className="flex justify-end gap-4 pt-6 mt-6 border-t border-neutral-40">
-              <Button
-                type="button"
-                variant="outline"
-                onClick={onCancel}
-                disabled={isSubmitting}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                disabled={isSubmitting}
-                className="bg-primary text-neutral-10 hover:bg-primary/90"
-              >
-                {isSubmitting ? 'Submitting...' : 'Submit Application'}
-              </Button>
-            </div>
+              {/* Submit Button */}
+              <div className="flex justify-end mt-6">
+                <Button
+                  type="submit"
+                  disabled={isSubmitting || !isValid}
+                  className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  {isSubmitting ? "Submitting..." : "Submit Application"}
+                </Button>
+              </div>
+            </FieldGroup>
           </form>
         </div>
       </div>
