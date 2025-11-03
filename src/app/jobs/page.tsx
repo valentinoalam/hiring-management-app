@@ -332,7 +332,7 @@ export default function JobsPage() {
             company={job.companyName || ""}
             location={job.location || ""}
             salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency) || ""}
-            logo={'XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX'}
+            logo={job.company?.logo || "/logo.png"}
             isActive={selectedJobId === job.id}
             onClick={() => handleJobSelect(job.id)}
           />
@@ -420,9 +420,10 @@ export default function JobsPage() {
           <JobDetail
             title={selectedJob?.title || ""}
             company={selectedJob?.companyName || ""}
-            logo={""}
+            logo={selectedJob?.company?.logo || "/logo.png"}
             type={selectedJob?.employmentType || ""}
             description={selectedJob?.description || ""}
+            onApply={() => router.push(`/jobs/${selectedJobId}/apply`)}
           />
         </div>
       </div>

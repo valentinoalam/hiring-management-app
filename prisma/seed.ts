@@ -8,7 +8,6 @@ import {
 import { User, Job, Prisma } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
-import { JobData } from "@/types/job";
 
 const prisma = new PrismaClient();
 

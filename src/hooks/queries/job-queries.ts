@@ -25,7 +25,7 @@ const fetchAllJobs = async (filters?: Omit<JobFilters, 'companyId'> & { page?: n
   if (filters?.search) params.append('search', filters.search);
   if (filters?.page) params.append('page', filters.page.toString());
 
-  return apiFetch(`/api/jobs/public?${params.toString()}`);
+  return apiFetch(`/api/jobs?${params.toString()}`);
 };
 
 const fetchJobDetail = async (jobId: string): Promise<Job> => {

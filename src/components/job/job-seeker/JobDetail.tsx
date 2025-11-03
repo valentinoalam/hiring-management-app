@@ -1,9 +1,13 @@
+import { Button } from "@/components/ui/button";
+import Image from "next/image";
+
 interface JobDetailProps {
   title: string;
   company: string;
   logo: string;
   type: string;
   description: string;
+  onApply: () => void;
 }
 
 export default function JobDetail({
@@ -12,15 +16,16 @@ export default function JobDetail({
   logo,
   type,
   description,
+  onApply
 }: JobDetailProps) {
   return (
     <div className="flex flex-col border border-neutral-40 rounded-lg p-6 gap-6 flex-1 h-fit">
       <div className="flex flex-col gap-4 pb-6 border-b border-neutral-40">
         <div className="flex items-start gap-6">
-          <img
+          <Image width={48} height={48}
             src={logo}
             alt={`${company} logo`}
-            className="w-12 h-12 rounded border border-neutral-40 flex-shrink-0"
+            className="w-12 h-12 rounded border border-neutral-40 shrink-0"
           />
           <div className="flex flex-col gap-2 flex-1">
             <div className="inline-flex">
@@ -35,9 +40,9 @@ export default function JobDetail({
               <p className="text-neutral-70 text-sm leading-6">{company}</p>
             </div>
           </div>
-          <button className="px-4 py-1 bg-secondary text-neutral-90 font-bold text-sm leading-6 rounded-lg shadow-sm hover:bg-secondary/90 transition-colors">
+          <Button onClick={onApply} className="px-4 py-1 bg-secondary text-neutral-90 font-bold text-sm leading-6 rounded-lg shadow-sm hover:bg-secondary/90 transition-colors">
             Apply
-          </button>
+          </Button>
         </div>
       </div>
 

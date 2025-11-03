@@ -6,7 +6,7 @@ import { auth } from "@/auth"
 export async function GET(request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   try {
     const { jobId: id } = await params
-
+    console.log(id)
     const job = await prisma.job.findUnique({
       where: { id },
       include: {

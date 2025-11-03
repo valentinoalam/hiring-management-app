@@ -1,4 +1,5 @@
 import { MapPin, DollarSign } from "lucide-react";
+import Image from "next/image";
 
 interface JobCardProps {
   title: string;
@@ -32,10 +33,10 @@ export default function JobCard({
       `}
     >
       <div className="flex items-start gap-4">
-        <img
+        <Image width={48} height={48}
           src={logo}
           alt={`${company} logo`}
-          className="w-12 h-12 rounded border border-neutral-40 flex-shrink-0"
+          className="w-12 h-12 rounded border border-neutral-40 shrink-0"
         />
         <div className="flex flex-col flex-1 min-w-0">
           <h3 className="text-neutral-90 font-bold text-base leading-7 truncate">
@@ -49,11 +50,11 @@ export default function JobCard({
 
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-1">
-          <MapPin className="w-4 h-4 text-neutral-80 flex-shrink-0" />
+          <MapPin className="w-4 h-4 text-neutral-80 shrink-0" />
           <span className="text-neutral-80 text-xs leading-5">{location}</span>
         </div>
         <div className="flex items-center gap-1">
-          <DollarSign className="w-4 h-4 text-neutral-80 flex-shrink-0" />
+          <DollarSign className="w-4 h-4 text-neutral-80 shrink-0" />
           <span className="text-neutral-80 text-xs leading-5">{salary}</span>
         </div>
       </div>
