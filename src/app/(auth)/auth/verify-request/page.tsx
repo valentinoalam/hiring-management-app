@@ -1,5 +1,3 @@
-// app/auth/verify-request/page.tsx
-
 import React from 'react';
 import {
   Card,
@@ -7,23 +5,27 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"; // Assuming these are your Shadcn UI components
+} from "@/components/ui/card";
 import Image from 'next/image';
 
-// The component receives an object containing 'searchParams' 
-// which is standard for Next.js App Router pages accessing URL queries.
-interface VerifyRequestProps {
-  searchParams: {
-    email?: string; // Auth.js passes the email here
+// 1. Define the standard type for App Router Page Props
+// The searchParams key needs to accept the standard structure (string | string[])
+interface VerifyRequestPageProps {
+  // The 'params' object is usually for dynamic routes like /posts/[slug]
+  params: object; 
+  // 'searchParams' is for URL query parameters like ?email=...
+  searchParams: { 
+    email?: string | string[]; // Auth.js passes 'email' as a string
+    // You can add other expected query params here
+    [key: string]: string | string[] | undefined; 
   };
 }
 
-// Renamed the function to reflect its use as the page component
-function VerifyRequestPage({ searchParams }: VerifyRequestProps) {
-  // Extract the email from the query parameters
-  const email = searchParams.email || '';
+function VerifyRequestPage({ searchParams }: VerifyRequestPageProps) {
+  // Extract the email. If it's an array (which shouldn't happen here), take the first element.
+  const emailParam = searchParams.email;
+  const email = Array.isArray(emailParam) ? emailParam[0] : emailParam || '';
   
-  // Custom message for the email display
   const emailDisplay = email 
     ? <b>{email}</b> 
     : <span className="font-semibold">alamat email Anda</span>;
@@ -37,7 +39,6 @@ function VerifyRequestPage({ searchParams }: VerifyRequestProps) {
             </CardTitle>
             
             <CardDescription className="text-neutral-90 text-s px-2">
-                {/* Modified content to clearly state the action needed */}
                 Kami sudah mengirimkan link sign-in ke {emailDisplay} 
                 {email ? ' yang berlaku dalam 30 menit.' : '.'}
             </CardDescription>
@@ -49,7 +50,6 @@ function VerifyRequestPage({ searchParams }: VerifyRequestProps) {
         </CardHeader>
         
         <CardContent className="p-0 mt-8">
-            {/* Make sure the image path is correct relative to your public folder */}
             <Image 
                 src="/illustrations/pana.svg" 
                 alt="email-sent" 
@@ -58,7 +58,6 @@ function VerifyRequestPage({ searchParams }: VerifyRequestProps) {
                 className="mx-auto object-contain" 
             />
         </CardContent>
-        {/* Optional: Add a link back to the login page */}
         <div className="text-center mt-6">
             <a 
                 href="/login" 
