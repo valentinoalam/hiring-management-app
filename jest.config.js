@@ -42,7 +42,6 @@ const customJestConfig = {
   preset: 'ts-jest',
   transform: {
     '^.+\\.(ts|tsx)?$': 'ts-jest', 
-    '^.+\\.(js|jsx)$': 'babel-jest',
   },
   testPathIgnorePatterns: ["<rootDir>/node_modules/", "<rootDir>/tests/setup.ts"], 
 }

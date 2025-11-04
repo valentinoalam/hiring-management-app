@@ -1,3 +1,9 @@
+import { signUpCredentials, signInOAuth } from '@/app/(auth)/sign-up/action'
+import { signIn } from '@/auth'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
+
 // Mock the auth module BEFORE imports
 jest.mock('@/auth', () => ({
   signIn: jest.fn(),
@@ -58,11 +64,6 @@ jest.mock('@/lib/email', () => ({
   sendVerificationEmail: jest.fn().mockResolvedValue(true),
 }))
 
-import { signUpCredentials, signUpWithEmail, signInOAuth } from '@/app/(auth)/sign-up/action'
-import { signIn } from '@/auth'
-import { redirect } from 'next/navigation'
-import { prisma } from '@/lib/prisma'
-import bcrypt from 'bcryptjs'
 
 describe('Auth Actions', () => {
   beforeEach(() => {

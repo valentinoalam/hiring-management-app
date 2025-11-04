@@ -65,8 +65,8 @@ export const getVerificationTokenByEmail = async (email: string) => {
   }
 }
 
-export const deleteVerificationToken = async (id: string) => {
+export const deleteVerificationToken = async (token: string) => {
   await prisma.verificationToken.delete({
-    where: { id }
+    where: { token }
   })
 }
