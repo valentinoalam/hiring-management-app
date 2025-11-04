@@ -1,30 +1,31 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+// tests/integration/auth-flow.test.tsx
 import React from 'react'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { createWrapper, render, screen, setupAuthMocks, setupRouterMock, waitFor } from '../setup/auth-test-utils'
 import userEvent from '@testing-library/user-event'
-import { useRouter } from 'next/navigation'
 import LoginPage from '@/app/(auth)/login/page'
 import SignUpPage from '@/app/(auth)/sign-up/page'
-import { createWrapper } from '../setup/auth-test-utils'
 import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/(auth)/login/action'
 import { signUpWithEmail } from '@/app/(auth)/sign-up/action'
+
+// Cast the mocks to jest.Mock for TypeScript
+const mockSignInCredentials = signInCredentials as jest.Mock
+const mockSignInMagicLink = signInMagicLink as jest.Mock
+const mockSignUpWithEmail = signUpWithEmail as jest.Mock
 
 describe('Auth Flow Integration', () => {
   const user = userEvent.setup()
   const wrapper = createWrapper()
-  const mockPush = jest.fn()
 
   beforeEach(() => {
     jest.clearAllMocks()
-    ;(useRouter as jest.Mock).mockReturnValue({
-      push: mockPush,
-      refresh: jest.fn(),
-    })
+    setupAuthMocks()
   })
 
   describe('Complete Login Flow', () => {
     it('completes magic link login flow', async () => {
-      ;(signInMagicLink as jest.Mock).mockResolvedValue({ success: true })
+      const { mockPush } = setupRouterMock()
+      mockSignInMagicLink.mockResolvedValue({ success: true })
 
       render(<LoginPage />, { wrapper })
 
@@ -48,12 +49,13 @@ describe('Auth Flow Integration', () => {
       await user.click(resendButton)
 
       await waitFor(() => {
-        expect(signInMagicLink).toHaveBeenCalledTimes(2)
+        expect(mockSignInMagicLink).toHaveBeenCalledTimes(2)
       })
     })
 
     it('completes password login flow with redirect', async () => {
-      ;(signInCredentials as jest.Mock).mockResolvedValue({ 
+      const { mockPush } = setupRouterMock()
+      mockSignInCredentials.mockResolvedValue({ 
         success: true, 
         url: '/dashboard' 
       })
@@ -83,7 +85,8 @@ describe('Auth Flow Integration', () => {
     })
 
     it('handles login error flow', async () => {
-      ;(signInCredentials as jest.Mock).mockResolvedValue({ 
+      setupRouterMock()
+      mockSignInCredentials.mockResolvedValue({ 
         success: false, 
         error: 'INVALID_CREDENTIALS' 
       })
@@ -112,7 +115,8 @@ describe('Auth Flow Integration', () => {
 
   describe('Complete Signup Flow', () => {
     it('completes email signup flow', async () => {
-      ;(signUpWithEmail as jest.Mock).mockResolvedValue({ success: true })
+      setupRouterMock()
+      mockSignUpWithEmail.mockResolvedValue({ success: true })
 
       render(<SignUpPage />, { wrapper })
 
@@ -142,22 +146,21 @@ describe('Auth Flow Integration', () => {
 
   describe('Navigation Between Auth Pages', () => {
     it('navigates from login to signup', async () => {
+      setupRouterMock()
       render(<LoginPage />, { wrapper })
 
-      const signupLink = screen.getByText(/daftar menggunakan email/i)
-      await user.click(signupLink)
-
-      // In a real app, this would navigate to /sign-up
-      // We're testing that the link is present and clickable
+      const signupLink = screen.getByRole('link', { name: /daftar menggunakan email/i })
+      
+      // Verify the link points to signup page
       expect(signupLink).toHaveAttribute('href', '/sign-up')
     })
 
     it('navigates from signup to login', async () => {
+      setupRouterMock()
       render(<SignUpPage />, { wrapper })
 
-      const loginLink = screen.getByText(/masuk ke akun anda/i)
-      await user.click(loginLink)
-
+      const loginLink = screen.getByRole('link', { name: /masuk ke akun anda/i })
+      
       expect(loginLink).toHaveAttribute('href', '/login')
     })
   })

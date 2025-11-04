@@ -30,7 +30,7 @@ import Link from "next/link"
 import Logo from "@/components/layout/logo"
 import { Separator } from "@/components/ui/separator"
 import { KeyRound, Mail, Lock } from "lucide-react"
-import LinkSentSuccess from "../auth/verify-request/page"
+import LinkSentSuccess from "@/components/layout/link-sent"
 
 const emailSchema = z.object({
   email: z.email({
@@ -55,7 +55,7 @@ type AuthMethod = "magic-link" | "password"
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl'); // Keep as string or null
+  const callbackUrl = searchParams.get('callbackUrl')|| '/'; // Keep as string or null
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")

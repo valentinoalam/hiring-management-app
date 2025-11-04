@@ -1,8 +1,4 @@
 // tests/setup.ts
-// This file is intended for global test setup and mock definitions.
-// It MUST be configured in jest.config.mjs under `setupFilesAfterEnv` 
-// and should NOT be treated as a test file itself.
-
 import '@testing-library/jest-dom';
 
 // Mock window.matchMedia
@@ -12,8 +8,8 @@ Object.defineProperty(window, 'matchMedia', {
     matches: false,
     media: query,
     onchange: null,
-    addListener: jest.fn(), // deprecated
-    removeListener: jest.fn(), // deprecated
+    addListener: jest.fn(),
+    removeListener: jest.fn(),
     addEventListener: jest.fn(),
     removeEventListener: jest.fn(),
     dispatchEvent: jest.fn(),
@@ -33,37 +29,151 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
   unobserve: jest.fn(),
   disconnect: jest.fn(),
 }));
-// --- Mocks ---
+
+// Mock fetch
+global.fetch = jest.fn();
+
+// --- Global Mocks ---
+
 // Mock next/font
 jest.mock('next/font/local', () => ({
   __esModule: true,
   default: () => ({
     className: 'mock-font-class',
+    style: { fontFamily: 'mock-font' },
   }),
-}))
-// Mock next/font/google
+}));
+
 jest.mock('next/font/google', () => ({
   Inter: () => ({
     className: 'mock-font-class',
+    style: { fontFamily: 'mock-font' },
   }),
-}))
-// Mock next/navigation
-jest.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: jest.fn(),
-    replace: jest.fn(),
-    prefetch: jest.fn(),
-    back: jest.fn(),
-  }),
-  // Note: useSearchParams now correctly returns the class instance
-  useSearchParams: () => new URLSearchParams(),
-  usePathname: () => '/',
 }));
 
-// Mock next-auth
+// Mock next/navigation - Use function mocks that can be overridden in tests
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+  useSearchParams: jest.fn(),
+  usePathname: jest.fn(),
+  useParams: jest.fn(),
+}));
 
-// Mock API fetch
-global.fetch = jest.fn();
+// Mock next-auth/react
+jest.mock('next-auth/react', () => ({
+  useSession: jest.fn(),
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+  SessionProvider: ({ children }: { children: React.ReactNode }) => children,
+}));
+
+// Mock next-auth/next
+jest.mock('next-auth/next', () => ({
+  authForServer: jest.fn(),
+}));
+
+// Mock next-auth/jwt
+jest.mock('next-auth/jwt', () => ({
+  getToken: jest.fn(),
+}));
+
+// Mock external libraries
+jest.mock('sonner', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+    promise: jest.fn(),
+  },
+}));
+
+// Mock bcryptjs
+jest.mock('bcryptjs', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
+
+// Mock uuid
+jest.mock('uuid', () => ({
+  v4: jest.fn(),
+}));
+
+// Mock Resend
+jest.mock('resend', () => ({
+  Resend: jest.fn().mockImplementation(() => ({
+    emails: {
+      send: jest.fn(),
+    },
+  })),
+}));
+
+// Mock Prisma
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+      findMany: jest.fn(),
+      findFirst: jest.fn(),
+      findFirstOrThrow: jest.fn(),
+      create: jest.fn(),
+      update: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    profile: {
+      create: jest.fn(),
+      findUnique: jest.fn(),
+      update: jest.fn(),
+    },
+    verificationToken: {
+      findUnique: jest.fn(),
+      findFirst: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    passwordResetToken: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+      delete: jest.fn(),
+      deleteMany: jest.fn(),
+    },
+    $queryRaw: jest.fn(),
+    $transaction: jest.fn(),
+  },
+}));
+
+// Mock email functions
+jest.mock('@/lib/email', () => ({
+  sendVerificationEmail: jest.fn(),
+  sendPasswordResetEmail: jest.fn(),
+  sendMagicLinkEmail: jest.fn(),
+}));
+
+// Mock token functions
+jest.mock('@/lib/tokens', () => ({
+  generateVerificationToken: jest.fn(),
+  generatePasswordResetToken: jest.fn(),
+  getVerificationTokenByToken: jest.fn(),
+  getVerificationTokenByEmail: jest.fn(),
+  deleteVerificationToken: jest.fn(),
+}));
+
+// Mock auth actions
+jest.mock('@/app/(auth)/login/action', () => ({
+  signInCredentials: jest.fn(),
+  signInMagicLink: jest.fn(),
+  signInOAuth: jest.fn(),
+}));
+
+jest.mock('@/app/(auth)/sign-up/action', () => ({
+  signUpWithEmail: jest.fn(),
+}));
+
+// --- Default Mock Implementations ---
+
+// Note: Default implementations are set within the jest.mock() calls above
+// This ensures proper mock setup without requiring additional imports
 
 // --- Test Utilities (Mock Data) ---
 
@@ -73,6 +183,7 @@ export const mockSession = {
     email: 'test@example.com',
     name: 'Test User',
     role: 'APPLICANT' as const,
+    isVerified: true,
   },
   expires: '2025-01-01T00:00:00.000Z',
 };

@@ -35,7 +35,7 @@ const signUpSchema = z.object({
   fullName: z.string().min(2, {
     message: "Full name must be at least 2 characters.",
   }),
-  email: z.string().email({
+  email: z.email({
     message: "Please enter a valid email address.",
   }),
   password: z.string()
@@ -57,7 +57,7 @@ const providerMap = [
 
 export default function SignUpPage() {
   const searchParams = useSearchParams();
-  const callbackURL = searchParams.get('callbackUrl') || undefined;
+  const callbackURL = searchParams.get('callbackUrl') || '/';
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
