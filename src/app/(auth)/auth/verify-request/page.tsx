@@ -6,27 +6,41 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import Image from 'next/image';
+import { resendVerificationEmail } from './action';
 
-// 1. Define the standard type for App Router Page Props
-// The searchParams key needs to accept the standard structure (string | string[])
-interface VerifyRequestPageProps {
-  // Use a generic index signature for 'params' to satisfy the type checker.
-  // This allows for any dynamic route segments Next.js might be expecting.
-  params: { [key: string]: string | string[] | undefined }; 
+// No need to define props interface - Next.js handles this automatically
+// The params and searchParams are now Promises
+
+async function VerifyRequestPage({ 
+  searchParams 
+}: { 
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }> 
+}) {
+  // Await the searchParams Promise
+  const params = await searchParams;
   
-  // This handles query parameters like ?email=user@example.com
-  searchParams: { 
-    email?: string | string[];
-    [key: string]: string | string[] | undefined; 
-  };
-}
-
-function VerifyRequestPage({ searchParams }: VerifyRequestPageProps) {
-  // Extract the email. If it's an array (which shouldn't happen here), take the first element.
-  const emailParam = searchParams.email;
+  // Extract the email
+  const emailParam = params.email;
   const email = Array.isArray(emailParam) ? emailParam[0] : emailParam || '';
-  
+
+  // Server action to handle resend
+  async function handleResend() {
+    'use server';
+    
+    if (!email) {
+      console.error('Email is required for resending verification');
+      return;
+    }
+
+    try {
+      await resendVerificationEmail(email);
+    } catch (error) {
+      console.error("Resend verification error:", error);
+    }
+  }
+
   const emailDisplay = email 
     ? <b>{email}</b> 
     : <span className="font-semibold">alamat email Anda</span>;
@@ -45,7 +59,7 @@ function VerifyRequestPage({ searchParams }: VerifyRequestPageProps) {
             </CardDescription>
             
             <p className="text-neutral-70 text-sm mt-4 px-2">
-              Jika Anda tidak melihat email tersebut, periksa folder **Spam** atau **Promosi** Anda.
+              Jika Anda tidak melihat email tersebut, periksa folder <strong>Spam</strong> atau <strong>Promosi</strong> Anda.
             </p>
 
         </CardHeader>
@@ -59,13 +73,28 @@ function VerifyRequestPage({ searchParams }: VerifyRequestPageProps) {
                 className="mx-auto object-contain" 
             />
         </CardContent>
-        <div className="text-center mt-6">
+        
+        <div className="text-center mt-6 space-y-4">
+          {email && (
+            <form action={handleResend}>
+              <Button 
+                type="submit"
+                variant="outline"
+                className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 border-blue-200"
+              >
+                Kirim Ulang Email Verifikasi
+              </Button>
+            </form>
+          )}
+          
+          <div>
             <a 
-                href="/login" 
-                className="text-blue-600 hover:underline text-sm"
+              href="/login" 
+              className="text-blue-600 hover:underline text-sm block mt-2"
             >
-                Kirim ulang email atau kembali ke halaman login
+              Kembali ke halaman login
             </a>
+          </div>
         </div>
       </Card>
     </div>
