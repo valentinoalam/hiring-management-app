@@ -11,12 +11,13 @@ import Image from 'next/image';
 // 1. Define the standard type for App Router Page Props
 // The searchParams key needs to accept the standard structure (string | string[])
 interface VerifyRequestPageProps {
-  // The 'params' object is usually for dynamic routes like /posts/[slug]
-  params: object; 
-  // 'searchParams' is for URL query parameters like ?email=...
+  // Use a generic index signature for 'params' to satisfy the type checker.
+  // This allows for any dynamic route segments Next.js might be expecting.
+  params: { [key: string]: string | string[] | undefined }; 
+  
+  // This handles query parameters like ?email=user@example.com
   searchParams: { 
-    email?: string | string[]; // Auth.js passes 'email' as a string
-    // You can add other expected query params here
+    email?: string | string[];
     [key: string]: string | string[] | undefined; 
   };
 }
