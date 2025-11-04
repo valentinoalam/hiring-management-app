@@ -1,26 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { useRouter } from 'next/navigation'
-
-// Mock components
-const LoginPage = () => <div data-testid="login-page">Login Page</div>
-LoginPage.displayName = 'LoginPage'
-
-const SignUpPage = () => <div data-testid="signup-page">Sign Up Page</div>
-SignUpPage.displayName = 'SignUpPage'
-
-// Mock utilities
-const createWrapper = () => {
-  const Wrapper = ({ children }: { children: React.ReactNode }) => <div>{children}</div>
-  Wrapper.displayName = 'TestWrapper'
-  return Wrapper
-}
-
-// Mock functions
-const signInCredentials = jest.fn()
-const signInMagicLink = jest.fn()
-const signUpWithEmail = jest.fn()
+import LoginPage from '@/app/(auth)/login/page'
+import SignUpPage from '@/app/(auth)/sign-up/page'
+import { createWrapper } from '../setup/auth-test-utils'
+import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/(auth)/login/action'
+import { signUpWithEmail } from '@/app/(auth)/sign-up/action'
 
 describe('Auth Flow Integration', () => {
   const user = userEvent.setup()

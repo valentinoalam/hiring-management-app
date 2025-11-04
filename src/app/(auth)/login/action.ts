@@ -57,10 +57,16 @@ export async function signInCredentials(formData: FormData, callbackUrl?: string
 export async function signInOAuth(providerId: string, callbackUrl?: string) {
   try {
     await signIn(providerId, {
-      redirectTo: callbackUrl || "/",
-    })
-  } catch (error) {
-    console.error("OAuth sign in error:", error)
-    throw error
+      redirectTo: callbackUrl, // Let NextAuth handle undefined
+      redirect: true,
+    });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  } catch (error: any) {
+    // Only throw if it's not a redirect
+    if (!error?.url) {
+      throw error;
+    }
+    // If it's a redirect, let it propagate
+    throw error;
   }
 }

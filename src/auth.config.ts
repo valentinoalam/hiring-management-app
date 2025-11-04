@@ -1,13 +1,32 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import type { NextAuthConfig, User } from "next-auth"
-import type { JWT } from "next-auth/jwt"
 import Credentials from "next-auth/providers/credentials"
 import Google from 'next-auth/providers/google'
 import Email from 'next-auth/providers/nodemailer'
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from "@/lib/prisma" 
+import { prisma } from '@/lib/prisma'
 import { compare } from "bcryptjs"
 import type { UserRole } from "@prisma/client" 
+
+// try {;
+  
+//   // Test connection on startup
+//   await prisma.$queryRaw`SELECT 1`;
+//   console.log('✅ Database connected in auth config');
+// } catch (error) {
+//   console.error('❌ Database connection failed in auth config:', error);
+//   throw new Error('Database connection failed');
+// }
+
+async function markUserAsLoggedIn(email: string, verified = true) {
+  await prisma.user.update({
+    where: { email },
+    data: {
+      lastLoginAt: new Date(),
+      isVerified: verified,
+    },
+  })
+}
 
 export const authConfig: NextAuthConfig = {
   adapter: PrismaAdapter(prisma),
@@ -65,8 +84,8 @@ export const authConfig: NextAuthConfig = {
       },
     }),
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID!,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
     }),
     Email({
       server: {
@@ -81,74 +100,45 @@ export const authConfig: NextAuthConfig = {
     }),
   ],
   callbacks: {
-    async jwt({ token, user, trigger, session, account }) {
-      // 💡 Initial sign in (User object is available here)
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id
         token.email = user.email
-        // Map custom fields to the token
-        token.name = (user as User).fullName! || user.name!
-        token.role = (user as User).role!
+        token.name = user.fullName ?? user.name
+        token.role = user.role
+        token.isVerified = user.isVerified
       }
 
-      // 💡 Handle session updates (e.g., refreshing user data)
-      if (trigger === "update" && session?.user) {
-        // Find the latest user data to update the token
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.id as string },
-          // include: { profile: true } // Removed include profile if not needed for simple token fields
+      if (trigger && trigger === "update" && session?.user?.id && prisma) {
+        const dbUser = await prisma.user.findFirstOrThrow({
+          where: { id: session.user.id },
         })
-        
         if (dbUser) {
           token.name = dbUser.fullName
           token.role = dbUser.role
-          // 💡 NEW: Update isVerified status if needed
           token.isVerified = dbUser.isVerified
         }
       }
-      
+
       return token
     },
+
     async session({ session, token }) {
-      // 💡 Add custom token info to the session
-      if (session.user) {
-        session.user.id = token.id as string
-        session.user.role = token.role as UserRole
+      if (session.user && token.sub) {
+        session.user.id = token.sub;
         session.user.email = token.email as string
         session.user.name = token.name as string
-        session.user.fullName = token.name as string // Assuming token.name holds fullName
-        // session.user.image is not consistently available, cast as null or use token.picture if needed
-        session.user.image = token.picture as string | null
-        // 💡 NEW: Add isVerified status to session for client checks
-        (session.user as User).isVerified = (token as JWT).isVerified
+        session.user.fullName = token.name as string
+        session.user.role = token.role as UserRole
+        session.user.isVerified = token.isVerified as boolean
       }
-      return session
+      return session;
     },
-    async signIn({ user, account, profile }) {
-      // 💡 IMPORTANT: Update lastLoginAt and isVerified for magic link sign-in
-      if (account?.provider === 'email' && user.email) {
-          await prisma.user.update({
-              where: { email: user.email },
-              data: { 
-                  lastLoginAt: new Date(),
-                  isVerified: true // Set to true after successful magic link verification
-              }
-          });
+    async signIn({ user, account }) {
+      if (user?.email && account?.provider !== "credentials" && prisma) {
+        // Mark OAuth and Email login users as verified
+        await markUserAsLoggedIn(user.email, true)
       }
-      
-      // 💡 IMPORTANT: Update lastLoginAt for OAuth sign-in
-      if (account?.provider !== 'credentials' && user.email) {
-          await prisma.user.update({
-              where: { email: user.email },
-              data: { 
-                  lastLoginAt: new Date(),
-                  // If using OAuth, the user is generally considered verified
-                  isVerified: true 
-              }
-          });
-      }
-      
-      // Credentials verification includes isVerified check in authorize()
       return true
     },
   },
@@ -178,45 +168,19 @@ export const authConfig: NextAuthConfig = {
     },
     // 💡 Event to initialize custom data when the PrismaAdapter creates a new user (via OAuth/Email)
     async createUser({ user }) {
-        if (user.id) {
-            
-            // 1. Create the mandatory Profile record linked to the new User.
-            await prisma.profile.create({
-                data: {
-                    userId: user.id,
-                    // Note: All other fields (bio, phone, location, etc.) 
-                    // are optional (String?) in our schema, so we omit them 
-                    // and let them default to NULL in the database.
-                }
-            });
-            
-            console.log(`Profile created and linked for new user: ${user.email}`);
-
-            // 2. EXAMPLE: Initialize default custom fields (OtherUserInfo)
-            // If you have InfoFields that should exist for every new user, 
-            // you could create initial "OtherUserInfo" entries here.
-            // Example: Initialize a "Welcome" field answer. (Requires InfoField model setup)
-            /*
-            const welcomeField = await prisma.infoField.findUnique({
-                where: { key: 'welcome_message_id' }
-            });
-            
-            if (welcomeField) {
-                await prisma.otherUserInfo.create({
-                    data: {
-                        profileId: user.id, // Assuming the newly created profile uses the userId as its ID for simplicity, or fetch the profile ID
-                        fieldId: welcomeField.id,
-                        infoFieldAnswer: 'Welcome to the platform! Please complete your profile.'
-                    }
-                });
-            }
-            */
-        }
+      if (user?.id) {
+        await prisma.profile.create({
+          data: {
+            userId: user.id,
+          },
+        })
+        console.log(`✅ Profile created for new user: ${user.email}`)
+      }
     },
   },
   pages: {
     signIn: "/login",
-    newUser: "/register",
+    newUser: "/sign-up",
     verifyRequest: "/auth/verify-request",
     error: "/auth/error", 
   },

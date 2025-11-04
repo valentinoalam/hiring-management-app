@@ -97,7 +97,8 @@ export default function Header() {
         </Link>
       );
     }
-    
+    console.log(isAuthenticated)
+    console.log(user.fullName)
     const initials = user.fullName
       ? user.fullName
           .split(" ")

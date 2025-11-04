@@ -12,12 +12,9 @@ CREATE TYPE "EmploymentType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INT
 
 -- CreateTable
 CREATE TABLE "verification_tokens" (
-    "id" TEXT NOT NULL,
     "identifier" TEXT NOT NULL,
     "token" TEXT NOT NULL,
-    "expires" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "verification_tokens_pkey" PRIMARY KEY ("id")
+    "expires" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -31,10 +28,28 @@ CREATE TABLE "password_reset_tokens" (
 );
 
 -- CreateTable
+CREATE TABLE "accounts" (
+    "id" UUID NOT NULL,
+    "userId" UUID NOT NULL,
+    "type" TEXT NOT NULL,
+    "provider" TEXT NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "refresh_token" TEXT,
+    "access_token" TEXT,
+    "expires_at" INTEGER,
+    "token_type" TEXT,
+    "scope" TEXT,
+    "id_token" TEXT,
+    "session_state" TEXT,
+
+    CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "users" (
     "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
-    "password" TEXT NOT NULL,
+    "password" TEXT,
     "fullName" TEXT NOT NULL,
     "role" "UserRole" NOT NULL DEFAULT 'APPLICANT',
     "isVerified" BOOLEAN NOT NULL DEFAULT false,
@@ -113,13 +128,12 @@ CREATE TABLE "jobs" (
     "slug" TEXT NOT NULL,
     "author_id" UUID NOT NULL,
     "company_id" UUID NOT NULL,
-    "recruiter_id" UUID NOT NULL,
     "title" TEXT NOT NULL,
     "description" TEXT,
     "department" TEXT,
     "location" TEXT,
     "remotePolicy" TEXT DEFAULT 'onsite',
-    "salary_min" DECIMAL(12,2),
+    "salary_min" DECIMAL(12,2) NOT NULL,
     "salary_max" DECIMAL(12,2),
     "salaryCurrency" TEXT DEFAULT 'IDR',
     "salaryDisplay" TEXT,
@@ -208,7 +222,13 @@ CREATE TABLE "interviews" (
 CREATE UNIQUE INDEX "verification_tokens_token_key" ON "verification_tokens"("token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "verification_tokens_identifier_token_key" ON "verification_tokens"("identifier", "token");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "accounts_provider_providerAccountId_key" ON "accounts"("provider", "providerAccountId");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
@@ -241,7 +261,7 @@ CREATE INDEX "companies_created_at_idx" ON "companies"("created_at");
 CREATE UNIQUE INDEX "jobs_slug_key" ON "jobs"("slug");
 
 -- CreateIndex
-CREATE INDEX "jobs_recruiter_id_idx" ON "jobs"("recruiter_id");
+CREATE INDEX "jobs_author_id_idx" ON "jobs"("author_id");
 
 -- CreateIndex
 CREATE INDEX "jobs_status_idx" ON "jobs"("status");
@@ -284,6 +304,9 @@ CREATE INDEX "interviews_applicationId_idx" ON "interviews"("applicationId");
 
 -- CreateIndex
 CREATE INDEX "interviews_scheduled_at_idx" ON "interviews"("scheduled_at");
+
+-- AddForeignKey
+ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

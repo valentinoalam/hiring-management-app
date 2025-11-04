@@ -30,7 +30,7 @@ import Link from "next/link"
 import Logo from "@/components/layout/logo"
 import { Separator } from "@/components/ui/separator"
 import { KeyRound, Mail, Lock } from "lucide-react"
-import LinkSentSuccess from "./link-send-notif"
+import LinkSentSuccess from "../auth/verify-request/page"
 
 const emailSchema = z.object({
   email: z.email({
@@ -55,7 +55,7 @@ type AuthMethod = "magic-link" | "password"
 
 export default function SignInPage() {
   const searchParams = useSearchParams();
-  const callbackURL = searchParams.get('callbackUrl') || undefined;
+  const callbackUrl = searchParams.get('callbackUrl'); // Keep as string or null
   const router = useRouter()
   const [isLoading, setIsLoading] = useState(false)
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
@@ -85,17 +85,20 @@ export default function SignInPage() {
     setEmail(values.email)
     
     try {
-      const result = await signInMagicLink(values.email, callbackURL)
+      // Only pass callbackUrl if it exists, otherwise let NextAuth use default
+      const result = await signInMagicLink(
+        values.email, 
+        callbackUrl || undefined // Convert null to undefined
+      )
       
       if (result?.error) {
         setError("Failed to send magic link. Please try again.")
       } else if (result?.success) {
-        // Trigger animation
         setShowAnimation(true)
         setTimeout(() => {
           setMagicLinkSent(true)
           setShowAnimation(false)
-        }, 600) // Match animation duration
+        }, 600)
       }
     } catch (err) {
       console.error("Magic link error:", err)
@@ -114,7 +117,11 @@ export default function SignInPage() {
       formData.append('email', values.email)
       formData.append('password', values.password)
       
-      const result = await signInCredentials(formData, callbackURL)
+      // Only pass callbackUrl if it exists
+      const result = await signInCredentials(
+        formData, 
+        callbackUrl || undefined // Convert null to undefined
+      )
       
       if (result?.error) {
         switch (result.error) {
@@ -131,7 +138,8 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success) {
-        router.push(callbackURL ?? "/")
+        // Use the callbackUrl if provided, otherwise default to "/"
+        router.push(callbackUrl || "/")
         router.refresh()
       }
     } catch (err) {
@@ -147,10 +155,17 @@ export default function SignInPage() {
     setError("")
     
     try {
-      await signInOAuth(providerId, callbackURL)
-    } catch (err) {
-      console.error("OAuth error:", err)
-      setError("An error occurred with OAuth sign in. Please try again.")
+      // Only pass callbackUrl if it exists
+      await signInOAuth(providerId, callbackUrl || undefined)
+      // Note: This will redirect, so code after won't execute
+    } catch (err: unknown) {
+      // Only handle actual errors, not redirects
+      if (!(err as { url?: string; cause?: { url?: string } })?.url && !(err as { url?: string; cause?: { url?: string } })?.cause?.url) {
+        console.error("OAuth error:", err)
+        setError("An error occurred with OAuth sign in. Please try again.")
+      }
+      // If it's a redirect error, let it propagate
+      throw err
     } finally {
       setIsLoading(false)
     }
@@ -158,7 +173,6 @@ export default function SignInPage() {
 
   const switchToPassword = () => {
     setActiveMethod("password")
-    // Pre-fill the email in password form if available
     if (email) {
       passwordForm.setValue("email", email)
     }
@@ -178,13 +192,16 @@ export default function SignInPage() {
           <div className={`
             transform transition-all duration-500 ease-out
             ${showAnimation ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
-          `}> <LinkSentSuccess email={email} />
+          `}> 
+            <LinkSentSuccess email={email} />
           </div>
         ) : 
           <Card className="max-h-[444px] md:w-[500px] border-none *:px-11 overflow-y-scroll">
             <CardHeader className="p-0 pt-6">
               <CardTitle className="font-bold text-xl">Masuk ke Rakamin</CardTitle>
-              <CardDescription className="text-neutral-100">Belum punya akun? <Link href="/sign-up" className="text-primary">Daftar menggunakan email</Link></CardDescription>
+              <CardDescription className="text-neutral-100">
+                Belum punya akun? <Link href="/sign-up" className="text-primary">Daftar menggunakan email</Link>
+              </CardDescription>
             </CardHeader>
             <CardContent className="p-0 pb-6">
               {error && (
@@ -196,18 +213,7 @@ export default function SignInPage() {
                 </Alert>
               )}
 
-              {magicLinkSent && (
-                <Alert className="mb-6 bg-green-50 border-green-200">
-                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <AlertDescription className="text-green-800">
-                    Link telah dikirim! Silakan periksa email Anda untuk link masuk.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Magic Link Form (Always visible initially) */}
+              {/* Magic Link Form */}
               <Form {...magicLinkForm}>
                 <form onSubmit={magicLinkForm.handleSubmit(onSubmitMagicLink)} className="space-y-6">
                   <FormField
@@ -219,7 +225,7 @@ export default function SignInPage() {
                         <FormControl>
                           <Input
                             type="email"
-                            className="rounded-xl  border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
+                            className="rounded-xl border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
                             placeholder="Enter your email"
                             disabled={isLoading || activeMethod === "password"}
                             {...field}
@@ -260,7 +266,7 @@ export default function SignInPage() {
                 </form>
               </Form>
 
-              {/* Password Form (Only visible when switched) */}
+              {/* Password Form */}
               {activeMethod === "password" && (
                 <Form {...passwordForm}>
                   <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6 mt-6">
@@ -336,7 +342,6 @@ export default function SignInPage() {
                     </div>
                   </div>
                   
-                  {/* Password Login Option */}
                   <Button
                     onClick={switchToPassword}
                     disabled={isLoading || !email}

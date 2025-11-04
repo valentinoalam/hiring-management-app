@@ -61,21 +61,6 @@ jest.mock('next/navigation', () => ({
 }));
 
 // Mock next-auth
-jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(() => ({
-    data: {
-      user: {
-        id: 'user-123',
-        email: 'test@example.com',
-        name: 'Test User',
-        role: 'APPLICANT',
-      },
-    },
-    status: 'authenticated',
-  })),
-  signIn: jest.fn(),
-  signOut: jest.fn(),
-}));
 
 // Mock API fetch
 global.fetch = jest.fn();

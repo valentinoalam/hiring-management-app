@@ -176,7 +176,7 @@ export default function RecruiterJobsPage() {
   }
 
   if (!session || userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
-    router.push('/login?callbackUrl=/recruiter/jobs');
+    router.push('/login?callbackUrl=/recruiter');
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
         <X className="h-10 w-10 mb-4" />

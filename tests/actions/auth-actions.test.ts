@@ -1,182 +1,173 @@
-// Mock functions
-const signIn = jest.fn()
+// Mock the auth module BEFORE imports
+jest.mock('@/auth', () => ({
+  signIn: jest.fn(),
+  signOut: jest.fn(),
+  auth: jest.fn(),
+}))
 
-const signInCredentials = async (formData: FormData) => {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
-  return signIn('password', {
-    email,
-    password,
-    redirect: false,
-    redirectTo: '/',
-  })
-}
-
-const signInMagicLink = async (email: string) => {
-  const response = await fetch('/api/auth/magic-link', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  })
-  return response.json()
-}
-
-const signInOAuth = async (provider: string) => {
-  return signIn(provider, {
-    redirectTo: '/',
-  })
-}
-
-const signUpWithEmail = async (email: string) => {
-  const response = await fetch('/api/auth/register', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ email }),
-  })
-  return response.json()
-}
-
-// Mock fetch
-global.fetch = jest.fn()
-
-// Mock toast
-jest.mock('sonner', () => ({
-  toast: {
-    success: jest.fn(),
-    error: jest.fn(),
+// Mock next-auth
+jest.mock('next-auth', () => ({
+  AuthError: class AuthError extends Error {
+    type: string
+    constructor(message: string) {
+      super(message)
+      this.type = 'AuthError'
+    }
   },
 }))
+
+// Mock next/navigation
+jest.mock('next/navigation', () => ({
+  redirect: jest.fn(),
+}))
+
+// Mock prisma
+jest.mock('@/lib/prisma', () => ({
+  prisma: {
+    user: {
+      findUnique: jest.fn(),
+      create: jest.fn(),
+    },
+    profile: {
+      create: jest.fn(),
+    },
+    $transaction: jest.fn((callback) => callback({
+      user: {
+        create: jest.fn(),
+      },
+      profile: {
+        create: jest.fn(),
+      },
+    })),
+  },
+}))
+
+// Mock bcryptjs
+jest.mock('bcryptjs', () => ({
+  hash: jest.fn().mockResolvedValue('hashedPassword'),
+  compare: jest.fn(),
+}))
+
+// Mock tokens
+jest.mock('@/lib/tokens', () => ({
+  generateVerificationToken: jest.fn().mockResolvedValue({ token: 'mock-token' }),
+}))
+
+// Mock email
+jest.mock('@/lib/email', () => ({
+  sendVerificationEmail: jest.fn().mockResolvedValue(true),
+}))
+
+import { signUpCredentials, signUpWithEmail, signInOAuth } from '@/app/(auth)/sign-up/action'
+import { signIn } from '@/auth'
+import { redirect } from 'next/navigation'
+import { prisma } from '@/lib/prisma'
+import bcrypt from 'bcryptjs'
 
 describe('Auth Actions', () => {
   beforeEach(() => {
     jest.clearAllMocks()
   })
 
-  describe('signInCredentials', () => {
-    it('should sign in successfully with valid credentials', async () => {
+  describe('signUpCredentials', () => {
+    it('should create user successfully with valid data', async () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
       mockFormData.append('password', 'Password123!')
+      mockFormData.append('fullName', 'Test User')
 
-      ;(signIn as jest.Mock).mockResolvedValue({ 
-        success: true, 
-        url: '/dashboard' 
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
+      ;(redirect as unknown as jest.Mock).mockImplementation((url) => {
+        throw new Error(`NEXT_REDIRECT: ${url}`)
       })
 
-      const result = await signInCredentials(mockFormData)
+      try {
+        await signUpCredentials(mockFormData)
+      } catch (error: unknown) {
+        expect((error as Error).message).toContain('verify-request')
+      }
 
-      expect(signIn).toHaveBeenCalledWith('password', {
-        email: 'test@example.com',
-        password: 'Password123!',
-        redirect: false,
-        redirectTo: '/',
-      })
-      expect(result).toEqual({ success: true, url: '/dashboard' })
+      expect(bcrypt.hash).toHaveBeenCalledWith('Password123!', 12)
+      expect(prisma.$transaction).toHaveBeenCalled()
     })
 
-    it('should handle invalid credentials', async () => {
+    it('should return error for missing fields', async () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
-      mockFormData.append('password', 'wrongpassword')
+      // Missing password and fullName
 
-      ;(signIn as jest.Mock).mockResolvedValue({ 
-        success: false, 
-        error: 'Invalid credentials' 
-      })
-
-      const result = await signInCredentials(mockFormData)
+      const result = await signUpCredentials(mockFormData)
 
       expect(result).toEqual({ 
         success: false, 
-        error: 'Invalid credentials' 
+        error: 'MISSING_REQUIRED_FIELDS' 
       })
     })
-  })
 
-  describe('signInMagicLink', () => {
-    it('should send magic link successfully', async () => {
-      ;(fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
+    it('should return error for invalid email', async () => {
+      const mockFormData = new FormData()
+      mockFormData.append('email', 'invalid-email')
+      mockFormData.append('password', 'Password123!')
+      mockFormData.append('fullName', 'Test User')
 
-      const result = await signInMagicLink('test@example.com')
-
-      expect(fetch).toHaveBeenCalledWith('/api/auth/magic-link', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: 'test@example.com',
-        }),
-      })
-      expect(result).toEqual({ success: true })
-    })
-
-    it('should handle magic link failure', async () => {
-      ;(fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Failed to send magic link' }),
-      })
-
-      const result = await signInMagicLink('test@example.com')
+      const result = await signUpCredentials(mockFormData)
 
       expect(result).toEqual({ 
         success: false, 
-        error: 'Failed to send magic link' 
+        error: 'INVALID_EMAIL_FORMAT' 
+      })
+    })
+
+    it('should return error for short password', async () => {
+      const mockFormData = new FormData()
+      mockFormData.append('email', 'test@example.com')
+      mockFormData.append('password', '12345')
+      mockFormData.append('fullName', 'Test User')
+
+      const result = await signUpCredentials(mockFormData)
+
+      expect(result).toEqual({ 
+        success: false, 
+        error: 'PASSWORD_TOO_SHORT' 
+      })
+    })
+
+    it('should return error for existing email', async () => {
+      const mockFormData = new FormData()
+      mockFormData.append('email', 'test@example.com')
+      mockFormData.append('password', 'Password123!')
+      mockFormData.append('fullName', 'Test User')
+
+      ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        id: '1',
+        email: 'test@example.com',
+        password: 'hashedPassword',
+      })
+
+      const result = await signUpCredentials(mockFormData)
+
+      expect(result).toEqual({ 
+        success: false, 
+        error: 'EMAIL_ALREADY_EXISTS' 
       })
     })
   })
 
   describe('signInOAuth', () => {
     it('should initiate OAuth flow', async () => {
-      ;(signIn as jest.Mock).mockResolvedValue({ success: true })
+      ;(signIn as jest.Mock).mockRejectedValue({ 
+        url: 'https://accounts.google.com/oauth',
+      })
 
-      await signInOAuth('google')
+      try {
+        await signInOAuth('google', '/dashboard')
+      } catch (error: unknown) {
+        expect((error as { url: string }).url).toBe('https://accounts.google.com/oauth')
+      }
 
       expect(signIn).toHaveBeenCalledWith('google', {
-        redirectTo: '/',
-      })
-    })
-  })
-
-  describe('signUpWithEmail', () => {
-    it('should register user successfully', async () => {
-      ;(fetch as jest.Mock).mockResolvedValue({
-        ok: true,
-        json: async () => ({ success: true }),
-      })
-
-      const result = await signUpWithEmail('test@example.com')
-
-      expect(fetch).toHaveBeenCalledWith('/api/auth/register', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          email: 'test@example.com',
-        }),
-      })
-      expect(result).toEqual({ success: true })
-    })
-
-    it('should handle registration failure', async () => {
-      ;(fetch as jest.Mock).mockResolvedValue({
-        ok: false,
-        json: async () => ({ error: 'Email already exists' }),
-      })
-
-      const result = await signUpWithEmail('test@example.com')
-
-      expect(result).toEqual({ 
-        success: false, 
-        error: 'Email already exists' 
+        redirectTo: '/dashboard',
+        redirect: true,
       })
     })
   })

@@ -7,17 +7,19 @@ const createJestConfig = nextJest({
 
 // Add any custom config to be passed to Jest
 const customJestConfig = {
-  // 1. ADD THE SETUP FILE PATH HERE
   setupFilesAfterEnv: ["<rootDir>/tests/setup.ts"],
   testEnvironment: "jest-environment-jsdom",
+  moduleDirectories: ['node_modules', '<rootDir>/'],
   moduleNameMapper: {
-    "^@/(.*)$": "<rootDir>/$1",
+    "^@/(.*)$": "<rootDir>/src/$1",
+    "^next-auth$": "<rootDir>/tests/mocks/next-auth-mock.ts",
+    "^@/lib/prisma$": "<rootDir>/tests/mocks/prisma-mock.ts",
   },
-  testMatch: ["**/__tests__/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
+  testMatch: ["**/tests/**/*.[jt]s?(x)", "**/?(*.)+(spec|test).[jt]s?(x)"],
   collectCoverageFrom: [
-    "lib/**/*.{js,jsx,ts,tsx}",
-    "hooks/**/*.{js,jsx,ts,tsx}",
-    "components/**/*.{js,jsx,ts,tsx}",
+    "@/lib/**/*.{js,jsx,ts,tsx}",
+    "@/hooks/**/*.{js,jsx,ts,tsx}",
+    "@/components/**/*.{js,jsx,ts,tsx}",
     "!**/*.d.ts",
     "!**/node_modules/**",
     "!**/.next/**",
@@ -30,7 +32,18 @@ const customJestConfig = {
       statements: 70,
     },
   },
-  // 2. ADD THIS TO PREVENT IT FROM BEING RUN AS A TEST
+  transformIgnorePatterns: [
+    // This regex tells Jest to NOT ignore node_modules
+    // that contain next-auth or its internal dependency @auth/core.
+    // We explicitly list the modules that need transpilation.
+    '/node_modules/(?!(next-auth|@auth/core|jose)/)',
+    "/node_modules/(?!(?:@auth/prisma-adapter)/)", // 👈 força Jest a transpilar prisma-adapter
+  ],
+  preset: 'ts-jest',
+  transform: {
+    '^.+\\.(ts|tsx)?$': 'ts-jest', 
+    '^.+\\.(js|jsx)$': 'babel-jest',
+  },
   testPathIgnorePatterns: ["<rootDir>/tests/setup.ts"], 
 }
 

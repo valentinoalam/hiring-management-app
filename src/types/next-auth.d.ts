@@ -4,8 +4,8 @@ import { UserRole } from "@prisma/client"
 declare module "next-auth" {
   interface User {
     id: string
-    email: string
     fullName?: string
+    email: string
     role?: UserRole
     isVerified?: boolean
   }
