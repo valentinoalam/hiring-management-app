@@ -149,6 +149,7 @@ export interface ApplicantData {
   applicant: {
     id: string;
     userId: string;
+    fullname: string;
     user: {
       id: string;
       email: string;
