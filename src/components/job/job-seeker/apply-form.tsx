@@ -104,7 +104,7 @@ interface AppFormField {
 
 interface Profile {
   linkedin: string;
-  name: string;
+  fullname: string;
   gender: string;
   id: string;
   userId: string;
@@ -351,7 +351,7 @@ export default function JobApplicationForm({
                 fieldValues[fieldKey] = profile.linkedin || "";
                 break;
               case 'full_name':
-                fieldValues[fieldKey] = profile.name || "";
+                fieldValues[fieldKey] = profile.fullname || "";
                 break;
               case 'gender':
                 fieldValues[fieldKey] = profile.gender || "";
@@ -461,7 +461,7 @@ export default function JobApplicationForm({
           location: formData.domicile as string || profile.location,
           linkedin: formData.linkedin_url as string || profile.linkedin,
           avatarUrl: avatarPreview || profile.avatarUrl,
-          name: formData.full_name as string || profile.name,
+          fullname: formData.full_name as string || profile.fullname,
           gender: formData.gender as string || profile.gender,
           ...(resumeFile && { resumeUrl: URL.createObjectURL(resumeFile) }),
         } as Partial<Profile>,
