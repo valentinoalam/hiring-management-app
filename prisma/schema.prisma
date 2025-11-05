@@ -112,6 +112,8 @@ model User {
   role        UserRole @default(APPLICANT)
   emailVerified          DateTime?
   lastLoginAt DateTime?                 // Added for analytics
+  // preferences   Json?      @default("{}") // Store {theme: 'dark', language: 'en', ...}
+
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 

@@ -118,7 +118,14 @@ interface Profile {
   website?: string;
   linkedinUrl?: string;
   githubUrl?: string;
-  userInfo: {
+  userInfo?: {
+    [fieldKey: string]: {
+      [fieldLabel: string]: string; // e.g. "Education": "text"
+      answer: string;
+    };
+  }[];
+/**
+ * userInfo: {
     id: string;
     fieldId: string;
     infoFieldAnswer: string;
@@ -127,6 +134,7 @@ interface Profile {
       key: string;
     };
   }[];
+ */
 }
 
 interface JobApplicationFormProps {
