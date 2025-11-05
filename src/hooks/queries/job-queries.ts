@@ -29,6 +29,7 @@ const fetchAllJobs = async (filters?: Omit<JobFilters, 'companyId'> & { page?: n
 };
 
 const fetchJobDetail = async (jobId: string): Promise<Job> => {
+  console.log('fetchJobDetail', jobId);
   return apiFetch(`/api/jobs/${jobId}`);
 };
 

@@ -6,14 +6,14 @@ import { useJobDetail } from '@/hooks/queries/job-queries';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
-import { Profile } from '@prisma/client';
 import { useSession } from 'next-auth/react';
 import { ApplicationData } from '@/types/job';
+import { useEffect } from 'react';
 
 export default function JobApplicationPage() {
   const params = useParams();
+  const jobId = Array.isArray(params.jobId) ? params.jobId[0] : params.jobId as string;
   const router = useRouter();
-  const jobId = params.id as string;
   const { data: session, status } = useSession();
   if(!session) {
     router.push('/login');
@@ -23,7 +23,12 @@ export default function JobApplicationPage() {
 
   // Fetch job details
   const { data: job, isLoading: jobLoading, error: jobError } = useJobDetail(jobId);
-  
+  useEffect(() => {
+    if (jobError) {
+      console.error('Error fetching job details:', jobError);
+    }
+    console.log(job)
+  }, [jobError, job])
   // Use the job application flow hook
   const { 
     appFormFields, 

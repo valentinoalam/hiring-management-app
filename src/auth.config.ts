@@ -114,26 +114,40 @@ export const authConfig: NextAuthConfig = {
   ],
   callbacks: {
     async jwt({ token, user, trigger, session }) {
+      // Initial sign in
       if (user) {
-        token.id = user.id
-        token.email = user.email
-        token.name = user.name ?? user.name
-        token.role = user.role
-        token.emailVerified = user.emailVerified
+        token.sub = user.id;
+        token.email = user.email;
+        token.name = user.name ?? user.name;
+        token.role = user.role;
+        token.emailVerified = user.emailVerified;
       }
 
-      if (trigger && trigger === "update" && session?.user?.id && prisma) {
-        const dbUser = await prisma.user.findFirstOrThrow({
-          where: { id: session.user.id },
-        })
-        if (dbUser) {
-          token.name = dbUser.name
-          token.role = dbUser.role
-          token.emailVerified = dbUser.emailVerified
+      // Update token when session is updated
+      if (trigger === "update" && session?.user?.id) {
+        try {
+          const dbUser = await prisma.user.findFirst({
+            where: { id: session.user.id },
+            select: {
+              name: true,
+              role: true,
+              emailVerified: true,
+              email: true,
+            },
+          });
+          
+          if (dbUser) {
+            token.name = dbUser.name;
+            token.role = dbUser.role;
+            token.emailVerified = dbUser.emailVerified;
+            token.email = dbUser.email;
+          }
+        } catch (error) {
+          console.error('Error updating JWT token:', error);
         }
       }
 
-      return token
+      return token;
     },
 
     async session({ session, token }) {

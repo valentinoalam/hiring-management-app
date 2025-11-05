@@ -382,7 +382,6 @@ async function createProfiles(users: User[]) {
 }
 
 async function createJobs(users: User[]): Promise<Job[]> {
-  const jobs = [];
   const [companies, infoFields] = await Promise.all([
         prisma.company.findMany({ include: { recruiter: true } }),
         prisma.infoField.findMany(),
