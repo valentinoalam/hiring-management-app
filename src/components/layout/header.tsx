@@ -112,7 +112,7 @@ export default function Header() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               {/* 💡 Use session.user.image */}
-              <AvatarImage src={user.image ?? undefined} alt={user.name} /> 
+              <AvatarImage src={user.image || undefined} alt={user.name || "nobody"} /> 
               {/* 💡 Use session.user.name initials */}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
