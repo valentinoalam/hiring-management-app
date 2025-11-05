@@ -18,7 +18,7 @@ import type { UserRole } from "@prisma/client"
 //   throw new Error('Database connection failed');
 // }
 
-async function markUserAsLoggedIn(email: string, verified = true) {
+async function markUserAsLoggedIn(email: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { email }
@@ -33,7 +33,7 @@ async function markUserAsLoggedIn(email: string, verified = true) {
       where: { email },
       data: {
         lastLoginAt: new Date(),
-        isVerified: verified,
+        emailVerified: new Date(),
       },
     });
   } catch (error) {
@@ -70,7 +70,7 @@ export const authConfig: NextAuthConfig = {
           }
           
           // 💡 NEW CHECK: Stop login if email is not verified
-          if (!user.isVerified) {
+          if (!user.emailVerified) {
               // This error message will be displayed on the sign-in error page
               throw new Error('Email not verified. Please check your inbox for the verification link.')
           }
@@ -87,7 +87,7 @@ export const authConfig: NextAuthConfig = {
             name: user.name, // Map name to the standard 'name' property
             role: user.role,
             image: user.image, // No image field in your DB user model directly
-            isVerified: user.isVerified,
+            emailVerified: user.emailVerified,
           }
         } catch (error) {
           console.error('Authentication error:', error)
@@ -119,7 +119,7 @@ export const authConfig: NextAuthConfig = {
         token.email = user.email
         token.name = user.name ?? user.name
         token.role = user.role
-        token.isVerified = user.isVerified
+        token.emailVerified = user.emailVerified
       }
 
       if (trigger && trigger === "update" && session?.user?.id && prisma) {
@@ -129,7 +129,7 @@ export const authConfig: NextAuthConfig = {
         if (dbUser) {
           token.name = dbUser.name
           token.role = dbUser.role
-          token.isVerified = dbUser.isVerified
+          token.emailVerified = dbUser.emailVerified
         }
       }
 
@@ -143,14 +143,14 @@ export const authConfig: NextAuthConfig = {
         session.user.name = token.name as string
         session.user.name = token.name as string
         session.user.role = token.role as UserRole
-        session.user.isVerified = token.isVerified as boolean
+        session.user.emailVerified = token.emailVerified as Date
       }
       return session;
     },
     async signIn({ user, account }) {
       if (user?.email && account?.provider !== "credentials" && prisma) {
         // Mark OAuth and Email login users as verified
-        await markUserAsLoggedIn(user.email, true)
+        await markUserAsLoggedIn(user.email)
       }
       return true
     },
@@ -159,11 +159,11 @@ export const authConfig: NextAuthConfig = {
     async signIn({ user, account }) {
       try {
         if (account?.provider === 'email' && user.email) {
-          await markUserAsLoggedIn(user.email, true);
+          await markUserAsLoggedIn(user.email);
         }
         
         if (account?.provider !== 'credentials' && user.email) {
-          await markUserAsLoggedIn(user.email, true);
+          await markUserAsLoggedIn(user.email);
         }
       } catch (error) {
         console.error('Error in signIn event:', error);

@@ -56,7 +56,6 @@ export async function signUpCredentials(formData: FormData) {
           password: hashedPassword,
           name: name.trim(),
           role: 'APPLICANT', // Default role
-          isVerified: false, // Explicitly set to false until verified
         },
       })
 
@@ -124,7 +123,6 @@ export async function signUpWithEmail(email: string) {
         email,
         name: "", // Will be filled later or can be optional
         role: 'APPLICANT', // Default role
-        isVerified: false, // Not verified yet
       },
     })
 
@@ -169,14 +167,14 @@ export async function resendVerificationEmail(email: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, isVerified: true }
+      select: { id: true, emailVerified: true }
     })
 
     if (!user) {
       return { success: false, error: 'USER_NOT_FOUND' }
     }
 
-    if (user.isVerified) {
+    if (user.emailVerified) {
       return { success: false, error: 'EMAIL_ALREADY_VERIFIED' }
     }
 

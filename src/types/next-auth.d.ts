@@ -6,14 +6,14 @@ declare module "next-auth" {
     user: {
       id: string;
       role?: UserRole;
-      isVerified?: boolean;
+      emailVerified?: Date;
       // fullName?: string; // Now from profile
     } & DefaultSession["user"];
   }
 
   interface User {
     role?: UserRole;
-    isVerified?: boolean;
+    emailVerified?: Date;
     // name is now from User model
   }
 }
@@ -23,6 +23,6 @@ declare module "next-auth/jwt" {
     id: string
     role?: UserRole
     name?: string
-    isVerified?: boolean
+    emailVerified?: Date
   }
 }

@@ -247,7 +247,7 @@ export const mockSession = {
     email: 'test@example.com',
     name: 'Test User',
     role: 'APPLICANT' as const,
-    isVerified: true,
+    emailVerified: true,
   },
   expires: '2025-01-01T00:00:00.000Z',
 };

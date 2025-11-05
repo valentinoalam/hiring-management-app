@@ -9,14 +9,14 @@ export async function resendVerificationEmail(email: string) {
   try {
     const user = await prisma.user.findUnique({
       where: { email },
-      select: { id: true, isVerified: true }
+      select: { id: true, emailVerified: true }
     });
 
     if (!user) {
       return { success: false, error: 'USER_NOT_FOUND' };
     }
 
-    if (user.isVerified) {
+    if (user.emailVerified) {
       return { success: false, error: 'EMAIL_ALREADY_VERIFIED' };
     }
 

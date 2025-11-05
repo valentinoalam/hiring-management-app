@@ -48,7 +48,7 @@ export const mockUser = {
   name: "Test User",
   password: "hashed-password",
   role: "USER" as const,
-  isVerified: true,
+  emailVerified: true,
   lastLoginAt: new Date(),
   createdAt: new Date(),
   updatedAt: new Date(),
@@ -60,7 +60,7 @@ export const mockSession = {
     email: "test@example.com",
     name: "Test User",
     role: "USER" as const,
-    isVerified: true,
+    emailVerified: true,
   },
   expires: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
 };
@@ -70,7 +70,7 @@ export const mockToken = {
   email: "test@example.com",
   name: "Test User",
   role: "USER",
-  isVerified: true,
+  emailVerified: true,
   iat: Math.floor(Date.now() / 1000),
   exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60,
 };
