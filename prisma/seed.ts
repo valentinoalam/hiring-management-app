@@ -841,7 +841,6 @@ async function createInfoFields(users: User[]) {
 main()
   .catch((e) => {
     console.error("❌ Seeding failed:", e);
-    await prisma.$disconnect();
     process.exit(1);
   })
   .finally(async () => {
