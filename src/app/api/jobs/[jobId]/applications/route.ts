@@ -66,7 +66,7 @@ export async function GET(
         {
           applicant: {
             user: {
-              fullName: { contains: search, mode: 'insensitive' },
+              name: { contains: search, mode: 'insensitive' },
             },
           },
         },
@@ -100,7 +100,7 @@ export async function GET(
               },
               author: {
                 select: {
-                  fullName: true,
+                  name: true,
                   profile: {
                     select: {
                       companyName: true,
@@ -116,7 +116,7 @@ export async function GET(
                 select: {
                   id: true,
                   email: true,
-                  fullName: true,
+                  name: true,
                 },
               },
               userInfo: {
@@ -139,7 +139,7 @@ export async function GET(
             include: {
               author: {
                 select: {
-                  fullName: true,
+                  name: true,
                 },
               },
             },
@@ -308,7 +308,7 @@ export async function POST(
             user: {
               select: {
                 id: true,
-                fullName: true,
+                name: true,
                 email: true,
               },
             },

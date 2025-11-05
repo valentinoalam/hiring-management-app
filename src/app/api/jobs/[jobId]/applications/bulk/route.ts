@@ -80,7 +80,7 @@ export async function PUT(
               include: {
                 user: {
                   select: {
-                    fullName: true,
+                    name: true,
                     email: true,
                   },
                 },

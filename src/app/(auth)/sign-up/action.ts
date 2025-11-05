@@ -6,16 +6,15 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { generateVerificationToken } from "@/lib/tokens"
 import { sendVerificationEmail } from "@/lib/email"
-import { redirect } from "next/navigation"
 
 export async function signUpCredentials(formData: FormData) {
   try {
     const email = formData.get('email') as string
     const password = formData.get('password') as string
-    const fullName = formData.get('fullName') as string
+    const name = formData.get('name') as string
 
     // Validate required fields
-    if (!email || !password || !fullName) {
+    if (!email || !password || !name) {
       return { success: false, error: 'MISSING_REQUIRED_FIELDS' }
     }
 
@@ -49,13 +48,13 @@ export async function signUpCredentials(formData: FormData) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user with transaction to ensure data consistency
-    await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
         data: {
           email: email.toLowerCase().trim(),
           password: hashedPassword,
-          fullName: fullName.trim(),
+          name: name.trim(),
           role: 'APPLICANT', // Default role
           isVerified: false, // Explicitly set to false until verified
         },
@@ -65,6 +64,7 @@ export async function signUpCredentials(formData: FormData) {
       await tx.profile.create({
         data: {
           userId: user.id,
+          fullname: name.trim(),
         },
       })
 
@@ -77,8 +77,7 @@ export async function signUpCredentials(formData: FormData) {
 
     // Don't sign in automatically - require email verification first
     // Instead, return success and let the client handle redirect to verification page
-  
-    redirect(`/auth/verify-request?email=${encodeURIComponent(email)}`)
+    return { success: true, url: result, redirectUrl: `/auth/verify-request?email=${encodeURIComponent(email)}` }
 
   } catch (error) {
     console.error("Sign up error:", error)
@@ -123,7 +122,7 @@ export async function signUpWithEmail(email: string) {
     const user = await prisma.user.create({
       data: {
         email,
-        fullName: "", // Will be filled later or can be optional
+        name: "", // Will be filled later or can be optional
         role: 'APPLICANT', // Default role
         isVerified: false, // Not verified yet
       },
@@ -133,7 +132,7 @@ export async function signUpWithEmail(email: string) {
     const verificationToken = await generateVerificationToken(email)
     await sendVerificationEmail(email, verificationToken.token)
 
-    return { success: true, user }
+    return { success: true, user, redirectUrl: `/auth/verify-request?email=${encodeURIComponent(email)}` }
   } catch (error) {
     console.error("Sign up error:", error)
     

@@ -7,6 +7,7 @@ import LoginPage from '@/app/(auth)/login/page'
 import SignUpPage from '@/app/(auth)/sign-up/page'
 import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/(auth)/login/action'
 import { signUpWithEmail } from '@/app/(auth)/sign-up/action'
+import { toast } from 'sonner'
 
 // Cast the mocks to jest.Mock for TypeScript
 const mockSignInCredentials = signInCredentials as jest.Mock
@@ -115,8 +116,11 @@ describe('Auth Flow Integration', () => {
 
   describe('Complete Signup Flow', () => {
     it('completes email signup flow', async () => {
-      setupRouterMock()
-      mockSignUpWithEmail.mockResolvedValue({ success: true })
+      const { mockPush } = setupRouterMock()
+      mockSignUpWithEmail.mockResolvedValue({ 
+        success: true,
+        redirectUrl: '/verify-request'
+      })
 
       render(<SignUpPage />, { wrapper })
 
@@ -127,41 +131,61 @@ describe('Auth Flow Integration', () => {
       const submitButton = screen.getByRole('button', { name: /daftar dengan email/i })
       await user.click(submitButton)
 
-      // Step 2: Verify success state
       await waitFor(() => {
-        expect(screen.getByText(/pendaftaran berhasil/i)).toBeInTheDocument()
+        expect(toast.loading).toHaveBeenCalledWith('Mendaftarkan akun...')
       })
 
-      // Step 3: Verify email is displayed
-      expect(screen.getByText('newuser@example.com')).toBeInTheDocument()
+      // Step 2: Verify success state
+      await waitFor(() => {
+        expect(toast.dismiss).toHaveBeenCalled() // Loading toast dismissed
+        expect(toast.success).toHaveBeenCalledWith("Pendaftaran Berhasil!", 
+          expect.objectContaining({
+            description: "Akun Anda telah berhasil dibuat. Silakan verifikasi email Anda.",
+            duration: 4000,
+          })
+        )
+      })
+      await waitFor(() => {
+        expect(mockPush).toHaveBeenCalledWith('/verify-request')
+      }, { timeout: 2000 })
+      // // Step 3: Verify email is displayed
+      // expect(screen.getByText('newuser@example.com')).toBeInTheDocument()
 
-      // Step 4: Test "Use Different Email" functionality
-      const differentEmailButton = screen.getByRole('button', { name: /gunakan email lain/i })
-      await user.click(differentEmailButton)
+      // // Step 4: Test "Use Different Email" functionality
+      // const differentEmailButton = screen.getByRole('button', { name: /gunakan email lain/i })
+      // await user.click(differentEmailButton)
 
       // Step 5: Verify back to form
-      expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
+      // expect(screen.getByLabelText(/email/i)).toBeInTheDocument()
     })
   })
 
   describe('Navigation Between Auth Pages', () => {
+    const callbackUrl = '/'
     it('navigates from login to signup', async () => {
       setupRouterMock()
       render(<LoginPage />, { wrapper })
 
-      const signupLink = screen.getByRole('link', { name: /daftar menggunakan email/i })
+      const signupLink = screen.getByRole('link', { name: /Daftar menggunakan email/i })
       
       // Verify the link points to signup page
-      expect(signupLink).toHaveAttribute('href', '/sign-up')
+      expect(signupLink.getAttribute('href')).toBe(`/sign-up?callbackUrl=${encodeURIComponent(callbackUrl)}`)
     })
 
     it('navigates from signup to login', async () => {
+      const callbackUrl = '/'
       setupRouterMock()
       render(<SignUpPage />, { wrapper })
+      // Debug: see all text content
+      screen.debug()
+      const allLinks = screen.getAllByRole('link')
+      allLinks.forEach(link => {
+        console.log('Link found:', link.textContent, link.getAttribute('href'))
+      })
 
-      const loginLink = screen.getByRole('link', { name: /masuk ke akun anda/i })
-      
-      expect(loginLink).toHaveAttribute('href', '/login')
+      // Try different queries
+      const loginLink = screen.getByRole('link', { name: /masuk/i })
+      expect(loginLink.getAttribute('href')).toBe(`/login?callbackUrl=${encodeURIComponent(callbackUrl)}`)
     })
   })
 })

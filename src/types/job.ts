@@ -20,7 +20,7 @@ export interface JobData {
   author?: {
     id: string;
     email: string;
-    fullName: string | null;
+    name: string | null;
   };
   company?: { // Added company field
     id: string;
@@ -40,7 +40,7 @@ export const jobWithAuthorAndCount = Prisma.validator<Prisma.JobDefaultArgs>()({
       select: {
         id: true,
         email: true,
-        fullName: true,
+        name: true,
       },
     },
     company: { // Added company include
@@ -79,7 +79,7 @@ export interface Job {
   updatedAt: string;
   recruiter?: {
     email: string;
-    fullName: string | null;
+    name: string | null;
   };
   company?: { // Added company info
     id: string;
@@ -111,7 +111,7 @@ export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
     updatedAt: prismaJob.updatedAt.toISOString(),
     recruiter: prismaJob.author ? {
       email: prismaJob.author.email,
-      fullName: prismaJob.author.fullName,
+      name: prismaJob.author.name,
     } : undefined,
     company: prismaJob.company ? { // Added company data
       id: prismaJob.company.id,
@@ -152,7 +152,7 @@ export interface ApplicantData {
     user: {
       id: string;
       email: string;
-      fullName: string;
+      name: string;
     };
     phone?: string;
     location?: string;
@@ -187,7 +187,7 @@ export interface Applicant {
   statusUpdatedAt?: string;
 
   // Profile info (flattened)
-  fullName: string;
+  fullname: string;
   email: string;
   phone?: string;
   location?: string;

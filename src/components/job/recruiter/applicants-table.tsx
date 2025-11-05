@@ -240,7 +240,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
             <Checkbox
               checked={selectedApplicants.includes(applicant.id)}
               onCheckedChange={() => toggleApplicantSelection(applicant.id)}
-              aria-label={`Select ${applicant.fullName}`}
+              aria-label={`Select ${applicant.name}`}
             />
           );
         },
@@ -256,12 +256,12 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
           return (
             <div className="flex items-center space-x-3">
               <Avatar>
-                <AvatarImage src={applicant.avatarUrl} alt={applicant.fullName} />
-                <AvatarFallback>{applicant.fullName.charAt(0)}</AvatarFallback>
+                <AvatarImage src={applicant.avatarUrl} alt={applicant.name} />
+                <AvatarFallback>{applicant.name.charAt(0)}</AvatarFallback>
               </Avatar>
               <div>
                 <div className="font-medium text-gray-900">
-                  {applicant.fullName}
+                  {applicant.name}
                 </div>
                 <div className="text-sm text-gray-500 flex items-center">
                   <Mail className="h-3 w-3 mr-1" />

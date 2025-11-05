@@ -32,7 +32,7 @@ import { Separator } from "@/components/ui/separator"
 import { Mail } from "lucide-react"
 
 const signUpSchema = z.object({
-  fullName: z.string().min(2, {
+  name: z.string().min(2, {
     message: "Full name must be at least 2 characters.",
   }),
   email: z.email({
@@ -65,7 +65,7 @@ export default function SignUpPage() {
   const form = useForm<z.infer<typeof signUpSchema>>({
     resolver: zodResolver(signUpSchema),
     defaultValues: {
-      fullName: "",
+      name: "",
       email: "",
       password: "",
       confirmPassword: "",
@@ -73,17 +73,19 @@ export default function SignUpPage() {
   })
 
   async function onSubmit(values: z.infer<typeof signUpSchema>) {
+    console.log('Form submitted with values:', values);
     setIsLoading(true)
     setError("")
     
     try {
       const formData = new FormData()
-      formData.append('fullName', values.fullName)
+      formData.append('name', values.name)
       formData.append('email', values.email)
       formData.append('password', values.password)
       
       const result = await signUpCredentials(formData)
-      
+      if(result.success) router.push(result.redirectUrl!)
+
       if (result?.error) {
         // Handle specific server-side error codes
         switch (result.error) {
@@ -123,10 +125,6 @@ export default function SignUpPage() {
     }
   }
 
-  const handleBackToLogin = () => {
-    router.push("/login" + (callbackURL ? `?callbackUrl=${encodeURIComponent(callbackURL)}` : ""))
-  }
-
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center px-4">
       <div className="max-w-md w-full gap-6">
@@ -135,7 +133,13 @@ export default function SignUpPage() {
           <CardHeader className="p-0 pt-6">
             <CardTitle className="font-bold text-xl text-neutral-100">Bergabung dengan Rakamin</CardTitle>
             <CardDescription className="text-neutral-90">
-              Sudah punya akun? <Button variant="ghost" onClick={handleBackToLogin} className="text-primary">Masuk</Button>
+              Sudah punya akun? {" "}
+              <Link 
+                href={`/login${callbackURL ? `?callbackUrl=${encodeURIComponent(callbackURL)}` : ""}`}
+                className="text-primary hover:underline"
+              >
+                Masuk
+              </Link>
             </CardDescription>
           </CardHeader>
           
@@ -154,7 +158,7 @@ export default function SignUpPage() {
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                 {/* <FormField
                   control={form.control}
-                  name="fullName"
+                  name="name"
                   render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-neutral-100">Nama Lengkap</FormLabel>
@@ -207,7 +211,7 @@ export default function SignUpPage() {
                           {...field}
                         />
                       </FormControl>
-                      <FormMessage className="text-neutral-70" />
+                      <FormMessage className="text-danger" />
                     </FormItem>
                   )}
                 />
@@ -236,7 +240,7 @@ export default function SignUpPage() {
                   type="submit"
                   variant="secondary"
                   disabled={isLoading}
-                  className="w-full rounded-xl font-bold bg-secondary text-neutral-90 hover:bg-neutral-100 transition-all duration-200 hover:scale-105 active:scale-95 mt-2"
+                  className="w-full cursor-pointer rounded-xl font-bold bg-secondary text-neutral-90 hover:bg-secondary/80 transition-all duration-200 mt-2 shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm ease-in-out"
                 >
                   {isLoading ? (
                     <>
@@ -281,7 +285,7 @@ export default function SignUpPage() {
                   disabled={isLoading}
                   type="button"
                   variant="outline"
-                  className="w-full flex items-center gap-3 bg-neutral-10 border border-neutral-40 rounded-lg px-6 py-3 text-neutral-100 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm transition-all duration-200 ease-in-out"
+                  className="w-full flex items-center gap-3 cursor-pointer bg-neutral-10 border border-neutral-40 rounded-lg px-6 py-3 text-neutral-100 font-medium shadow-sm hover:shadow-md hover:-translate-y-0.5 active:translate-y-0 active:shadow-sm transition-all duration-200 ease-in-out"
                 >
                   {provider.name === "Google" && 
                     <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">

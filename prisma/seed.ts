@@ -78,7 +78,7 @@ async function createUsers(): Promise<User[]> {
       data: {
         email: `recruiter${i + 1}@careerconnect.com`,
         password: hashedPassword,
-        fullName: faker.person.fullName(),
+        name: faker.person.firstName(),
         role: UserRole.RECRUITER,
         createdAt: faker.date.past({ years: 1 }),
       },
@@ -92,7 +92,7 @@ async function createUsers(): Promise<User[]> {
       data: {
         email: faker.internet.email().toLowerCase(),
         password: hashedPassword,
-        fullName: faker.person.fullName(),
+        name: faker.person.firstName(),
         role: UserRole.APPLICANT,
         createdAt: faker.date.past({ years: 1 }),
       },
@@ -105,7 +105,7 @@ async function createUsers(): Promise<User[]> {
     data: {
       email: "system@careerconnect.com",
       password: hashedPassword,
-      fullName: "System Administrator",
+      name: "System Administrator",
       role: UserRole.RECRUITER,
       createdAt: faker.date.past({ years: 1 }),
     },
@@ -114,6 +114,7 @@ async function createUsers(): Promise<User[]> {
   await prisma.profile.create({
     data: {
       userId: adminUser.id,
+      fullname: faker.person.fullName(),
       bio: "System administrator for CareerConnect platform",
       phone: faker.phone.number(),
       location: "Jakarta, Indonesia",
@@ -288,13 +289,14 @@ async function createCompanies(
       await prisma.profile.create({
         data: {
           userId: recruiter.id,
+          fullname: recruiter.name? recruiter.name + faker.person.lastName() : faker.person.fullName(),
           bio: faker.person.bio(),
           phone: faker.phone.number(),
           location: faker.location.city() + ", " + faker.location.country(),
           avatarUrl: faker.image.avatar(),
           companyName: faker.company.name(),
           website: faker.internet.url(),
-          linkedinUrl: `https://linkedin.com/in/${recruiter.fullName
+          linkedinUrl: `https://linkedin.com/in/${recruiter.name
             .toLowerCase()
             .replace(/\s+/g, "")}`,
           createdAt: recruiter.createdAt,
@@ -355,6 +357,7 @@ async function createProfiles(users: User[]) {
     await prisma.profile.create({
       data: {
         userId: applicant.id,
+        fullname: applicant.name? applicant.name + faker.person.lastName() : faker.person.fullName(),
         bio: faker.person.bio(),
         phone: faker.phone.number(),
         location: faker.location.city() + ", " + faker.location.country(),
@@ -365,10 +368,10 @@ async function createProfiles(users: User[]) {
           Math.floor(Math.random() * 2) === 1
             ? faker.internet.url()
             : undefined,
-        linkedinUrl: `https://linkedin.com/in/${applicant.fullName
+        linkedinUrl: `https://linkedin.com/in/${applicant.name
           .toLowerCase()
           .replace(/\s+/g, "")}`,
-        githubUrl: `https://github.com/${applicant.fullName
+        githubUrl: `https://github.com/${applicant.name
           .toLowerCase()
           .replace(/\s+/g, "")}`,
         createdAt: applicant.createdAt,
@@ -619,7 +622,7 @@ async function createApplications(users: User[], jobs: Job[]) {
               // Generate realistic form responses based on field type
               switch (appField.field.key) {
                 case "full_name":
-                  formResponse[appField.field.key] = applicant.fullName;
+                  formResponse[appField.field.key] = applicant.name;
                   break;
                 case "email":
                   formResponse[appField.field.key] = applicant.email;

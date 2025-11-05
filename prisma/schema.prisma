@@ -95,7 +95,7 @@ model User {
   id          String   @id @default(uuid()) @db.Uuid
   email       String   @unique
   password    String?
-  fullName    String
+  name    String
   role        UserRole @default(APPLICANT)
   isVerified  Boolean  @default(false)  // Added email verification
   lastLoginAt DateTime?                 // Added for analytics
@@ -118,6 +118,7 @@ model Profile {
   id           String   @id @default(uuid()) @db.Uuid
   userId       String   @unique @db.Uuid
   companyId    String?   @unique @db.Uuid
+  fullname     String
   bio          String?  
   phone        String?
   location     String?

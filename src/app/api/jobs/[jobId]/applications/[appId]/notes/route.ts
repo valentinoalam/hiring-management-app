@@ -30,7 +30,7 @@ export async function GET(
             author: {
               select: {
                 id: true,
-                fullName: true,
+                name: true,
                 email: true,
               },
             },
@@ -106,7 +106,7 @@ export async function POST(
         author: {
           select: {
             id: true,
-            fullName: true,
+            name: true,
             email: true,
           },
         },

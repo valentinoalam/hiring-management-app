@@ -44,7 +44,7 @@ describe('Job Application Flow', () => {
         formFields: [
           {
             id: 'field-1',
-            key: 'fullName',
+            key: 'name',
             label: 'Full Name',
             fieldType: 'text',
             fieldState: 'mandatory' as const,
@@ -122,7 +122,7 @@ describe('Job Application Flow', () => {
       
       // Verify field properties
       expect(formFields[0]).toMatchObject({
-        key: 'fullName',
+        key: 'name',
         fieldType: 'text',
         fieldState: 'mandatory',
         validation: { required: true }
@@ -151,7 +151,7 @@ describe('Job Application Flow', () => {
       coverLetter: 'I am very interested in this Senior Frontend Developer position. I have 5 years of experience with React and TypeScript, and I believe my skills align perfectly with your requirements. I am particularly excited about the opportunity to work on your innovative product suite.',
       source: 'company-website',
       formResponse: {
-        fullName: 'John David Smith',
+        name: 'John David Smith',
         email: 'john.smith@example.com',
         experience: '5',
         skills: 'React, TypeScript, Next.js, Node.js, GraphQL, Jest, Cypress',
@@ -194,7 +194,7 @@ describe('Job Application Flow', () => {
         },
         applicant: {
           user: {
-            fullName: 'John David Smith',
+            name: 'John David Smith',
             email: 'john.smith@example.com'
           }
         }
@@ -230,7 +230,7 @@ describe('Job Application Flow', () => {
     it('should handle missing required fields error', async () => {
       const incompleteApplicationData = {
         formResponses: {
-          // Missing fullName and email (required fields)
+          // Missing name and email (required fields)
           skills: 'React, JavaScript',
         },
         coverLetter: 'Test cover letter',
@@ -240,7 +240,7 @@ describe('Job Application Flow', () => {
         ok: false,
         status: 400,
         json: async () => ({ 
-          error: 'Missing required fields: fullName, email' 
+          error: 'Missing required fields: name, email' 
         }),
       });
 
@@ -311,7 +311,7 @@ describe('Job Application Flow', () => {
         formFields: [
           {
             id: 'field-1',
-            key: 'fullName',
+            key: 'name',
             label: 'Full Name',
             fieldType: 'text',
             fieldState: 'mandatory' as const,
@@ -335,7 +335,7 @@ describe('Job Application Flow', () => {
       const mockProfile = {
         id: 'profile-123',
         userId: userId,
-        fullName: 'Jane Doe',
+        name: 'Jane Doe',
         email: 'jane.doe@example.com',
         phone: '+1-555-6789',
         location: 'New York, NY',
@@ -351,7 +351,7 @@ describe('Job Application Flow', () => {
         appliedAt: '2024-01-15T14:45:00.000Z',
         coverLetter: 'I am excited to apply...',
         formResponse: {
-          fullName: 'Jane Doe',
+          name: 'Jane Doe',
           github: 'https://github.com/janedoe'
         }
       };
@@ -381,7 +381,7 @@ describe('Job Application Flow', () => {
         coverLetter: 'I am excited to apply for the Full Stack Developer position at Startup XYZ. With my 4 years of experience in modern web technologies and my passion for creating scalable applications, I believe I would be a valuable addition to your team.',
         source: 'linkedin',
         formResponses: {
-          fullName: 'Jane Doe',
+          name: 'Jane Doe',
           github: 'https://github.com/janedoe',
           availability: 'immediate',
           portfolio: 'https://janedoe.dev'
@@ -427,7 +427,7 @@ describe('Job Application Flow', () => {
     it('should handle partial application data with some optional fields missing', async () => {
       const minimalApplicationData = {
         formResponses: {
-          fullName: 'Bob Wilson',
+          name: 'Bob Wilson',
           email: 'bob@example.com',
           experience: '3'
         },
@@ -463,7 +463,7 @@ describe('Job Application Flow', () => {
   describe('Application Status Updates', () => {
     it('should track application status after submission', async () => {
       const applicationData = {
-        formResponses: { fullName: 'Test User', email: 'test@example.com' },
+        formResponses: { name: 'Test User', email: 'test@example.com' },
         coverLetter: 'Test application'
       };
 

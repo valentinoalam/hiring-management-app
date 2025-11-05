@@ -185,7 +185,7 @@ describe('JobApplicationForm', () => {
         phone: '+1234567890',
         location: 'New York, NY',
         linkedin: 'https://linkedin.com/in/johndoe',
-        fullName: 'John Doe',
+        name: 'John Doe',
         gender: 'male',
       });
 

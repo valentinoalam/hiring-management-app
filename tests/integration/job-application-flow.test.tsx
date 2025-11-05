@@ -129,7 +129,7 @@ describe('Job Application Flow Integration', () => {
       data: {
         id: 'profile-123',
         userId: 'user-123',
-        fullName: 'John Doe',
+        name: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
         location: 'New York, NY',
@@ -260,7 +260,7 @@ describe('Job Application Flow Integration', () => {
       data: {
         id: 'profile-123',
         userId: 'user-123',
-        fullName: 'John Doe',
+        name: 'John Doe',
         email: 'john@example.com',
         userInfo: [],
       },

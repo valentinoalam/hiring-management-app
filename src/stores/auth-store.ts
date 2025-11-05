@@ -6,7 +6,7 @@ import { persist } from "zustand/middleware"
 
 interface UserProfile {
   id: string
-  role: "recruiter" | "job_seeker"
+  role: "RECRUITER" | "APPLICANT"
   email: string
   created_at: string
   updated_at: string

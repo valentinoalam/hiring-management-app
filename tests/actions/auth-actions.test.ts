@@ -75,7 +75,7 @@ describe('Auth Actions', () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
       mockFormData.append('password', 'Password123!')
-      mockFormData.append('fullName', 'Test User')
+      mockFormData.append('name', 'Test User')
 
       ;(prisma.user.findUnique as jest.Mock).mockResolvedValue(null)
       ;(redirect as unknown as jest.Mock).mockImplementation((url) => {
@@ -95,7 +95,7 @@ describe('Auth Actions', () => {
     it('should return error for missing fields', async () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
-      // Missing password and fullName
+      // Missing password and name
 
       const result = await signUpCredentials(mockFormData)
 
@@ -109,7 +109,7 @@ describe('Auth Actions', () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'invalid-email')
       mockFormData.append('password', 'Password123!')
-      mockFormData.append('fullName', 'Test User')
+      mockFormData.append('name', 'Test User')
 
       const result = await signUpCredentials(mockFormData)
 
@@ -123,7 +123,7 @@ describe('Auth Actions', () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
       mockFormData.append('password', '12345')
-      mockFormData.append('fullName', 'Test User')
+      mockFormData.append('name', 'Test User')
 
       const result = await signUpCredentials(mockFormData)
 
@@ -137,7 +137,7 @@ describe('Auth Actions', () => {
       const mockFormData = new FormData()
       mockFormData.append('email', 'test@example.com')
       mockFormData.append('password', 'Password123!')
-      mockFormData.append('fullName', 'Test User')
+      mockFormData.append('name', 'Test User')
 
       ;(prisma.user.findUnique as jest.Mock).mockResolvedValue({
         id: '1',

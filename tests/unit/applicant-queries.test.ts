@@ -28,7 +28,7 @@ describe('Applicant Queries', () => {
     it('should fetch applicants for a job with filters', async () => {
       const mockApplicants = [
         createMockApplicant(),
-        createMockApplicant({ id: 'applicant-456', fullName: 'Jane Smith' }),
+        createMockApplicant({ id: 'applicant-456', name: 'Jane Smith' }),
       ];
       
       (global.fetch as jest.Mock).mockResolvedValueOnce({
@@ -46,7 +46,7 @@ describe('Applicant Queries', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data?.applicants).toHaveLength(2);
-      expect(result.current.data?.applicants[0].fullName).toBe('John Doe');
+      expect(result.current.data?.applicants[0].name).toBe('John Doe');
       expect(global.fetch).toHaveBeenCalledWith('/api/jobs/job-123/applications?status=PENDING&search=John', expect.any(Object));
     });
 
@@ -131,7 +131,7 @@ describe('Applicant Queries', () => {
           content: 'Strong candidate',
           isInternal: true,
           createdAt: '2024-01-01T00:00:00.000Z',
-          author: { fullName: 'Recruiter Name' },
+          author: { name: 'Recruiter Name' },
         },
       ];
       

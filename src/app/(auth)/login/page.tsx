@@ -200,7 +200,16 @@ export default function SignInPage() {
             <CardHeader className="p-0 pt-6">
               <CardTitle className="font-bold text-xl">Masuk ke Rakamin</CardTitle>
               <CardDescription className="text-neutral-100">
-                Belum punya akun? <Link href="/sign-up" className="text-primary">Daftar menggunakan email</Link>
+                Belum punya akun?{" "}
+                <Link 
+                  href={{
+                    pathname: '/sign-up',
+                    query: callbackUrl ? { callbackUrl } : {}
+                  }}
+                  className="text-primary hover:underline"
+                >
+                  Daftar menggunakan email
+                </Link>
               </CardDescription>
             </CardHeader>
             <CardContent className="p-0 pb-6">

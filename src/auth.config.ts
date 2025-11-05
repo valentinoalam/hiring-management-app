@@ -19,13 +19,26 @@ import type { UserRole } from "@prisma/client"
 // }
 
 async function markUserAsLoggedIn(email: string, verified = true) {
-  await prisma.user.update({
-    where: { email },
-    data: {
-      lastLoginAt: new Date(),
-      isVerified: verified,
-    },
-  })
+  try {
+    const user = await prisma.user.findUnique({
+      where: { email }
+    });
+
+    if (!user) {
+      console.warn(`User with email ${email} not found for login update`);
+      return;
+    }
+
+    await prisma.user.update({
+      where: { email },
+      data: {
+        lastLoginAt: new Date(),
+        isVerified: verified,
+      },
+    });
+  } catch (error) {
+    console.error('Error updating user login:', error);
+  }
 }
 
 export const authConfig: NextAuthConfig = {
@@ -71,10 +84,10 @@ export const authConfig: NextAuthConfig = {
           return {
             id: user.id,
             email: user.email,
-            name: user.fullName, // Map fullName to the standard 'name' property
-            fullName: user.fullName,
+            name: user.name, // Map name to the standard 'name' property
             role: user.role,
             image: null, // No image field in your DB user model directly
+            isVerified: user.isVerified,
           }
         } catch (error) {
           console.error('Authentication error:', error)
@@ -104,7 +117,7 @@ export const authConfig: NextAuthConfig = {
       if (user) {
         token.id = user.id
         token.email = user.email
-        token.name = user.fullName ?? user.name
+        token.name = user.name ?? user.name
         token.role = user.role
         token.isVerified = user.isVerified
       }
@@ -114,7 +127,7 @@ export const authConfig: NextAuthConfig = {
           where: { id: session.user.id },
         })
         if (dbUser) {
-          token.name = dbUser.fullName
+          token.name = dbUser.name
           token.role = dbUser.role
           token.isVerified = dbUser.isVerified
         }
@@ -128,7 +141,7 @@ export const authConfig: NextAuthConfig = {
         session.user.id = token.sub;
         session.user.email = token.email as string
         session.user.name = token.name as string
-        session.user.fullName = token.name as string
+        session.user.name = token.name as string
         session.user.role = token.role as UserRole
         session.user.isVerified = token.isVerified as boolean
       }
@@ -143,38 +156,34 @@ export const authConfig: NextAuthConfig = {
     },
   },
   events: {
-    // 💡 Update lastLoginAt for credentials sign-in success
     async signIn({ user, account }) {
-      if (account?.provider === 'email' && user.email) {
-          await prisma.user.update({
-              where: { email: user.email },
-              data: { 
-                  lastLoginAt: new Date(),
-                  isVerified: true 
-              }
-          })
+      try {
+        if (account?.provider === 'email' && user.email) {
+          await markUserAsLoggedIn(user.email, true);
+        }
+        
+        if (account?.provider !== 'credentials' && user.email) {
+          await markUserAsLoggedIn(user.email, true);
+        }
+      } catch (error) {
+        console.error('Error in signIn event:', error);
       }
-      // 💡 Also update lastLoginAt for OAuth sign-in
-      if (account?.provider !== 'credentials' && user.email) {
-          await prisma.user.update({
-              where: { email: user.email },
-              data: { 
-                  lastLoginAt: new Date(),
-                  isVerified: true 
-              }
-          });
-      }
-      
     },
-    // 💡 Event to initialize custom data when the PrismaAdapter creates a new user (via OAuth/Email)
+    
     async createUser({ user }) {
-      if (user?.id) {
-        await prisma.profile.create({
-          data: {
-            userId: user.id,
-          },
-        })
-        console.log(`✅ Profile created for new user: ${user.email}`)
+      try {
+        if (user?.id) {
+          await prisma.profile.create({
+            data: {
+              userId: user.id,
+              fullname: user.name || "",
+              bio: "I am a new user!",
+            },
+          });
+          console.log(`✅ Profile created for new user: ${user.email}`);
+        }
+      } catch (error) {
+        console.error('Error creating profile:', error);
       }
     },
   },

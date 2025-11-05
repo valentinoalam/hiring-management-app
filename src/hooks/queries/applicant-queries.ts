@@ -149,7 +149,7 @@ const translateApplicantData = (data: ApplicantData): Applicant => {
     statusUpdatedAt: data.statusUpdatedAt,
 
     // Flattened applicant data
-    fullName: data.applicant?.user?.fullName ?? "",
+    name: data.applicant?.user?.name ?? "",
     email: data.applicant?.user?.email ?? "",
     phone: data.applicant?.phone ?? "",
     location: data.applicant?.location ?? "",

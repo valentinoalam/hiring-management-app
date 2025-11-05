@@ -37,7 +37,7 @@ describe('Application Queries', () => {
         formFields: [
           {
             id: 'field-1',
-            key: 'fullName',
+            key: 'name',
             label: 'Full Name',
             fieldType: 'text',
             fieldState: 'mandatory' as const,
@@ -62,7 +62,7 @@ describe('Application Queries', () => {
       await waitFor(() => expect(result.current.isSuccess).toBe(true));
 
       expect(result.current.data?.formFields).toHaveLength(1);
-      expect(result.current.data?.formFields[0].key).toBe('fullName');
+      expect(result.current.data?.formFields[0].key).toBe('name');
       expect(result.current.data?.formConfig.resumeRequired).toBe(true);
     });
 
@@ -94,7 +94,7 @@ describe('Application Queries', () => {
         coverLetter: 'I am very interested...',
         source: 'website',
         formResponses: {
-          fullName: 'John Doe',
+          name: 'John Doe',
           experience: '5 years',
         },
         resumeUrl: 'https://example.com/resume.pdf',
@@ -121,14 +121,14 @@ describe('Application Queries', () => {
 
     it('should handle validation errors', async () => {
       const applicationData = {
-        formResponses: { fullName: '' }, // Missing required field
+        formResponses: { name: '' }, // Missing required field
         coverLetter: 'Test',
       };
 
       (global.fetch as jest.Mock).mockResolvedValueOnce({
         ok: false,
         status: 400,
-        json: async () => ({ error: 'Missing required field: fullName' }),
+        json: async () => ({ error: 'Missing required field: name' }),
       });
 
       const { result } = renderHook(() => useSubmitJobApplication('job-123'), {
@@ -189,7 +189,7 @@ describe('Application Queries', () => {
       const mockProfile = {
         id: 'profile-123',
         userId: 'user-123',
-        fullName: 'John Doe',
+        name: 'John Doe',
         email: 'john@example.com',
         phone: '+1234567890',
       };

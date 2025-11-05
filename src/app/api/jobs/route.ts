@@ -53,7 +53,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               email: true,
-              fullName: true,
+              name: true,
             },
           },
           company: {

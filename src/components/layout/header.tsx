@@ -98,13 +98,13 @@ export default function Header() {
       );
     }
     console.log(isAuthenticated)
-    console.log(user.fullName)
-    const initials = user.fullName
-      ? user.fullName
+    console.log(user.name)
+    const initials = user.name
+      ? user.name
           .split(" ")
           .map((n) => n[0])
           .join("")
-      : ""; // Fallback for when user.fullName is undefined or null
+      : ""; // Fallback for when user.name is undefined or null
 
     return (
       <DropdownMenu>
@@ -112,8 +112,8 @@ export default function Header() {
           <Button variant="ghost" className="relative h-8 w-8 rounded-full">
             <Avatar className="h-8 w-8">
               {/* 💡 Use session.user.image */}
-              <AvatarImage src={user.image ?? undefined} alt={user.fullName} /> 
-              {/* 💡 Use session.user.fullName initials */}
+              <AvatarImage src={user.image ?? undefined} alt={user.name} /> 
+              {/* 💡 Use session.user.name initials */}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
           </Button>
@@ -121,8 +121,8 @@ export default function Header() {
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">
             <div className="flex flex-col space-y-1">
-              {/* 💡 Use session.user.fullName */}
-              <p className="text-sm font-medium leading-none">{user.fullName}</p> 
+              {/* 💡 Use session.user.name */}
+              <p className="text-sm font-medium leading-none">{user.name}</p> 
               {/* 💡 Use session.user.email */}
               <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
             </div>

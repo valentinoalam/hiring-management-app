@@ -238,9 +238,21 @@
   input[type="search"],
   button
   {
-    @apply rounded-xl;
+    @apply rounded-xl focus-visible:bg-primary;
   }
-
+  input:where([type='text'], [type='email'], [type='password'], [type='number'], [type='tel']):focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply outline-none border-primary;
+    /*
+      Explanation of @apply classes:
+      - outline-none: Removes the default browser focus outline.
+      - ring-2: Adds a 2-pixel thick custom ring.
+      - ring-offset-2: Adds a 2-pixel gap between the element border and the ring.
+      - ring-indigo-500: Sets the color of the ring.
+      - border-indigo-500: Optionally changes the border color on focus.
+    */
+  }
   input[type="checkbox"] {
     @apply rounded-lg
   }

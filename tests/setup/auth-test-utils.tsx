@@ -2,7 +2,7 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
 import { 
@@ -45,7 +45,7 @@ export const createWrapper = () => {
 export const mockUser = {
   id: "user-123",
   email: "test@example.com",
-  fullName: "Test User",
+  name: "Test User",
   password: "hashed-password",
   role: "USER" as const,
   isVerified: true,
@@ -59,7 +59,6 @@ export const mockSession = {
     id: "user-123",
     email: "test@example.com",
     name: "Test User",
-    fullName: "Test User",
     role: "USER" as const,
     isVerified: true,
   },
@@ -141,7 +140,7 @@ export const mockAuthResponses = {
 export const mockFormData = {
   email: 'test@example.com',
   password: 'Password123!',
-  fullName: 'Test User',
+  name: 'Test User',
 }
 
 // Utility function to setup router mock
@@ -160,6 +159,22 @@ export const setupRouterMock = (overrides = {}) => {
   });
   
   return { mockPush, mockRefresh };
+};
+
+// Utility function to setup search params mock
+export const setupSearchParamsMock = (params: Record<string, string> = {}) => {
+  const searchParams = new URLSearchParams(params);
+  
+  (useSearchParams as jest.Mock).mockReturnValue({
+    get: jest.fn((key: string) => searchParams.get(key)),
+    getAll: jest.fn((key: string) => searchParams.getAll(key)),
+    has: jest.fn((key: string) => searchParams.has(key)),
+    toString: jest.fn(() => searchParams.toString()),
+    entries: jest.fn(() => searchParams.entries()),
+    keys: jest.fn(() => searchParams.keys()),
+    values: jest.fn(() => searchParams.values()),
+    forEach: jest.fn((callback) => searchParams.forEach(callback)),
+  });
 };
 
 // Re-export everything from testing-library

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         author: {
           select: {
-            fullName: true,
+            name: true,
             email: true,
             profile: {
               select: {
@@ -81,7 +81,7 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       include: {
         author: {
           select: {
-            fullName: true,
+            name: true,
             email: true,
             profile: {
               select: {

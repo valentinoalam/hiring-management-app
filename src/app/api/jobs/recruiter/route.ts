@@ -83,7 +83,7 @@ export async function GET(request: NextRequest) {
             select: {
               id: true,
               email: true,
-              fullName: true,
+              name: true,
             },
           },
           company: {
@@ -279,7 +279,7 @@ export async function POST(request: NextRequest) {
           select: {
             id: true,
             email: true,
-            fullName: true,
+            name: true,
           },
         },
         company: {
@@ -412,7 +412,7 @@ export async function PUT(request: NextRequest) {
           select: {
             id: true,
             email: true,
-            fullName: true,
+            name: true,
           },
         },
         company: {

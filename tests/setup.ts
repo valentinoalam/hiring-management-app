@@ -34,7 +34,12 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 global.fetch = jest.fn();
 
 // --- Global Mocks ---
-
+jest.mock('next/navigation', () => ({
+  useRouter: jest.fn(),
+  useSearchParams: jest.fn(),
+  usePathname: jest.fn(),
+  useParams: jest.fn(),
+}));
 // Mock next/font
 jest.mock('next/font/local', () => ({
   __esModule: true,
@@ -51,17 +56,51 @@ jest.mock('next/font/google', () => ({
   }),
 }));
 
-// Mock next/navigation - Use function mocks that can be overridden in tests
-jest.mock('next/navigation', () => ({
-  useRouter: jest.fn(),
-  useSearchParams: jest.fn(),
-  usePathname: jest.fn(),
-  useParams: jest.fn(),
-}));
 
+// Mock next/navigation with default implementations
+jest.mock('next/navigation', () => {
+  const mockPush = jest.fn();
+  const mockReplace = jest.fn();
+  const mockBack = jest.fn();
+  const mockForward = jest.fn();
+  const mockRefresh = jest.fn();
+  const mockPrefetch = jest.fn();
+  
+  return {
+    useRouter: jest.fn(() => ({
+      push: mockPush,
+      replace: mockReplace,
+      back: mockBack,
+      forward: mockForward,
+      refresh: mockRefresh,
+      prefetch: mockPrefetch,
+    })),
+    
+    useSearchParams: jest.fn(() => {
+      const params = new URLSearchParams();
+      return {
+        get: jest.fn((key: string) => params.get(key)),
+        getAll: jest.fn((key: string) => params.getAll(key)),
+        has: jest.fn((key: string) => params.has(key)),
+        toString: jest.fn(() => params.toString()),
+        forEach: jest.fn(),
+        entries: jest.fn(),
+        keys: jest.fn(),
+        values: jest.fn(),
+        [Symbol.iterator]: jest.fn(),
+      };
+    }),
+    
+    usePathname: jest.fn(() => '/'),
+    useParams: jest.fn(() => ({})),
+  };
+});
 // Mock next-auth/react
 jest.mock('next-auth/react', () => ({
-  useSession: jest.fn(),
+  useSession: jest.fn(() => ({
+    data: null,
+    status: 'unauthenticated',
+  })),
   signIn: jest.fn(),
   signOut: jest.fn(),
   SessionProvider: ({ children }: { children: React.ReactNode }) => children,
@@ -89,22 +128,32 @@ jest.mock('sonner', () => ({
 
 // Mock bcryptjs
 jest.mock('bcryptjs', () => ({
-  compare: jest.fn(),
-  hash: jest.fn(),
+  compare: jest.fn(() => Promise.resolve(true)),
+  hash: jest.fn(() => Promise.resolve('hashed-password')),
 }));
 
 // Mock uuid
 jest.mock('uuid', () => ({
-  v4: jest.fn(),
+  v4: jest.fn(() => 'mock-uuid-token-123'),
 }));
 
 // Mock Resend
 jest.mock('resend', () => ({
   Resend: jest.fn().mockImplementation(() => ({
     emails: {
-      send: jest.fn(),
+      send: jest.fn(() => Promise.resolve({ id: 'email-123', error: null })),
     },
   })),
+}));
+
+jest.mock('sonner', () => ({
+  toast: {
+    success: jest.fn(),
+    error: jest.fn(),
+    loading: jest.fn(),
+    dismiss: jest.fn(),
+    promise: jest.fn(),
+  },
 }));
 
 // Mock Prisma
@@ -145,18 +194,38 @@ jest.mock('@/lib/prisma', () => ({
 
 // Mock email functions
 jest.mock('@/lib/email', () => ({
-  sendVerificationEmail: jest.fn(),
-  sendPasswordResetEmail: jest.fn(),
-  sendMagicLinkEmail: jest.fn(),
+  sendVerificationEmail: jest.fn(() => Promise.resolve({ id: 'email-123' })),
+  sendPasswordResetEmail: jest.fn(() => Promise.resolve({ id: 'email-123' })),
+  sendMagicLinkEmail: jest.fn(() => Promise.resolve({ id: 'email-123' })),
 }));
 
 // Mock token functions
 jest.mock('@/lib/tokens', () => ({
-  generateVerificationToken: jest.fn(),
-  generatePasswordResetToken: jest.fn(),
-  getVerificationTokenByToken: jest.fn(),
-  getVerificationTokenByEmail: jest.fn(),
-  deleteVerificationToken: jest.fn(),
+  generateVerificationToken: jest.fn(() => Promise.resolve({
+    id: 'token-123',
+    identifier: 'test@example.com',
+    token: 'mock-verification-token',
+    expires: new Date(Date.now() + 3600 * 1000),
+  })),
+  generatePasswordResetToken: jest.fn(() => Promise.resolve({
+    id: 'token-123',
+    email: 'test@example.com',
+    token: 'mock-password-reset-token',
+    expires: new Date(Date.now() + 3600 * 1000),
+  })),
+  getVerificationTokenByToken: jest.fn(() => Promise.resolve({
+    id: 'token-123',
+    identifier: 'test@example.com',
+    token: 'mock-verification-token',
+    expires: new Date(Date.now() + 3600 * 1000),
+  })),
+  getVerificationTokenByEmail: jest.fn(() => Promise.resolve({
+    id: 'token-123',
+    identifier: 'test@example.com',
+    token: 'mock-verification-token',
+    expires: new Date(Date.now() + 3600 * 1000),
+  })),
+  deleteVerificationToken: jest.fn(() => Promise.resolve()),
 }));
 
 // Mock auth actions
@@ -169,11 +238,6 @@ jest.mock('@/app/(auth)/login/action', () => ({
 jest.mock('@/app/(auth)/sign-up/action', () => ({
   signUpWithEmail: jest.fn(),
 }));
-
-// --- Default Mock Implementations ---
-
-// Note: Default implementations are set within the jest.mock() calls above
-// This ensures proper mock setup without requiring additional imports
 
 // --- Test Utilities (Mock Data) ---
 
@@ -216,7 +280,7 @@ export const createMockJob = (overrides = {}) => ({
 
 export const createMockApplicant = (overrides = {}) => ({
   id: 'applicant-123',
-  fullName: 'John Doe',
+  name: 'John Doe',
   email: 'john@example.com',
   appliedAt: '2024-01-01T00:00:00.000Z',
   status: 'PENDING' as const,

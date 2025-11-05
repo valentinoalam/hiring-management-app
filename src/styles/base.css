@@ -27,7 +27,7 @@
     
     --muted: hsl(210, 50%, 95%); /* Light blue-grey */
     --muted-foreground: hsl(210, 30%, 40%);
-
+    --ring: #01959F;
     /* Neutral Color Palette */
     --neutral-10: #FFFFFF;
     --neutral-20: #FAFAFA;
