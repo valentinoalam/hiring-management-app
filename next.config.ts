@@ -14,6 +14,10 @@ const nextConfig: NextConfig = {
         protocol: "https",
         hostname: "**", // Allow all HTTPS domains
       },
+            {
+        protocol: "http",
+        hostname: "**", // Allow all HTTPS domains
+      },
     ], 
     // Define device sizes for responsive images
     deviceSizes: [

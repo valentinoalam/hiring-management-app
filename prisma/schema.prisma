@@ -1,32 +1,30 @@
-// ======================================
-// Hiring Management App Prisma Schema 
+// ====================================== Hiring Management App Prisma Schema
 // ======================================
 
 generator client {
-  provider = "prisma-client-js"
-  output   = "../node_modules/.prisma/client"
+    provider = "prisma-client-js"
+    output = "../node_modules/.prisma/client"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+    provider = "postgresql"
+    url = env("DATABASE_URL")
 }
 
-// ======================================
-// ENUMS (Enhanced)
+// ====================================== ENUMS (Enhanced)
 // ======================================
 
 enum UserRole {
   RECRUITER
   APPLICANT
-  ADMIN        // Added for future scalability
+  ADMIN // Added for future scalability
 }
 
 enum JobStatus {
   DRAFT
   ACTIVE
   INACTIVE
-  ARCHIVED     // Added for better job lifecycle
+  ARCHIVED // Added for better job lifecycle
 }
 
 enum ApplicationStatus {
@@ -35,7 +33,7 @@ enum ApplicationStatus {
   SHORTLISTED
   REJECTED
   ACCEPTED
-  WITHDRAWN    // Added for candidate-initiated withdrawals
+  WITHDRAWN // Added for candidate-initiated withdrawals
 }
 
 enum EmploymentType {
@@ -68,6 +66,20 @@ model PasswordResetToken {
 
   @@map("password_reset_tokens")
 }
+
+model Session {
+  id           String   @id @default(uuid()) @db.Uuid
+  userId       String?  @map("user_id") @db.Uuid
+  sessionToken String   @unique @map("session_token") @db.Text
+  accessToken  String?  @map("access_token") @db.Text
+  expires      DateTime
+  user         User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("sessions")
+}
+
 model Account {
   id                String  @id @default(uuid()) @db.Uuid
   userId            String  @db.Uuid
@@ -92,18 +104,20 @@ model Account {
 // ======================================
 
 model User {
-  id          String   @id @default(uuid()) @db.Uuid
+  id String @id @default(uuid())@db.Uuid
   email       String   @unique
   password    String?
-  name    String
+  name        String
+  image       String?  
   role        UserRole @default(APPLICANT)
-  isVerified  Boolean  @default(false)  // Added email verification
+  emailVerified          DateTime?
   lastLoginAt DateTime?                 // Added for analytics
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
   // Relations
-  accounts    Account[]
+  accounts      Account[]
+  sessions      Session[]
   jobs        Job[]         @relation("JobAuthor")
   profile     Profile?
   customField    InfoField[]

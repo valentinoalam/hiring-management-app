@@ -28,6 +28,19 @@ CREATE TABLE "password_reset_tokens" (
 );
 
 -- CreateTable
+CREATE TABLE "sessions" (
+    "id" UUID NOT NULL,
+    "user_id" UUID,
+    "session_token" TEXT NOT NULL,
+    "access_token" TEXT,
+    "expires" TIMESTAMP(3) NOT NULL,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
 CREATE TABLE "accounts" (
     "id" UUID NOT NULL,
     "userId" UUID NOT NULL,
@@ -51,8 +64,9 @@ CREATE TABLE "users" (
     "email" TEXT NOT NULL,
     "password" TEXT,
     "name" TEXT NOT NULL,
+    "image" TEXT,
     "role" "UserRole" NOT NULL DEFAULT 'APPLICANT',
-    "isVerified" BOOLEAN NOT NULL DEFAULT false,
+    "emailVerified" TIMESTAMP(3),
     "lastLoginAt" TIMESTAMP(3),
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "updatedAt" TIMESTAMP(3) NOT NULL,
@@ -229,6 +243,9 @@ CREATE UNIQUE INDEX "verification_tokens_identifier_token_key" ON "verification_
 CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
 
 -- CreateIndex
+CREATE UNIQUE INDEX "sessions_session_token_key" ON "sessions"("session_token");
+
+-- CreateIndex
 CREATE UNIQUE INDEX "accounts_provider_providerAccountId_key" ON "accounts"("provider", "providerAccountId");
 
 -- CreateIndex
@@ -305,6 +322,9 @@ CREATE INDEX "interviews_applicationId_idx" ON "interviews"("applicationId");
 
 -- CreateIndex
 CREATE INDEX "interviews_scheduled_at_idx" ON "interviews"("scheduled_at");
+
+-- AddForeignKey
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;

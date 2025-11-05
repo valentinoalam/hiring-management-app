@@ -86,7 +86,7 @@ export const authConfig: NextAuthConfig = {
             email: user.email,
             name: user.name, // Map name to the standard 'name' property
             role: user.role,
-            image: null, // No image field in your DB user model directly
+            image: user.image, // No image field in your DB user model directly
             isVerified: user.isVerified,
           }
         } catch (error) {
