@@ -138,6 +138,8 @@ model Profile {
   bio          String?  
   phone        String?
   location     String?
+  // gender       Gender
+  // linkedin     String?
   avatarUrl    String?  @map("avatar_url")
   resumeUrl    String?  @map("resume_url")
   portfolioUrl String?  @map("portfolio_url")

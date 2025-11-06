@@ -3,7 +3,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
 import { apiFetch } from "@/lib/api";
-import { Application, Profile } from "@prisma/client";
+import { Application } from "@prisma/client";
+import { Profile } from '@/types/user';
 
 // NEW: API functions for Job Applications and Profile Updates
 const submitJobApplication = async ({
@@ -13,9 +14,14 @@ const submitJobApplication = async ({
   jobId: string;
   applicationData: ApplicationData;
 }): Promise<{ application: ApplicantData }> => {
-  return apiFetch(`/api/jobs/${jobId}/applications`, {
+  const backendData = {
+    formResponse: applicationData.formResponse,
+    profileUpdates: applicationData.profileUpdates,
+    userInfoUpdates: applicationData.otherInfoUpdates,
+  };
+  return apiFetch(`/api/jobs/${jobId}/apply`, {
     method: 'POST',
-    body: JSON.stringify(applicationData),
+    body: JSON.stringify(backendData),
   });
 };
 
@@ -106,10 +112,11 @@ export function useDeleteFormField() {
 
 export const useUserProfile = (userId: string) => {
   return useQuery({
-    queryKey: queryKeys.profile.user(userId),
+    queryKey: queryKeys.currentUser.profile(),
     queryFn: () => fetchUserProfile(userId),
     enabled: !!userId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    retry: 1, // Tambahkan 'retry: false' untuk berjaga-jaga jika ada kasus error lain, atau atur retryCount ke 1.
+    staleTime: 5 * 60 * 1000,
   });
 };
 

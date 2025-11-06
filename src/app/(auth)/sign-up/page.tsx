@@ -244,7 +244,7 @@ export default function SignUpPage() {
                 )}
 
                 {/* Sign Up Form using FieldGroup and Controller */}
-                <form id="form-signup-demo" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <form id="form-signup" onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
                   <FieldGroup>
                     
                     {/* Full Name Field */}

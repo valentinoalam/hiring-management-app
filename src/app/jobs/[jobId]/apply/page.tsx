@@ -35,26 +35,9 @@ export default function JobApplicationPage() {
     userProfile, 
     isLoading: dataLoading, 
     submitApplication, 
-    isSubmitting 
+    isSubmitting, 
+    error: flowError
   } = useJobApplicationFlow(jobId, userId || '');
-
-  const handleSubmit = async (applicationData: ApplicationData) => {
-    try {
-      await submitApplication({
-        jobId,
-        resumeUrl: applicationData.resumeUrl || '',
-        coverLetter: applicationData.coverLetter || '',
-        source: applicationData.source,
-        applicantInfo: applicationData.applicantInfo,
-      } as ApplicationData);
-      
-      // Redirect to success page or show success message
-      router.push('/jobs/success');
-    } catch (error) {
-      // Error handling is done in the mutation
-      console.error('Application submission error:', error);
-    }
-  };
 
   const handleCancel = () => {
     router.back();
@@ -70,28 +53,39 @@ export default function JobApplicationPage() {
       </div>
     );
   }
-
-  if (jobError) {
+  
+  if (!job || !appFormFields) {
+    const title = !job ? "Job Not Found" : "Error Loading Application Data";
+    const message = !job? "The job maybe already been removed." : "There was an issue loading the form data. Please try again later.";
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-lg font-bold text-danger-main">Job Not Found</h2>
-          <p className="text-neutral-90 mt-2">The job you&apos;re looking for doesn&apos;t exist or is no longer available.</p>
+          <h2 className="text-lg font-bold text-danger-main">{title}</h2>
+          <p className="text-neutral-90">{message}</p>
           <Button onClick={handleCancel} className="mt-4">
             <ArrowLeft className="w-4 h-4 mr-2" />
-            Back to Jobs
+            Go Back
           </Button>
         </div>
       </div>
     );
   }
 
-  if (!job) {
+  // Handle errors from both hooks
+  if (jobError || flowError) {
+    // You can customize the message based on the error type
+    const errorTitle = jobError ? "Job Not Found" : "Error Loading Application Data";
+    const errorMessage = jobError ? 
+      "The job you're looking for doesn't exist or is no longer available." :
+      "There was an issue loading the form data. Please try again later.";
+
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-neutral-90">Job not found.</p>
-          <Button onClick={handleCancel} className="mt-4">
+          <h2 className="text-lg font-bold text-danger-main">{errorTitle}</h2>
+          <p className="text-neutral-90 mt-2">{errorMessage}</p>
+          <Button onClick={() => router.back()} className="mt-4">
+            <ArrowLeft className="w-4 h-4 mr-2" />
             Go Back
           </Button>
         </div>
@@ -101,12 +95,10 @@ export default function JobApplicationPage() {
 
   return (
     <JobApplicationForm
-      jobId={jobId}
-      jobTitle={job.title}
-      companyName={job.company?.name || 'Unknown Company'}
-      onSubmit={handleSubmit}
-      onCancel={handleCancel}
-      userId={userId!}
-    />
+      job={job}
+      appFormFields={appFormFields} // <<-- DATA PASSED AS PROP
+      userProfile={userProfile} // <<-- DATA PASSED AS PROP
+      onSubmit={submitApplication}
+      onCancel={handleCancel} />
   );
 }

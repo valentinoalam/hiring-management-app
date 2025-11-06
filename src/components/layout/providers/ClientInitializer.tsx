@@ -48,7 +48,7 @@ export default function ClientInitializer({ session, children }: ClientInitializ
   }, [profile, setBasicProfile]); // This effect re-runs only when 'profile' data changes
 
   return (
-    <QueryProvider> 
+
       <NextAuthProvider session={session}>  
         <ThemeProvider>
           {children}
@@ -56,6 +56,5 @@ export default function ClientInitializer({ session, children }: ClientInitializ
           <Toaster />
         </ThemeProvider>
       </NextAuthProvider>
-    </QueryProvider>
   );
 }

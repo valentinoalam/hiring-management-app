@@ -1,5 +1,6 @@
 import { convertDecimalToNumber } from "@/utils/formatters/formatters";
 import { JobStatus, Prisma } from "@prisma/client";
+import { Profile } from "./user";
 
 export interface JobData {
   id: string;
@@ -123,6 +124,29 @@ export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
     candidatesCount: prismaJob._count?.candidates || 0
   };
 };
+
+export interface AppFormField {
+  id: string;
+  fieldState: "mandatory" | "optional" | "off";
+  field: {
+    id: string;
+    key: string;
+    label: string;
+    fieldType: string;
+    options?: string;
+    description?: string;
+    placeholder?: string;
+    validation?: {
+      min?: number;
+      max?: number;
+      minDate?: string;
+      maxDate?: string;
+      fileTypes?: string[];
+    };
+  };
+  sortOrder?: number;
+}
+
 
 export type ApplicationStatus = 'PENDING' | 'UNDER_REVIEW' | 'SHORTLISTED' | 'REJECTED' | 'ACCEPTED' | 'WITHDRAWN';
 
@@ -293,15 +317,37 @@ export interface UpdateJobData {
   requirements?: object;
 }
 
+// Create shared types between frontend and backend
+export interface ApplicationSubmission {
+  formResponse: Record<string, unknown>;
+  profileUpdates: {
+    phone?: string;
+    location?: string;
+    fullname?: string;
+    avatarUrl?: string;
+    resumeUrl?: string;
+  };
+  userInfoUpdates: Array<{
+    id?: string;
+    fieldId: string;
+    infoFieldAnswer: string;
+  }>;
+}
+
 export interface ApplicationData {
   jobId: string;
   formResponse:JSON
   resumeUrl: string;
   coverLetter: string;
   source?: string;
-  applicantInfo?: JSON;
+  profileUpdates: Partial<Profile>;     // Add these
+  otherInfoUpdates: OtherInfoUpdate[];   // Add these
 }
-
+interface OtherInfoUpdate {
+  id?: string;
+  fieldId: string;
+  infoFieldAnswer: string;
+}
 // New interfaces for company relations
 export interface Company {
   id: string;

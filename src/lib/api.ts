@@ -8,6 +8,10 @@ export const apiFetch = async (url: string, options?: RequestInit) => {
     ...options,
   });
 
+  //if not found, return null
+  if (response.status === 404) {
+    return null; // Resolve the query with null data instead of throwing an error
+  }
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     throw new Error(errorData.error || `HTTP error! status: ${response.status}`);

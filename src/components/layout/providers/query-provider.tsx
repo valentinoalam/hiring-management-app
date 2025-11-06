@@ -1,6 +1,5 @@
 "use client"
 
-
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'; // For localStorage
 

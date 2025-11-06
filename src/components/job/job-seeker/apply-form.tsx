@@ -16,16 +16,25 @@ import { Card } from "@/components/ui/card";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useApplicationFormFields, useUserProfile } from "@/hooks/queries/application-queries";
-import { OtherUserInfo } from "@prisma/client";
-import { ApplicationData } from "@/types/job";
+import { OtherInfo, Profile, ProfileOtherInfo } from "@/types/user";
+import { AppFormField, ApplicantData, ApplicationData, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
-const ACCEPTED_RESUME_TYPES = ["application/pdf", "application/msword", "application/vnd.openxmlformats-officedocument.wordprocessingml.document"];
-const ACCEPTED_IMAGE_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const ACCEPTED_IMAGE_TYPES = [
+  "image/jpeg", 
+  "image/jpg", 
+  "image/png", 
+  "image/webp"
+];
+const ACCEPTED_RESUME_TYPES = [
+  "application/pdf", 
+  "application/msword", 
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+];
 
 // Dynamic schema based on AppFormField configuration
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
@@ -80,70 +89,12 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
 
 type ApplicationFormData = z.infer<ReturnType<typeof createApplicationSchema>>;
 
-interface AppFormField {
-  id: string;
-  fieldState: "mandatory" | "optional" | "off";
-  field: {
-    id: string;
-    key: string;
-    label: string;
-    fieldType: string;
-    options?: string;
-    description?: string;
-    placeholder?: string;
-    validation?: {
-      min?: number;
-      max?: number;
-      minDate?: string;
-      maxDate?: string;
-      fileTypes?: string[];
-    };
-  };
-  sortOrder?: number;
-}
-
-interface Profile {
-  linkedin: string;
-  fullname: string;
-  gender: string;
-  id: string;
-  userId: string;
-  bio?: string;
-  phone?: string;
-  location?: string;
-  avatarUrl?: string;
-  resumeUrl?: string;
-  portfolioUrl?: string;
-  companyName?: string;
-  website?: string;
-  linkedinUrl?: string;
-  githubUrl?: string;
-  userInfo?: {
-    [fieldKey: string]: {
-      [fieldLabel: string]: string; // e.g. "Education": "text"
-      answer: string;
-    };
-  }[];
-/**
- * userInfo: {
-    id: string;
-    fieldId: string;
-    infoFieldAnswer: string;
-    field: {
-      id: string;
-      key: string;
-    };
-  }[];
- */
-}
-
 interface JobApplicationFormProps {
-  jobId: string;
-  jobTitle: string;
-  companyName: string;
-  onSubmit: (applicationData: ApplicationData) => Promise<void>;
+  job: Job;
+  appFormFields: AppFormField[];
+  userProfile: Profile | null | undefined;
+  onSubmit: (applicationData: ApplicationData) => Promise<unknown>;
   onCancel: () => void;
-  userId: string;
 }
 
 // Gesture Profile Capture Component
@@ -281,44 +232,28 @@ function GestureProfileCapture({
 }
 
 export default function JobApplicationForm({
-  jobId,
-  jobTitle,
-  companyName,
+  job,
+  appFormFields,
+  userProfile,
   onSubmit,
-  onCancel,
-  userId,
+  onCancel
 }: JobApplicationFormProps) {
   const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [coverLetterMode, setCoverLetterMode] = useState<'text' | 'file'>('text');
   const [showGestureCapture, setShowGestureCapture] = useState(false);
+  const router = useRouter();
   
-  const { 
-    data: formFieldsData, 
-    isLoading: loadingFields, 
-    error: fieldsError 
-  } = useApplicationFormFields(jobId);
-  
-  const { 
-    data: profileData, 
-    isLoading: loadingProfile, 
-    error: profileError 
-  } = useUserProfile(userId);
-
-  const profile = profileData;
+  const profile = userProfile;
   
   // Set initial avatar preview when profile loads
   React.useEffect(() => {
-    if (profileData?.avatarUrl && !avatarPreview) {
-      setAvatarPreview(profileData.avatarUrl);
+    if (userProfile?.avatarUrl && !avatarPreview) {
+      setAvatarPreview(userProfile.avatarUrl);
     }
-  }, [profileData?.avatarUrl, avatarPreview]);
-
-  const isLoading = loadingFields || loadingProfile;
-  const error = fieldsError || profileError;
-
-  const appFormFields = useMemo(() => formFieldsData?.formFields || [], [formFieldsData?.formFields]);
+  }, [userProfile?.avatarUrl, avatarPreview]);
 
   const formSchema = createApplicationSchema(appFormFields);
   const {
@@ -341,8 +276,8 @@ export default function JobApplicationForm({
         if (appField.fieldState !== "off") {
           const fieldKey = appField.field.key;
           
-          const userInfo = profile.userInfo?.find(
-            (info: Partial<OtherUserInfo>) => info.fieldId === appField.field.id
+          const userInfo = profile.otherInfo?.find(
+            (info: ProfileOtherInfo) => info.fieldId === appField.field.id
           );
           
           if (userInfo) {
@@ -355,15 +290,15 @@ export default function JobApplicationForm({
               case 'domicile':
                 fieldValues[fieldKey] = profile.location || "";
                 break;
-              case 'linkedin_url':
-                fieldValues[fieldKey] = profile.linkedin || "";
-                break;
+              // case 'linkedin_url':
+              //   fieldValues[fieldKey] = profile.linkedin || "";
+              //   break;
               case 'full_name':
                 fieldValues[fieldKey] = profile.fullname || "";
                 break;
-              case 'gender':
-                fieldValues[fieldKey] = profile.gender || "";
-                break;
+              // case 'gender':
+              //   fieldValues[fieldKey] = profile.gender || "";
+              //   break;
               default:
                 fieldValues[fieldKey] = "";
             }
@@ -397,6 +332,7 @@ export default function JobApplicationForm({
         return;
       }
       const previewUrl = URL.createObjectURL(file);
+      setAvatarFile(file);
       setAvatarPreview(previewUrl);
     }
   };
@@ -449,53 +385,143 @@ export default function JobApplicationForm({
     setValue('coverLetterFile', undefined, { shouldValidate: true });
   };
 
+  // const handleFormSubmit = async (formData: ApplicationFormData) => {
+  //   if (!profile) return;
+
+  //   try {
+  //     const coverLetterContent =
+  //       coverLetterMode === "text"
+  //         ? formData.coverLetter
+  //         : coverLetterFile?.name || "";
+  //     const computedResumeUrl = resumeFile
+  //       ? URL.createObjectURL(resumeFile)
+  //       : (profile.resumeUrl || "");
+  //     // prepare partial profile updates (only fields you allow to change from this form)
+  //     const profileUpdates: Partial<Profile> = {
+  //       phone: formData.phone_number as string || profile.phone,
+  //       location: formData.domicile as string || profile.location,
+  //       // linkedin: formData.linkedin_url as string || profile.linkedin,
+  //       avatarUrl: avatarPreview || profile.avatarUrl,
+  //       fullname: formData.full_name as string || profile.fullname,
+  //       // gender: formData.gender as string || profile.gender,
+  //       ...(resumeFile && { resumeUrl: URL.createObjectURL(resumeFile) }),
+  //     };
+        
+  //       // assemble otherInfo updates (to be turned into OtherUserInfo records by backend)
+  //     const otherInfoUpdates = appFormFields
+  //       .filter((appField: AppFormField) => appField.fieldState !== "off")
+  //       .map((appField: AppFormField) => {
+  //         const fieldKey = appField.field.key;
+  //         // profile.otherInfo is the structured array coming from backend (ProfileOtherInfo[])
+  //         const existing = profile.otherInfo?.find(
+  //           (info: ProfileOtherInfo) => info.fieldId === appField.field.id
+  //         );
+
+  //         return {
+  //           id: existing?.id,                 // may be undefined for new entries
+  //           fieldId: appField.field.id,
+  //           infoFieldAnswer: formData[fieldKey] as string || "",
+  //         };
+  //       });
+
+  //     const applicationData: ApplicationData = {
+  //       jobId: job.id,
+  //       formResponse: JSON.parse(JSON.stringify(formData)), // safe JSON copy
+  //       resumeUrl: computedResumeUrl,
+  //       coverLetter: coverLetterContent as string,
+  //       source: formData.source as string || undefined,
+  //       profileUpdates,
+  //       otherInfoUpdates,
+  //     };
+
+  //   // Call the injected prop (expected signature: submitApplication({ jobId, applicationData }))
+  //   await onSubmit(applicationData);
+  //   } catch (error) {
+  //     console.error("Error submitting application:", error);
+  //     throw error;
+  //   }
+  // };
   const handleFormSubmit = async (formData: ApplicationFormData) => {
     if (!profile) return;
 
     try {
-      const coverLetterContent = coverLetterMode === 'text' 
-        ? formData.coverLetter 
-        : coverLetterFile?.name || '';
+      const coverLetterContent = coverLetterMode === "text"
+        ? formData.coverLetter
+        : coverLetterFile?.name || "";
 
-      const submissionData = {
-        jobId: jobId,
-        userId: userId,
-        formResponse: formData as unknown as JSON,
+      // Prepare FormData for file upload
+      const submitFormData = new FormData();
+      
+      // Add files
+      if (avatarFile) {
+        submitFormData.append('avatar', avatarFile);
+      }
+      if (resumeFile) {
+        submitFormData.append('resume', resumeFile);
+      }
+      if (coverLetterFile && coverLetterMode === 'file') {
+        submitFormData.append('coverLetterFile', coverLetterFile);
+      }
+
+      // Add JSON data
+      submitFormData.append('formResponse', JSON.stringify(formData));
+      submitFormData.append('profileUpdates', JSON.stringify({
+        phone: formData.phone_number as string || profile.phone,
+        location: formData.domicile as string || profile.location,
+        fullname: formData.full_name as string || profile.fullname,
+        // Note: avatarUrl and resumeUrl will be set by backend after upload
+      }));
+      submitFormData.append('userInfoUpdates', JSON.stringify(
+        appFormFields
+          .filter((appField: AppFormField) => appField.fieldState !== "off")
+          .map((appField: AppFormField) => {
+            const fieldKey = appField.field.key;
+            const existing = profile.otherInfo?.find(
+              (info: ProfileOtherInfo) => info.fieldId === appField.field.id
+            );
+
+            return {
+              id: existing?.id,
+              fieldId: appField.field.id,
+              infoFieldAnswer: formData[fieldKey] || "",
+            };
+          })
+      ));
+
+      // Create ApplicationData structure
+      const applicationData: ApplicationData = {
+        jobId: job.id,
+        formResponse: JSON.parse(JSON.stringify(formData)),
         resumeUrl: resumeFile ? URL.createObjectURL(resumeFile) : (profile.resumeUrl || ''),
         coverLetter: coverLetterContent as string,
         source: formData.source as string,
         profileUpdates: {
           phone: formData.phone_number as string || profile.phone,
           location: formData.domicile as string || profile.location,
-          linkedin: formData.linkedin_url as string || profile.linkedin,
-          avatarUrl: avatarPreview || profile.avatarUrl,
           fullname: formData.full_name as string || profile.fullname,
-          gender: formData.gender as string || profile.gender,
-          ...(resumeFile && { resumeUrl: URL.createObjectURL(resumeFile) }),
-        } as Partial<Profile>,
-        userInfoUpdates: appFormFields
+        },
+        otherInfoUpdates: appFormFields
           .filter((appField: AppFormField) => appField.fieldState !== "off")
           .map((appField: AppFormField) => {
             const fieldKey = appField.field.key;
-            const existingUserInfo = profile.userInfo?.find(
-              (info: { fieldId: string }) => info.fieldId === appField.field.id
+            const existing = profile.otherInfo?.find(
+              (info: ProfileOtherInfo) => info.fieldId === appField.field.id
             );
-            
             return {
-              id: existingUserInfo?.id,
+              id: existing?.id,
               fieldId: appField.field.id,
-              infoFieldAnswer: formData[fieldKey] as string || "",
+              infoFieldAnswer: String(formData[fieldKey] || ""),
             };
-          }),
+          })
       };
 
-      await onSubmit(submissionData);
+      await onSubmit(applicationData);
+      
+      router.push('/jobs/success');
     } catch (error) {
-      console.error('Error submitting application:', error);
-      throw error;
+      console.error('Application submission error:', error);
     }
   };
-
   const renderFormField = (appField: AppFormField) => {
     const { field, fieldState } = appField;
     const isRequired = fieldState === "mandatory";
@@ -863,31 +889,31 @@ export default function JobApplicationForm({
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center p-8">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-        <span className="ml-3 text-lg">Loading application form...</span>
-      </div>
-    );
-  }
+  // if (isLoading) {
+  //   return (
+  //     <div className="flex justify-center items-center p-8">
+  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+  //       <span className="ml-3 text-lg">Loading application form...</span>
+  //     </div>
+  //   );
+  // }
 
-  if (error) {
-    return (
-      <div className="text-center p-8 text-red-600">
-        <h3 className="text-lg font-semibold mb-2">Failed to load application form</h3>
-        <p className="text-sm text-muted-foreground">
-          {error.message || 'Please try refreshing the page'}
-        </p>
-        <button 
-          onClick={() => window.location.reload()}
-          className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-        >
-          Retry
-        </button>
-      </div>
-    );
-  }
+  // if (error) {
+  //   return (
+  //     <div className="text-center p-8 text-red-600">
+  //       <h3 className="text-lg font-semibold mb-2">Failed to load application form</h3>
+  //       <p className="text-sm text-muted-foreground">
+  //         {error.message || 'Please try refreshing the page'}
+  //       </p>
+  //       <button 
+  //         onClick={() => window.location.reload()}
+  //         className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+  //       >
+  //         Retry
+  //       </button>
+  //     </div>
+  //   );
+  // }
 
   if (appFormFields.length === 0) {
     return (
@@ -902,7 +928,7 @@ export default function JobApplicationForm({
 
   const visibleFields = appFormFields
     .filter((field: AppFormField) => field.fieldState !== "off")
-    .sort((a: { sortOrder: number; }, b: { sortOrder: number; }) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   const photoProfileField = appFormFields.find((f: AppFormField) => f.field.key === 'photo_profile');
 
@@ -932,7 +958,7 @@ export default function JobApplicationForm({
             </button>
             <div className="flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <h1 className="text-lg font-bold leading-7 text-neutral-100 font-sans">
-                Apply {jobTitle} at {companyName}
+                Apply {job.title} at {job?.company?.name}
               </h1>
               <div className="flex items-center gap-3">
                 <div className="flex items-start gap-2 text-sm leading-6 text-neutral-90 font-sans">
