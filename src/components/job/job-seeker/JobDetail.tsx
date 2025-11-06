@@ -1,10 +1,13 @@
 import { Button } from "@/components/ui/button";
+import { MapPin, Banknote } from "lucide-react";
 import Image from "next/image";
 
 interface JobDetailProps {
   title: string;
   company: string;
   logo: string;
+  salary: string;
+  location: string;
   type: string;
   description: string;
   onApply: () => void;
@@ -14,6 +17,8 @@ export default function JobDetail({
   title,
   company,
   logo,
+  salary,
+  location,
   type,
   description,
   onApply
@@ -39,6 +44,16 @@ export default function JobDetail({
               </h1>
               <p className="text-neutral-70 text-sm leading-6">{company}</p>
             </div>
+            <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-1">
+            <MapPin className="w-4 h-4 text-neutral-80 shrink-0" />
+            <span className="text-neutral-80 text-xs leading-5">{location}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            <Banknote className="w-4 h-4 text-neutral-80 shrink-0" />
+            <span className="text-neutral-80 text-xs leading-5">{salary}</span>
+          </div>
+        </div>
           </div>
           <Button onClick={onApply} className="px-4 py-1 bg-secondary text-neutral-90 font-bold text-sm leading-6 rounded-lg shadow-sm hover:bg-secondary/90 transition-colors">
             Apply

@@ -303,35 +303,13 @@ export default function JobsPage() {
         </div>
       ) : (
         filteredJobs.map(job => (
-          // <div
-          //   key={job.id}
-          //   className={`p-4 rounded-xl cursor-pointer transition-all border ${
-          //     selectedJobId === job.id
-          //       ? 'bg-primary/10 border-primary shadow-lg'
-          //       : 'bg-card border-border hover:shadow-md hover:border-primary/50'
-          //   }`}
-          //   onClick={() => handleJobSelect(job.id)}
-          // >
-          //   <div className="flex justify-between items-start">
-          //     <h3 className="text-lg font-bold text-card-foreground line-clamp-1">{job.title}</h3>
-          //     <Heart className="w-5 h-5 text-gray-400 hover:text-red-500 transition-colors" />
-          //   </div>
-          //   <p className="text-sm text-muted-foreground mb-2">{job.companyName}</p>
-          //   <div className="text-sm space-y-1 mt-2">
-          //     <span className="flex items-center text-sm text-gray-600">
-          //       <MapPin className="w-4 h-4 mr-2" />{job.location} ({job.employmentType})
-          //     </span>
-          //     <span className="flex items-center text-sm text-gray-600">
-          //       {salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)} / year
-          //     </span>
-          //   </div>
-          // </div>
           <JobCard
             key={job.id}
             title={job.title}
             company={job.companyName || ""}
             location={job.location || ""}
-            salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency) || ""}
+            employmentType={job.employmentType || ""}
+            salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}
             logo={job.company?.logo || "/logo.png"}
             isActive={selectedJobId === job.id}
             onClick={() => handleJobSelect(job.id)}
@@ -416,7 +394,6 @@ export default function JobsPage() {
 
         {/* 3. Job Detail */}
         <div className="col-span-1 lg:col-span-1 xl:col-span-1 hidden md:block">
-          {/* {renderJobDetail()} */}
           <JobDetail
             title={selectedJob?.title || ""}
             company={selectedJob?.companyName || ""}
@@ -424,7 +401,8 @@ export default function JobsPage() {
             type={selectedJob?.employmentType || ""}
             description={selectedJob?.description || ""}
             onApply={() => router.push(`/jobs/${selectedJobId}/apply`)}
-          />
+            salary={ selectedJob? salaryDisplay(selectedJob.salaryMin, selectedJob.salaryMax, selectedJob?.salaryCurrency) : ""} 
+            location={''}          />
         </div>
       </div>
     </div>

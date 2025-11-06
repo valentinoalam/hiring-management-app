@@ -6,22 +6,17 @@ import { apiFetch } from "@/lib/api";
 import { Application } from "@prisma/client";
 import { Profile } from '@/types/user';
 
-// NEW: API functions for Job Applications and Profile Updates
 const submitJobApplication = async ({
   jobId,
   applicationData,
 }: {
   jobId: string;
-  applicationData: ApplicationData;
+  applicationData: FormData; // Change from ApplicationData to FormData
 }): Promise<{ application: ApplicantData }> => {
-  const backendData = {
-    formResponse: applicationData.formResponse,
-    profileUpdates: applicationData.profileUpdates,
-    userInfoUpdates: applicationData.otherInfoUpdates,
-  };
   return apiFetch(`/api/jobs/${jobId}/apply`, {
     method: 'POST',
-    body: JSON.stringify(backendData),
+    body: applicationData, // Send FormData directly, no JSON.stringify
+    // Note: Don't set Content-Type header - let browser set multipart/form-data automatically
   });
 };
 
@@ -144,7 +139,7 @@ export const useSubmitJobApplication = (jobId: string) => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: (applicationData: ApplicationData) => submitJobApplication({ jobId, applicationData }),
+    mutationFn: (formData: FormData) => submitJobApplication({ jobId, applicationData: formData }),
     onSuccess: (result) => {
       console.log(result)
       // Update profile cache with new data

@@ -29,6 +29,23 @@ export interface ProfileOtherInfo {
   };
 }
 
+export interface ProfileData {
+  fullname: string;
+  id: string;
+  userId: string;
+  bio?: string;
+  phone?: string;
+  location?: string;
+  avatarUrl?: string;
+  resumeUrl?: string;
+  portfolioUrl?: string;
+  companyName?: string;
+  website?: string;
+  linkedinUrl?: string;
+  githubUrl?: string;
+  // otherInfo is array of structured answers
+  otherInfo?: OtherInfo[];
+}
 // Dynamic mapped data (for derived frontend usage, optional)
 export interface OtherInfo {
   [fieldKey: string]: {

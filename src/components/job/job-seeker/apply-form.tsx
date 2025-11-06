@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OtherInfo, Profile, ProfileOtherInfo } from "@/types/user";
+import { OtherInfo, OtherInfoData, Profile, ProfileData, ProfileOtherInfo, transformProfileUserInfo } from "@/types/user";
 import { AppFormField, ApplicantData, ApplicationData, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
@@ -40,48 +40,126 @@ const ACCEPTED_RESUME_TYPES = [
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
   const schema: Record<string, z.ZodTypeAny> = {};
 
-  appFormFields.forEach((field) => {
-    if (field.fieldState !== "off") {
-      const fieldConfig = field.field;
-      const isRequired = field.fieldState === "mandatory";
-      
-      let fieldValidator: z.ZodTypeAny;
+  // Sort fields by sortOrder first
+  const sortedFields = [...appFormFields]
+    .filter(field => field.fieldState !== 'off')
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
-      switch (fieldConfig.key) {
-        case 'email':
-          fieldValidator = z.string().email("Invalid email address");
-          break;
-        case 'phone_number':
-          fieldValidator = z.string().regex(/^\+?[\d\s-]+$/, "Invalid phone number");
-          break;
-        case 'linkedin_url':
-          fieldValidator = z.string().url("Must be a valid URL");
-          break;
-        case 'date_of_birth':
-          fieldValidator = z.string().min(1, "Date of birth is required");
-          break;
-        default:
-          fieldValidator = z.string().min(1, `${fieldConfig.label} is required`);
-      }
+  sortedFields.forEach((field) => {
+    const { field: fieldConfig, fieldState } = field;
+    const isRequired = fieldState === 'mandatory';
 
-      if (!isRequired) {
-        fieldValidator = fieldValidator.optional().or(z.literal(""));
-      }
+    // Create base validator based on field type
+    let fieldValidator: z.ZodTypeAny;
 
-      schema[fieldConfig.key] = fieldValidator;
+    switch (fieldConfig.fieldType) {
+      case 'email':
+        fieldValidator = z.string().email("Invalid email address");
+        break;
+      case 'url':
+        fieldValidator = z.string().url("Must be a valid URL");
+        break;
+      case 'number':
+        fieldValidator = z.number().or(z.string().transform(val => Number(val)));
+        // Add validation from field.validation
+        if (fieldConfig.validation?.min !== undefined) {
+          fieldValidator = fieldValidator.refine(
+            val => Number(val) >= fieldConfig.validation!.min!,
+            `Must be at least ${fieldConfig.validation.min}`
+          );
+        }
+        if (fieldConfig.validation?.max !== undefined) {
+          fieldValidator = fieldValidator.refine(
+            (val: unknown) => Number(val) <= fieldConfig.validation!.max!,
+            `Must be at most ${fieldConfig.validation.max}`
+          );
+        }
+        break;
+      case 'date':
+        fieldValidator = z.string();
+        // Add date validation
+        if (fieldConfig.validation?.minDate) {
+          fieldValidator = fieldValidator.refine(
+            (date: unknown) => new Date(String(date)) >= new Date(fieldConfig.validation!.minDate!),
+            `Date must be after ${fieldConfig.validation.minDate}`
+          );
+        }
+        if (fieldConfig.validation?.maxDate) {
+          fieldValidator = fieldValidator.refine(
+            (date: unknown) => new Date(String(date)) <= new Date(fieldConfig.validation!.maxDate!),
+            `Date must be before ${fieldConfig.validation.maxDate}`
+          );
+        }
+        break;
+      case 'file':
+        // File field validation
+        fieldValidator = z.instanceof(File)
+          .refine(file => file.size <= MAX_FILE_SIZE, `File must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+        
+        // Add file type validation if specified
+        if (fieldConfig.validation?.fileTypes && fieldConfig.validation.fileTypes.length > 0) {
+          fieldValidator = fieldValidator.refine(
+            (file: unknown) => fieldConfig.validation!.fileTypes!.includes((file as File).type),
+            `File must be one of: ${fieldConfig.validation.fileTypes.join(', ')}`
+          );
+        }
+        
+        // Make optional if not required
+        if (!isRequired) {
+          fieldValidator = fieldValidator.optional().or(z.literal(undefined));
+        }
+        break;
+      case 'checkbox':
+        fieldValidator = z.boolean().or(z.literal('on'));
+        break;
+      case 'radio':
+      case 'select':
+        fieldValidator = z.string();
+        break;
+      case 'textarea':
+        fieldValidator = z.string();
+        break;
+      default: // text, phone, etc.
+        fieldValidator = z.string();
     }
+
+    // For string-based fields, add string-specific validations
+    if (!['file', 'checkbox'].includes(fieldConfig.fieldType)) {
+      if (isRequired) {
+        fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+      }
+      
+      // Add phone number validation for phone fields
+      if (fieldConfig.key === 'phone_number') {
+        fieldValidator = (fieldValidator as z.ZodString).regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
+      }
+    }
+
+    // Handle required/optional for non-file fields
+    if (!isRequired && fieldConfig.fieldType !== 'file') {
+      if (fieldValidator instanceof z.ZodString) {
+        fieldValidator = fieldValidator.optional().or(z.literal(''));
+      } else {
+        fieldValidator = fieldValidator.optional();
+      }
+    }
+
+    schema[fieldConfig.key] = fieldValidator;
   });
 
-  // Add required application fields
-  schema.resume = z.any().refine(
-    (file) => file instanceof File || typeof file === 'string',
-    "Resume is required"
-  );
+  // Add fixed application fields (resume, cover letter, source)
+  schema.resume = z.instanceof(File, { message: "Resume is required" })
+    .refine(file => file.size <= MAX_FILE_SIZE, "Resume must be less than 5MB")
+    .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Resume must be PDF or Word document");
+
+  schema.coverLetter = z.string().min(1, "Cover letter is required").optional().or(z.literal(''));
   
-  schema.coverLetter = z.string().min(50, "Cover letter must be at least 50 characters").optional().or(z.literal(""));
-  
-  schema.coverLetterFile = z.any().optional();
-  
+  schema.coverLetterFile = z.instanceof(File)
+    .refine(file => file.size <= MAX_FILE_SIZE, "Cover letter file must be less than 5MB")
+    .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Cover letter must be PDF or Word document")
+    .optional()
+    .or(z.literal(undefined));
+
   schema.source = z.string().min(1, "Please specify how you heard about this position");
 
   return z.object(schema);
@@ -93,7 +171,7 @@ interface JobApplicationFormProps {
   job: Job;
   appFormFields: AppFormField[];
   userProfile: Profile | null | undefined;
-  onSubmit: (applicationData: ApplicationData) => Promise<unknown>;
+  onSubmit: (applicationData: FormData) => Promise<unknown>;
   onCancel: () => void;
 }
 
@@ -272,17 +350,20 @@ export default function JobApplicationForm({
     if (profile && appFormFields.length > 0) {
       const fieldValues: Partial<ApplicationFormData> = {};
 
+      // Transform profile.otherInfo if it's in array format
+      const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
+        ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
+        : (profile.otherInfo as OtherInfo | undefined);
+
       appFormFields.forEach((appField: AppFormField) => {
         if (appField.fieldState !== "off") {
           const fieldKey = appField.field.key;
           
-          const userInfo = profile.otherInfo?.find(
-            (info: ProfileOtherInfo) => info.fieldId === appField.field.id
-          );
-          
-          if (userInfo) {
-            fieldValues[fieldKey] = userInfo.infoFieldAnswer;
+          // Try to get value from transformed otherInfo first
+          if (transformedOtherInfo && transformedOtherInfo[fieldKey]) {
+            fieldValues[fieldKey] = transformedOtherInfo[fieldKey].answer;
           } else {
+            // Fall back to direct profile properties
             switch (fieldKey) {
               case 'phone_number':
                 fieldValues[fieldKey] = profile.phone || "";
@@ -290,15 +371,22 @@ export default function JobApplicationForm({
               case 'domicile':
                 fieldValues[fieldKey] = profile.location || "";
                 break;
-              // case 'linkedin_url':
-              //   fieldValues[fieldKey] = profile.linkedin || "";
-              //   break;
+              case 'linkedin_url':
+                fieldValues[fieldKey] = profile.linkedinUrl || "";
+                break;
               case 'full_name':
                 fieldValues[fieldKey] = profile.fullname || "";
                 break;
-              // case 'gender':
-              //   fieldValues[fieldKey] = profile.gender || "";
-              //   break;
+              case 'gender':
+                // You might need to map this based on your data structure
+                fieldValues[fieldKey] = ""; // Add gender logic if available
+                break;
+              case 'photo_profile':
+                // Handle photo profile separately
+                if (profile.avatarUrl) {
+                  setAvatarPreview(profile.avatarUrl);
+                }
+                break;
               default:
                 fieldValues[fieldKey] = "";
             }
@@ -311,11 +399,14 @@ export default function JobApplicationForm({
         setValue('resume', profile.resumeUrl, { shouldValidate: false });
       }
 
+      // Set all field values
       Object.entries(fieldValues).forEach(([key, value]) => {
-        setValue(key as keyof ApplicationFormData, value, { 
-          shouldValidate: false,
-          shouldDirty: false
-        });
+        if (value !== undefined) {
+          setValue(key as keyof ApplicationFormData, value, { 
+            shouldValidate: false,
+            shouldDirty: false
+          });
+        }
       });
     }
   }, [profile, appFormFields, setValue]);
@@ -385,151 +476,92 @@ export default function JobApplicationForm({
     setValue('coverLetterFile', undefined, { shouldValidate: true });
   };
 
-  // const handleFormSubmit = async (formData: ApplicationFormData) => {
-  //   if (!profile) return;
+  const prepareFormData = (formData: ApplicationFormData): FormData => {
+    const submitFormData = new FormData();
 
-  //   try {
-  //     const coverLetterContent =
-  //       coverLetterMode === "text"
-  //         ? formData.coverLetter
-  //         : coverLetterFile?.name || "";
-  //     const computedResumeUrl = resumeFile
-  //       ? URL.createObjectURL(resumeFile)
-  //       : (profile.resumeUrl || "");
-  //     // prepare partial profile updates (only fields you allow to change from this form)
-  //     const profileUpdates: Partial<Profile> = {
-  //       phone: formData.phone_number as string || profile.phone,
-  //       location: formData.domicile as string || profile.location,
-  //       // linkedin: formData.linkedin_url as string || profile.linkedin,
-  //       avatarUrl: avatarPreview || profile.avatarUrl,
-  //       fullname: formData.full_name as string || profile.fullname,
-  //       // gender: formData.gender as string || profile.gender,
-  //       ...(resumeFile && { resumeUrl: URL.createObjectURL(resumeFile) }),
-  //     };
+    // 1. Add files
+    const coverLetterContent = coverLetterMode === "text"
+      ? formData.coverLetter
+      : coverLetterFile?.name || "";
+    if (avatarFile) submitFormData.append('avatar', avatarFile);
+    if (resumeFile) submitFormData.append('resume', resumeFile);
+    if (coverLetterFile && coverLetterMode === 'file') {
+      submitFormData.append('coverLetterFile', coverLetterFile);
+    }
+
+    // 2. Add dynamic file fields from appFormFields
+    appFormFields
+      .filter(field => field.field.fieldType === 'file' && field.fieldState !== 'off')
+      .forEach(field => {
+        const file = formData[field.field.key as keyof ApplicationFormData];
+        if (file instanceof File) {
+          submitFormData.append(`field_${field.field.id}`, file);
+        }
+      });
+
+    // 3. Add structured data as JSON strings
+    const profileUpdates: Partial<ProfileData> = {
+        phone: formData.phone_number as string || profile?.phone,
+        location: formData.domicile as string || profile?.location,
+        linkedinUrl: formData.linkedin_url as string || profile?.linkedinUrl,
+        fullname: formData.full_name as string || profile?.fullname,
+        // Handle avatar - if new avatar was captured/uploaded
+        ...(avatarPreview && avatarPreview !== profile?.avatarUrl && { avatarUrl: avatarPreview }),
+      };
+
+    // Transform current otherInfo for updates
+    const otherInfoUpdates = appFormFields
+      .filter((appField: AppFormField) => appField.fieldState !== "off")
+      .map((appField: AppFormField) => {
+        const fieldKey = appField.field.key;
+        const currentValue = formData[fieldKey as keyof ApplicationFormData];
         
-  //       // assemble otherInfo updates (to be turned into OtherUserInfo records by backend)
-  //     const otherInfoUpdates = appFormFields
-  //       .filter((appField: AppFormField) => appField.fieldState !== "off")
-  //       .map((appField: AppFormField) => {
-  //         const fieldKey = appField.field.key;
-  //         // profile.otherInfo is the structured array coming from backend (ProfileOtherInfo[])
-  //         const existing = profile.otherInfo?.find(
-  //           (info: ProfileOtherInfo) => info.fieldId === appField.field.id
-  //         );
+        // Find existing record ID if it exists
+        let existingId: string | undefined;
+        if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
+          const existingInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
+            (info: OtherInfoData) => info.field.key === appField.field.id
+          );
+          existingId = existingInfo?.id;
+        }
 
-  //         return {
-  //           id: existing?.id,                 // may be undefined for new entries
-  //           fieldId: appField.field.id,
-  //           infoFieldAnswer: formData[fieldKey] as string || "",
-  //         };
-  //       });
+        return {
+          id: existingId,
+          fieldId: appField.field.id,
+          infoFieldAnswer: typeof currentValue === 'string' ? currentValue : String(currentValue),
+        };
+      });
 
-  //     const applicationData: ApplicationData = {
-  //       jobId: job.id,
-  //       formResponse: JSON.parse(JSON.stringify(formData)), // safe JSON copy
-  //       resumeUrl: computedResumeUrl,
-  //       coverLetter: coverLetterContent as string,
-  //       source: formData.source as string || undefined,
-  //       profileUpdates,
-  //       otherInfoUpdates,
-  //     };
+    submitFormData.append('profileUpdates', JSON.stringify(profileUpdates));
+    submitFormData.append('userInfoUpdates', JSON.stringify(otherInfoUpdates));
+    submitFormData.append('formResponse', JSON.stringify(formData));
+    submitFormData.append('coverLetter', String(coverLetterContent));
+    submitFormData.append('source', String(formData.source) || 'direct');
 
-  //   // Call the injected prop (expected signature: submitApplication({ jobId, applicationData }))
-  //   await onSubmit(applicationData);
-  //   } catch (error) {
-  //     console.error("Error submitting application:", error);
-  //     throw error;
-  //   }
-  // };
+    return submitFormData;
+  };
+
   const handleFormSubmit = async (formData: ApplicationFormData) => {
     if (!profile) return;
 
     try {
-      const coverLetterContent = coverLetterMode === "text"
-        ? formData.coverLetter
-        : coverLetterFile?.name || "";
-
-      // Prepare FormData for file upload
-      const submitFormData = new FormData();
-      
-      // Add files
-      if (avatarFile) {
-        submitFormData.append('avatar', avatarFile);
-      }
-      if (resumeFile) {
-        submitFormData.append('resume', resumeFile);
-      }
-      if (coverLetterFile && coverLetterMode === 'file') {
-        submitFormData.append('coverLetterFile', coverLetterFile);
-      }
-
-      // Add JSON data
-      submitFormData.append('formResponse', JSON.stringify(formData));
-      submitFormData.append('profileUpdates', JSON.stringify({
-        phone: formData.phone_number as string || profile.phone,
-        location: formData.domicile as string || profile.location,
-        fullname: formData.full_name as string || profile.fullname,
-        // Note: avatarUrl and resumeUrl will be set by backend after upload
-      }));
-      submitFormData.append('userInfoUpdates', JSON.stringify(
-        appFormFields
-          .filter((appField: AppFormField) => appField.fieldState !== "off")
-          .map((appField: AppFormField) => {
-            const fieldKey = appField.field.key;
-            const existing = profile.otherInfo?.find(
-              (info: ProfileOtherInfo) => info.fieldId === appField.field.id
-            );
-
-            return {
-              id: existing?.id,
-              fieldId: appField.field.id,
-              infoFieldAnswer: formData[fieldKey] || "",
-            };
-          })
-      ));
-
-      // Create ApplicationData structure
-      const applicationData: ApplicationData = {
-        jobId: job.id,
-        formResponse: JSON.parse(JSON.stringify(formData)),
-        resumeUrl: resumeFile ? URL.createObjectURL(resumeFile) : (profile.resumeUrl || ''),
-        coverLetter: coverLetterContent as string,
-        source: formData.source as string,
-        profileUpdates: {
-          phone: formData.phone_number as string || profile.phone,
-          location: formData.domicile as string || profile.location,
-          fullname: formData.full_name as string || profile.fullname,
-        },
-        otherInfoUpdates: appFormFields
-          .filter((appField: AppFormField) => appField.fieldState !== "off")
-          .map((appField: AppFormField) => {
-            const fieldKey = appField.field.key;
-            const existing = profile.otherInfo?.find(
-              (info: ProfileOtherInfo) => info.fieldId === appField.field.id
-            );
-            return {
-              id: existing?.id,
-              fieldId: appField.field.id,
-              infoFieldAnswer: String(formData[fieldKey] || ""),
-            };
-          })
-      };
-
-      await onSubmit(applicationData);
-      
+      const formDataToSubmit = prepareFormData(formData);
+      await onSubmit(formDataToSubmit);
       router.push('/jobs/success');
     } catch (error) {
       console.error('Application submission error:', error);
+      throw error;
     }
   };
   const renderFormField = (appField: AppFormField) => {
     const { field, fieldState } = appField;
-    const isRequired = fieldState === "mandatory";
+    const isRequired = fieldState === 'mandatory';
     const error = errors[field.key as keyof ApplicationFormData];
 
     const commonProps = {
       ...register(field.key as keyof ApplicationFormData),
       className: "h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent",
+      placeholder: field.placeholder || `Enter your ${field.label.toLowerCase()}`,
     };
 
     switch (field.fieldType) {
@@ -545,7 +577,6 @@ export default function JobApplicationForm({
             <Input
               type={field.fieldType}
               {...commonProps}
-              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
             />
             {field.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
@@ -569,7 +600,6 @@ export default function JobApplicationForm({
             </FieldLabel>
             <Textarea
               {...commonProps}
-              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
               className="min-h-20 border-2 border-neutral-40 bg-neutral-10 resize-y"
               rows={4}
             />
@@ -598,7 +628,6 @@ export default function JobApplicationForm({
               {...commonProps}
               min={field.validation?.min}
               max={field.validation?.max}
-              placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
             />
             {field.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
@@ -746,46 +775,7 @@ export default function JobApplicationForm({
           </Field>
         );
 
-      // Special field cases from first form
-      case 'gender':
-        return (
-          <Field key={field.id}>
-            <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
-            </FieldLabel>
-            <FieldGroup className="flex flex-col sm:flex-row gap-6">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="female"
-                  {...register(field.key as keyof ApplicationFormData)}
-                  className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
-                />
-                <span className="text-sm leading-6 text-neutral-90 font-sans">
-                  She/her (Female)
-                </span>
-              </label>
-              <label className="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="radio"
-                  value="male"
-                  {...register(field.key as keyof ApplicationFormData)}
-                  className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
-                />
-                <span className="text-sm leading-6 text-neutral-90 font-sans">
-                  He/him (Male)
-                </span>
-              </label>
-            </FieldGroup>
-            {error && (
-              <FieldDescription className="text-danger-main">
-                {error.message}
-              </FieldDescription>
-            )}
-          </Field>
-        );
-
+      // Special field types with custom UI
       case 'phone_number':
         return (
           <Field key={field.id}>
@@ -810,10 +800,15 @@ export default function JobApplicationForm({
               <Input
                 type="tel"
                 {...register(field.key as keyof ApplicationFormData)}
-                placeholder="81XXXXXXXXX"
+                placeholder={field.placeholder || "81XXXXXXXXX"}
                 className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
               />
             </div>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -822,30 +817,84 @@ export default function JobApplicationForm({
           </Field>
         );
 
-      case 'domicile':
+      case 'file':
         return (
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
               {isRequired && <span className="text-danger-main">*</span>}
             </FieldLabel>
-            <div className="relative">
-              <select
-                {...register(field.key as keyof ApplicationFormData)}
-                className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
+            <div className="flex flex-col gap-2">
+              <input
+                type="file"
+                id={field.key}
+                accept={field.validation?.fileTypes?.join(',')}
+                onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (file) {
+                    // Validate file size
+                    if (file.size > MAX_FILE_SIZE) {
+                      alert(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
+                      e.target.value = '';
+                      return;
+                    }
+                    
+                    // Validate file type if specified
+                    if (field.validation?.fileTypes && field.validation.fileTypes.length > 0) {
+                      if (!field.validation.fileTypes.includes(file.type)) {
+                        alert(`File must be one of: ${field.validation.fileTypes.join(', ')}`);
+                        e.target.value = '';
+                        return;
+                      }
+                    }
+                    
+                    setValue(field.key as keyof ApplicationFormData, file, { shouldValidate: true });
+                  }
+                }}
+                className="hidden"
+              />
+              <label
+                htmlFor={field.key}
+                className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
               >
-                <option value="">Choose your domicile</option>
-                <option value="jakarta">Jakarta</option>
-                <option value="bandung">Bandung</option>
-                <option value="surabaya">Surabaya</option>
-                <option value="yogyakarta">Yogyakarta</option>
-                <option value="bali">Bali</option>
-                <option value="medan">Medan</option>
-              </select>
-              <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
+                <Upload className="w-4 h-4" />
+                Upload {field.label}
+              </label>
+              
+              {/* File info display */}
+              {formValues[field.key as keyof ApplicationFormData] instanceof File && (
+                <div className="flex items-center gap-2 p-3 border border-neutral-40 bg-neutral-10 rounded-lg">
+                  <FileText className="w-5 h-5 text-neutral-100" />
+                  <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
+                    {(formValues[field.key as keyof ApplicationFormData] as File).name}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setValue(field.key as keyof ApplicationFormData, '' as never, { shouldValidate: true });
+                      const fileInput = document.getElementById(field.key) as HTMLInputElement;
+                      if (fileInput) fileInput.value = '';
+                    }}
+                    className="p-1 hover:bg-gray-100 rounded"
+                  >
+                    <X className="w-4 h-4 text-neutral-100" />
+                  </button>
+                </div>
+              )}
+              
+              {/* Help text */}
+              <div className="text-xs text-neutral-60">
+                <p>Maximum file size: {MAX_FILE_SIZE / 1024 / 1024}MB</p>
+                {field.validation?.fileTypes && (
+                  <p>Accepted types: {field.validation.fileTypes.join(', ')}</p>
+                )}
               </div>
             </div>
+            {field.description && (
+              <FieldDescription className="text-xs text-neutral-60 mt-1">
+                {field.description}
+              </FieldDescription>
+            )}
             {error && (
               <FieldDescription className="text-danger-main">
                 {error.message}
@@ -853,7 +902,6 @@ export default function JobApplicationForm({
             )}
           </Field>
         );
-
       default:
         return (
           <Field key={field.id}>
@@ -888,32 +936,6 @@ export default function JobApplicationForm({
         );
     }
   };
-
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex justify-center items-center p-8">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-  //       <span className="ml-3 text-lg">Loading application form...</span>
-  //     </div>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <div className="text-center p-8 text-red-600">
-  //       <h3 className="text-lg font-semibold mb-2">Failed to load application form</h3>
-  //       <p className="text-sm text-muted-foreground">
-  //         {error.message || 'Please try refreshing the page'}
-  //       </p>
-  //       <button 
-  //         onClick={() => window.location.reload()}
-  //         className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-  //       >
-  //         Retry
-  //       </button>
-  //     </div>
-  //   );
-  // }
 
   if (appFormFields.length === 0) {
     return (
@@ -1022,6 +1044,7 @@ export default function JobApplicationForm({
               {/* Dynamic Form Fields */}
               {visibleFields
                 .filter((field: AppFormField) => field.field.key !== 'photo_profile')
+                .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0))
                 .map((appField: AppFormField) => renderFormField(appField))}
 
               {/* Resume Upload */}

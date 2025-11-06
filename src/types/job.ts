@@ -262,7 +262,7 @@ export interface FormField {
   fieldName: string;
   fieldType: string;
   fieldState: "mandatory" | "optional" | "off";
-  displayOrder: number;
+  sortOrder: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -342,7 +342,19 @@ export interface ApplicationData {
   source?: string;
   profileUpdates: Partial<Profile>;     // Add these
   otherInfoUpdates: OtherInfoUpdate[];   // Add these
+  files?: {
+    avatar?: File;
+    resume?: File;
+    coverLetterFile?: File;
+    [key: string]: File | undefined;
+  };
 }
+
+export interface ApplicationSubmission {
+  applicationData: ApplicationData;
+  formData: FormData;
+}
+
 interface OtherInfoUpdate {
   id?: string;
   fieldId: string;
