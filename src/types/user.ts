@@ -96,3 +96,45 @@ export const transformProfileUserInfo = (userInfo: OtherInfoData[]): OtherInfo =
     return acc;
   }, {});
 };
+
+export interface TransformedApplicationData {
+  jobId: string;
+  userId: string;
+  application: {
+    jobId: string;
+    applicantId: string;
+    status: 'PENDING';
+    formResponse: JSON;
+    coverLetter: string | null;
+    source: string;
+    appliedAt: Date;
+  };
+  profileUpdates: {
+    fullname: string;
+    gender?: string | null;
+    dateOfBirth?: Date | null;
+    email?: string | null;
+    phone?: string | null;
+    location?: string | null;
+    avatarUrl?: string | null;
+    resumeUrl?: string | null;
+    linkedinUrl?: string | null;
+    bio?: string | null;
+    portfolioUrl?: string | null;
+    companyName?: string | null;
+    website?: string | null;
+    githubUrl?: string | null;
+  };
+  otherInfoUpdates: Array<{
+    id?: string;
+    profileId: string;
+    fieldId: string;
+    infoFieldAnswer: string;
+  }>;
+  files: {
+    avatar: File | null;
+    resume: File | null;
+    coverLetterFile: File | null;
+    dynamic: Record<string, File>;
+  };
+}

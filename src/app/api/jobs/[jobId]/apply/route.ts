@@ -77,8 +77,6 @@ export async function POST(
     );
   }
 }
-    
-
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processApplication(transformedData: any, userProfile: any) {
