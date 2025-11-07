@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useMemo, useRef } from "react";
+import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { ArrowLeft, Upload, Calendar, ChevronDown, FileText, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -63,14 +63,14 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         fieldValidator = z.number().or(z.string().transform(val => Number(val)));
         // Add validation from field.validation
         if (fieldConfig.validation?.min !== undefined) {
-          fieldValidator = fieldValidator.refine(
-            val => Number(val) >= fieldConfig.validation!.min!,
+          fieldValidator = (fieldValidator as z.ZodNumber).min(
+            fieldConfig.validation.min,
             `Must be at least ${fieldConfig.validation.min}`
           );
         }
         if (fieldConfig.validation?.max !== undefined) {
-          fieldValidator = fieldValidator.refine(
-            (val: unknown) => Number(val) <= fieldConfig.validation!.max!,
+          fieldValidator = (fieldValidator as z.ZodNumber).max(
+            fieldConfig.validation.max,
             `Must be at most ${fieldConfig.validation.max}`
           );
         }
@@ -123,27 +123,81 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         fieldValidator = z.string();
     }
 
-    // For string-based fields, add string-specific validations
-    if (!['file', 'checkbox'].includes(fieldConfig.fieldType)) {
-      if (isRequired) {
-        fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+    // Handle required validation based on field type
+    if (isRequired) {
+      switch (fieldConfig.fieldType) {
+        case 'string':
+        case 'text':
+        case 'email':
+        case 'url':
+        case 'textarea':
+        case 'phone_number':
+        case 'domicile':
+        case 'linkedin_url':
+        case 'full_name':
+        case 'gender':
+          // String-based fields
+          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+          break;
+        case 'number':
+          // Number fields - already handled in number case
+          break;
+        case 'checkbox':
+          // Checkbox fields
+          fieldValidator = fieldValidator.refine(
+            val => val === true || val === 'on',
+            `${fieldConfig.label} is required`
+          );
+          break;
+        case 'radio':
+        case 'select':
+          // Radio and select fields
+          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+          break;
+        case 'date':
+          // Date fields
+          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+          break;
+        case 'file':
+          // File fields - already handled in file case
+          break;
+        default:
+          // Default string validation
+          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+      }
+    } else {
+      // Handle optional fields
+      if (fieldConfig.fieldType !== 'file' && fieldConfig.fieldType !== 'checkbox') {
+        if (fieldValidator instanceof z.ZodString) {
+          fieldValidator = fieldValidator.optional().or(z.literal(''));
+        } else {
+          fieldValidator = fieldValidator.optional();
+        }
+      }
+    }
+    
+    const isStringField = !['file', 'checkbox'].includes(fieldConfig.fieldType);
+    
+    if (isStringField) {
+      // Required validation for string fields
+      if (isRequired && fieldValidator instanceof z.ZodString) {
+        fieldValidator = fieldValidator.min(1, `${fieldConfig.label} is required`);
       }
       
-      // Add phone number validation for phone fields
-      if (fieldConfig.key === 'phone_number') {
-        fieldValidator = (fieldValidator as z.ZodString).regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
+      // Phone number specific validation
+      if (fieldConfig.key === 'phone_number' && fieldValidator instanceof z.ZodString) {
+        fieldValidator = fieldValidator.regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
       }
     }
 
-    // Handle required/optional for non-file fields
+    // Handle optional fields (excluding file fields)
     if (!isRequired && fieldConfig.fieldType !== 'file') {
       if (fieldValidator instanceof z.ZodString) {
         fieldValidator = fieldValidator.optional().or(z.literal(''));
-      } else {
+      } else if (!(fieldValidator instanceof z.ZodFile)) {
         fieldValidator = fieldValidator.optional();
       }
     }
-
     schema[fieldConfig.key] = fieldValidator;
   });
 
@@ -152,7 +206,7 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     .refine(file => file.size <= MAX_FILE_SIZE, "Resume must be less than 5MB")
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Resume must be PDF or Word document");
 
-  schema.coverLetter = z.string().min(1, "Cover letter is required").optional().or(z.literal(''));
+  schema.coverLetter = z.string().optional().or(z.literal(''));
   
   schema.coverLetterFile = z.instanceof(File)
     .refine(file => file.size <= MAX_FILE_SIZE, "Cover letter file must be less than 5MB")
@@ -326,6 +380,17 @@ export default function JobApplicationForm({
   
   const profile = userProfile;
   
+  // Helper function to get date of birth from profile
+  const getProfileDateOfBirth = useCallback((): string | undefined => {
+    // If date of birth is stored in otherInfo, extract it
+    if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
+      const dobInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
+        (info: OtherInfoData) => info.field.key === 'date_of_birth'
+      );
+      return dobInfo?.infoFieldAnswer;
+    }
+    return undefined;
+  }, [profile]);
   // Set initial avatar preview when profile loads
   React.useEffect(() => {
     if (userProfile?.avatarUrl && !avatarPreview) {
@@ -377,9 +442,14 @@ export default function JobApplicationForm({
               case 'full_name':
                 fieldValues[fieldKey] = profile.fullname || "";
                 break;
+              case 'email':
+                fieldValues[fieldKey] = profile.email || "";
+                break;
               case 'gender':
-                // You might need to map this based on your data structure
-                fieldValues[fieldKey] = ""; // Add gender logic if available
+                fieldValues[fieldKey] = profile.gender || "";
+                break;
+              case 'date_of_birth':
+                fieldValues[fieldKey] = getProfileDateOfBirth() || "";
                 break;
               case 'photo_profile':
                 // Handle photo profile separately
@@ -409,7 +479,7 @@ export default function JobApplicationForm({
         }
       });
     }
-  }, [profile, appFormFields, setValue]);
+  }, [profile, appFormFields, setValue, getProfileDateOfBirth]);
 
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -500,14 +570,42 @@ export default function JobApplicationForm({
       });
 
     // 3. Add structured data as JSON strings
-    const profileUpdates: Partial<ProfileData> = {
-        phone: formData.phone_number as string || profile?.phone,
-        location: formData.domicile as string || profile?.location,
-        linkedinUrl: formData.linkedin_url as string || profile?.linkedinUrl,
-        fullname: formData.full_name as string || profile?.fullname,
-        // Handle avatar - if new avatar was captured/uploaded
-        ...(avatarPreview && avatarPreview !== profile?.avatarUrl && { avatarUrl: avatarPreview }),
-      };
+    const profileUpdates: Partial<ProfileData> = {};
+  
+    // Check each field and only include if changed
+    if (formData.full_name !== profile?.fullname) {
+      profileUpdates.fullname = formData.full_name as string;
+    }
+    
+    if (formData.phone_number !== profile?.phone) {
+      profileUpdates.phone = formData.phone_number as string;
+    }
+    
+    if (formData.domicile !== profile?.location) {
+      profileUpdates.location = formData.domicile as string;
+    }
+    
+    if (formData.email !== profile?.email) { // Assuming email is in profile
+      profileUpdates.email = formData.email as string;
+    }
+    
+    if (formData.linkedin_url !== profile?.linkedinUrl) {
+      profileUpdates.linkedinUrl = formData.linkedin_url as string;
+    }
+    
+    if (formData.date_of_birth !== getProfileDateOfBirth()) { // You'll need a helper function
+      profileUpdates.dateOfBirth = formData.date_of_birth as Date; // Add this field to ProfileData if needed
+    }
+    
+    if (formData.gender !== profile?.gender) { // Add gender to ProfileData if needed
+      profileUpdates.gender = formData.gender as string;
+    }
+    
+    // Handle avatar - only update if new avatar was captured/uploaded
+    if (avatarPreview && avatarPreview !== profile?.avatarUrl) {
+      profileUpdates.avatarUrl = avatarPreview;
+    }
+
 
     // Transform current otherInfo for updates
     const otherInfoUpdates = appFormFields
@@ -518,19 +616,26 @@ export default function JobApplicationForm({
         
         // Find existing record ID if it exists
         let existingId: string | undefined;
+        let existingValue: string | undefined;
         if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
           const existingInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
             (info: OtherInfoData) => info.field.key === appField.field.id
           );
           existingId = existingInfo?.id;
+          existingValue = existingInfo?.infoFieldAnswer;
         }
 
-        return {
-          id: existingId,
-          fieldId: appField.field.id,
-          infoFieldAnswer: typeof currentValue === 'string' ? currentValue : String(currentValue),
-        };
-      });
+        // Only include if value changed
+        if (String(currentValue) !== existingValue) {
+          return {
+            id: existingId,
+            fieldId: appField.field.id,
+            infoFieldAnswer: typeof currentValue === 'string' ? currentValue : String(currentValue),
+          };
+        }
+        
+        return null;
+      }).filter(Boolean);
 
     submitFormData.append('profileUpdates', JSON.stringify(profileUpdates));
     submitFormData.append('userInfoUpdates', JSON.stringify(otherInfoUpdates));
@@ -572,7 +677,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Input
               type={field.fieldType}
@@ -584,7 +689,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -596,7 +701,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Textarea
               {...commonProps}
@@ -609,7 +714,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -621,7 +726,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Input
               type="number"
@@ -635,7 +740,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -647,7 +752,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="relative">
               <select
@@ -671,7 +776,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -683,7 +788,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="relative">
               <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -706,7 +811,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -718,7 +823,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <FieldGroup className="flex flex-col gap-3">
               {field.options?.split(',').map((option: string) => (
@@ -741,7 +846,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -759,7 +864,7 @@ export default function JobApplicationForm({
               />
               <span className="text-sm leading-6 text-neutral-90 font-sans">
                 {field.label}
-                {isRequired && <span className="text-danger-main">*</span>}
+                {isRequired && <span className="text-danger">*</span>}
               </span>
             </label>
             {field.description && (
@@ -768,7 +873,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -781,7 +886,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
               <div className="flex items-center gap-1 px-4 border-r border-neutral-40">
@@ -810,7 +915,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -822,7 +927,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="flex flex-col gap-2">
               <input
@@ -896,7 +1001,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -907,7 +1012,7 @@ export default function JobApplicationForm({
           <Field key={field.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
               {field.label}
-              {isRequired && <span className="text-danger-main">*</span>}
+              {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             {field.fieldType === 'textarea' ? (
               <Textarea
@@ -928,7 +1033,7 @@ export default function JobApplicationForm({
               </FieldDescription>
             )}
             {error && (
-              <FieldDescription className="text-danger-main">
+              <FieldDescription className="text-danger">
                 {error.message}
               </FieldDescription>
             )}
@@ -969,7 +1074,7 @@ export default function JobApplicationForm({
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">
       <div className="w-full max-w-[700px] border border-neutral-40 bg-neutral-10 rounded-none shadow-sm">
         <div className="p-6 sm:p-8 md:p-10 flex flex-col gap-6">
-          <header className="flex items-start gap-4">
+          <div className="flex items-start gap-4">
             <button
               onClick={onCancel}
               className="flex items-center justify-center p-1 border border-neutral-40 bg-neutral-10 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
@@ -984,63 +1089,244 @@ export default function JobApplicationForm({
               </h1>
               <div className="flex items-center gap-3">
                 <div className="flex items-start gap-2 text-sm leading-6 text-neutral-90 font-sans">
-                  <span className="text-blue-500">ℹ️</span>
+                  <span className="text-secondary-foreground">ℹ️</span>
                   <span className="whitespace-nowrap">This field required to fill</span>
                 </div>
               </div>
             </div>
-          </header>
+          </div>
 
           <form onSubmit={handleSubmit(handleFormSubmit)}>
             <FieldGroup className="flex flex-col gap-4">
-              <p className="text-xs font-bold leading-5 text-danger-main font-sans">
+              <p className="text-xs font-bold leading-5 text-danger font-sans">
                 * Required
               </p>
 
               {/* Photo Profile Field with Gesture Capture */}
-              {photoProfileField && photoProfileField.fieldState !== 'off' && (
-                <FieldSet>
-                  <FieldLabel className="text-xs font-bold leading-5 text-neutral-90 font-sans">
-                    Photo Profile
-                    {photoProfileField.fieldState === 'mandatory' && <span className="text-danger-main">*</span>}
-                  </FieldLabel>
-                  <div className="flex flex-col gap-2">
-                    <div
-                      className="w-32 h-32 rounded-2xl bg-cover bg-center border-2 border-neutral-40"
-                      style={{
-                        backgroundImage: avatarPreview 
-                          ? `url(${avatarPreview})`
-                          : "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 128 128%22%3E%3Ccircle cx=%2264%22 cy=%2264%22 r=%2264%22 fill=%22%23B8E6E6%22/%3E%3Cpath d=%22M64 70c-11 0-20-9-20-20s9-20 20-20 20 9 20 20-9 20-20 20z%22 fill=%22%23666%22/%3E%3Cpath d=%22M30 110c0-20 15-35 34-35s34 15 34 35%22 fill=%22%23047C7C%22/%3E%3C/svg%3E')",
-                      }}
+              <FieldSet>
+                <FieldLabel className="text-s font-bold leading-5 text-neutral-90 font-sans">
+                  Photo Profile
+                <span className="text-danger">*</span>
+                </FieldLabel>
+                <div className="flex flex-col gap-2">
+                  <div
+                    className="w-32 h-32 rounded-full bg-cover bg-center"
+                    >
+                      <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? `url(${avatarPreview})` : "/avatar.svg"} alt={"avatar"} />
+                  </div>
+                  <div className="flex gap-2">
+                    {/* <input
+                      type="file"
+                      id="avatar"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
                     />
-                    <div className="flex gap-2">
-                      <input
-                        type="file"
-                        id="avatar"
-                        accept="image/*"
-                        onChange={handleAvatarChange}
-                        className="hidden"
-                      />
-                      <label
-                        htmlFor="avatar"
-                        className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <Upload className="w-4 h-4" />
-                        Upload Photo
-                      </label>
-                      <Button
-                        type="button"
-                        onClick={() => setShowGestureCapture(true)}
-                        className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
-                      >
-                        <Camera className="w-4 h-4" />
-                        Take Photo
-                      </Button>
+                    <label
+                      htmlFor="avatar"
+                      className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Photo
+                    </label> */}
+                    <Button
+                      type="button"
+                      onClick={() => setShowGestureCapture(true)}
+                      className="flex gap-2 px-4 py-1 border-2 items-normal content-center border-neutral-40 bg-neutral-10 rounded-xl text-sm font-bold shadow-xl leading-6 text-neutral-100 cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <Camera className="size-5 stroke-3 font-bold" />
+                      <b>Take a Picture</b>
+                    </Button>
+                  </div>
+                </div>
+              </FieldSet>
+  
+              {/* Profile Fields Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Full Name */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Full Name
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <Input
+                    type="text"
+                    {...register('full_name')}
+                    placeholder="Enter your full name"
+                    className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
+                  />
+                  {errors.full_name && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.full_name.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Email */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Email
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <Input
+                    type="email"
+                    {...register('email')}
+                    placeholder="Enter your email address"
+                    className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
+                  />
+                  {errors.email && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.email.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Phone Number */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Phone Number
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
+                    <div className="flex items-center gap-1 px-4 border-r border-neutral-40">
+                      <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                        <svg viewBox="0 0 16 16" className="w-full h-full">
+                          <rect width="16" height="5.33" fill="#CE1126" />
+                          <rect y="10.67" width="16" height="5.33" fill="#CE1126" />
+                          <rect y="5.33" width="16" height="5.33" fill="#FFF" />
+                        </svg>
+                      </div>
+                      <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
+                    </div>
+                    <span className="flex items-center px-3 text-sm leading-6 text-neutral-90 font-sans border-r border-neutral-40">
+                      +62
+                    </span>
+                    <Input
+                      type="tel"
+                      {...register('phone_number')}
+                      placeholder="81XXXXXXXXX"
+                      className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
+                    />
+                  </div>
+                  {errors.phone_number && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.phone_number.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Date of Birth */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Date of Birth
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <div className="relative">
+                    <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <Calendar className="w-4 h-4 text-neutral-100" />
+                    </div>
+                    <Input
+                      type="date"
+                      {...register('date_of_birth')}
+                      className="w-full h-10 pl-12 pr-12 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
+                    />
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-neutral-100" />
                     </div>
                   </div>
-                </FieldSet>
-              )}
+                  {errors.date_of_birth && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.date_of_birth.message}
+                    </FieldDescription>
+                  )}
+                </Field>
 
+                {/* Gender */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Gender
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <FieldGroup className="flex flex-col sm:flex-row gap-6">
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="female"
+                        {...register('gender')}
+                        className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
+                      />
+                      <span className="text-sm leading-6 text-neutral-90 font-sans">
+                        She/her (Female)
+                      </span>
+                    </label>
+                    <label className="flex items-center gap-2 cursor-pointer">
+                      <input
+                        type="radio"
+                        value="male"
+                        {...register('gender')}
+                        className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
+                      />
+                      <span className="text-sm leading-6 text-neutral-90 font-sans">
+                        He/him (Male)
+                      </span>
+                    </label>
+                  </FieldGroup>
+                  {errors.gender && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.gender.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* Domicile */}
+                <Field>
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    Domicile
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <div className="relative">
+                    <select
+                      {...register('domicile')}
+                      className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
+                    >
+                      <option value="">Choose your domicile</option>
+                      <option value="jakarta">Jakarta</option>
+                      <option value="bandung">Bandung</option>
+                      <option value="surabaya">Surabaya</option>
+                      <option value="yogyakarta">Yogyakarta</option>
+                      <option value="bali">Bali</option>
+                      <option value="medan">Medan</option>
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
+                      <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
+                    </div>
+                  </div>
+                  {errors.domicile && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.domicile.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+
+                {/* LinkedIn URL */}
+                <Field className="md:col-span-2">
+                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                    LinkedIn Profile URL
+                    <span className="text-danger-main">*</span>
+                  </FieldLabel>
+                  <Input
+                    type="url"
+                    {...register('linkedin_url')}
+                    placeholder="https://linkedin.com/in/yourprofile"
+                    className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
+                  />
+                  {errors.linkedin_url && (
+                    <FieldDescription className="text-danger-main">
+                      {errors.linkedin_url.message}
+                    </FieldDescription>
+                  )}
+                </Field>
+              </div>
               {/* Dynamic Form Fields */}
               {visibleFields
                 .filter((field: AppFormField) => field.field.key !== 'photo_profile')
@@ -1051,7 +1337,7 @@ export default function JobApplicationForm({
               <Field>
                 <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                   Resume
-                  <span className="text-danger-main">*</span>
+                  <span className="text-danger">*</span>
                 </FieldLabel>
                 <div className="flex flex-col gap-2">
                   {!resumeFile && !profile?.resumeUrl ? (
@@ -1091,7 +1377,7 @@ export default function JobApplicationForm({
                   )}
                 </div>
                 {errors.resume && (
-                  <FieldDescription className="text-danger-main">
+                  <FieldDescription className="text-danger">
                     {errors.resume.message}
                   </FieldDescription>
                 )}
@@ -1185,7 +1471,7 @@ export default function JobApplicationForm({
                   </div>
                 )}
                 {errors.coverLetter && (
-                  <FieldDescription className="text-danger-main">
+                  <FieldDescription className="text-danger">
                     {errors.coverLetter.message}
                   </FieldDescription>
                 )}
@@ -1195,7 +1481,7 @@ export default function JobApplicationForm({
               <Field>
                 <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                   How did you hear about this position?
-                  <span className="text-danger-main">*</span>
+                  <span className="text-danger">*</span>
                 </FieldLabel>
                 <div className="relative">
                   <select
@@ -1214,7 +1500,7 @@ export default function JobApplicationForm({
                   </div>
                 </div>
                 {errors.source && (
-                  <FieldDescription className="text-danger-main">
+                  <FieldDescription className="text-danger">
                     {errors.source.message}
                   </FieldDescription>
                 )}

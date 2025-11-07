@@ -2,7 +2,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { transformProfileUserInfo, Profile } from '@/types/user';
+import { Profile } from '@/types/user';
 
 export async function GET(
   request: NextRequest,
@@ -60,8 +60,8 @@ export async function GET(
       id: profile.id,
       userId: profile.userId,
       fullname: profile.fullname,
-      // gender: profile.gender,
-      // linkedin: profile.linkedin,
+      gender: profile.gender ?? undefined,
+      email: profile.email ?? profile.user.email,
       bio: profile.bio ?? undefined,
       phone: profile.phone ?? undefined,
       location: profile.location ?? undefined,

@@ -2,6 +2,9 @@ export interface Profile {
   fullname: string;
   id: string;
   userId: string;
+  gender?: string;
+  email?: string;
+  dateOfBirth?: Date;
   bio?: string;
   phone?: string;
   location?: string;
@@ -33,6 +36,9 @@ export interface ProfileData {
   fullname: string;
   id: string;
   userId: string;
+  gender?: string;
+  dateOfBirth?: Date;
+  email: string;
   bio?: string;
   phone?: string;
   location?: string;

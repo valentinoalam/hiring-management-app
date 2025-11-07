@@ -43,31 +43,6 @@ export default function JobApplicationPage() {
     router.back();
   };
 
-  // if (isLoading) {
-  //   return (
-  //     <div className="flex justify-center items-center p-8">
-  //       <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
-  //       <span className="ml-3 text-lg">Loading application form...</span>
-  //     </div>
-  //   );
-  // }
-
-  // if (error) {
-  //   return (
-  //     <div className="text-center p-8 text-red-600">
-  //       <h3 className="text-lg font-semibold mb-2">Failed to load application form</h3>
-  //       <p className="text-sm text-muted-foreground">
-  //         {error.message || 'Please try refreshing the page'}
-  //       </p>
-  //       <button 
-  //         onClick={() => window.location.reload()}
-  //         className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
-  //       >
-  //         Retry
-  //       </button>
-  //     </div>
-  //   );
-  // }
   if (jobLoading || dataLoading) {
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
@@ -103,16 +78,24 @@ export default function JobApplicationPage() {
     const errorMessage = jobError ? 
       "The job you're looking for doesn't exist or is no longer available." :
       "There was an issue loading the form data. Please try again later.";
-
+    const error = jobError || flowError
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-bold text-danger-main">{errorTitle}</h2>
-          <p className="text-neutral-90 mt-2">{errorMessage}</p>
-          <Button onClick={() => router.back()} className="mt-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
+          <p className="text-neutral-90 mt-2">{error?.message || errorMessage}</p>
+          <div className='gap-5'>
+            <Button onClick={() => router.back()} className="mt-4">
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Go Back
+            </Button>
+            <Button variant={"secondary"}
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-primary text-white rounded-md hover:bg-primary/90"
+            >
+              Retry
+            </Button>
+          </div>
         </div>
       </div>
     );
