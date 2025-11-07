@@ -80,41 +80,58 @@ export async function POST(
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 async function processApplication(transformedData: any, userProfile: any) {
   return await prisma.$transaction(async (tx) => {
-    // 1. Handle file uploads
+    // 1. Handle file uploads (EXCLUDING cover letter file)
     const fileUploads: Record<string, string> = {};
-    const avatarFile = transformedData.files.avatar
-    if (transformedData.files.avatar && avatarFile.size > 0) {
-      const allowedMimeType = ['image/jpeg', 'image/png', 'image/webp']
-        if(allowedMimeType.includes(avatarFile.type)) {
-          const uploadResult = await uploadFile(avatarFile, {
-            folder: 'avatars',
-          });
-          fileUploads.avatarUrl = uploadResult.url;
-        }
+    
+    // Handle avatar file
+    const avatarFile = transformedData.files.avatar;
+    if (avatarFile && avatarFile.size > 0) {
+      const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/webp'];
+      if (allowedMimeTypes.includes(avatarFile.type)) {
+        const uploadResult = await uploadFile(avatarFile, {
+          folder: 'avatars',
+        });
+        fileUploads.avatarUrl = uploadResult.url;
+      }
     }
 
-    const resumeFile = transformedData.files.resume
+    // Handle resume file
+    const resumeFile = transformedData.files.resume;
     if (resumeFile && resumeFile.size > 0) {
       const allowedMimeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
-      if(allowedMimeTypes.includes(resumeFile.type)) {
+      if (allowedMimeTypes.includes(resumeFile.type)) {
         const uploadResult = await uploadFile(resumeFile, {
           folder: 'resumes',
-          // 
         });
         fileUploads.resumeUrl = uploadResult.url;
       }
     }
 
+    // Handle dynamic field files
     for (const [fieldKey, file] of Object.entries(transformedData.files.dynamic)) {
-      if (file instanceof File) {
+      if (file instanceof File && file.size > 0) {
         const uploadResult = await uploadFile(file, {
           folder: 'application-files',  
         });
         fileUploads[fieldKey] = uploadResult.url;
       }
     }
+
+    // 2. Handle cover letter file separately (for Application domain)
+    let coverLetterFileUrl: string | undefined;
+    const coverLetterFile = transformedData.files.coverLetterFile;
     
-    // 2. Merge profile updates with file uploads
+    if (coverLetterFile && coverLetterFile.size > 0) {
+      const allowedMimeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
+      if (allowedMimeTypes.includes(coverLetterFile.type)) {
+        const uploadResult = await uploadFile(coverLetterFile, {
+          folder: 'cover-letters',
+        });
+        coverLetterFileUrl = uploadResult.url;
+      }
+    }
+
+    // 3. Merge profile updates with file uploads (EXCLUDING cover letter)
     const finalProfileUpdates = {
       ...transformedData.profileUpdates,
       ...fileUploads,
@@ -132,7 +149,6 @@ async function processApplication(transformedData: any, userProfile: any) {
 
     // Only update if there are actual changes
     if (Object.keys(cleanProfileUpdates).length > 0) {
-      // Optional: Check if values are actually different from current profile
       const hasRealChanges = Object.keys(cleanProfileUpdates).some(key => {
         const newValue = cleanProfileUpdates[key];
         const currentValue = userProfile[key];
@@ -151,20 +167,16 @@ async function processApplication(transformedData: any, userProfile: any) {
           data: cleanProfileUpdates,
         });
       }
-      // If no real changes, updatedProfile remains userProfile
     }
 
-
-    // 4. Update or create user info records ONLY for changed fields
+    // 4. Update or create user info records
     for (const userInfoUpdate of transformedData.userInfoUpdates) {
       if (userInfoUpdate.id) {
-        // Update existing record
         await tx.otherUserInfo.update({
           where: { id: userInfoUpdate.id },
           data: { infoFieldAnswer: userInfoUpdate.infoFieldAnswer },
         });
       } else {
-        // Create new record
         await tx.otherUserInfo.create({
           data: {
             profileId: userProfile.id,
@@ -175,12 +187,25 @@ async function processApplication(transformedData: any, userProfile: any) {
       }
     }
 
-    // 5. Create application
+    // 5. Create application with cover letter logic
+    const applicationData = {
+      ...transformedData.application,
+      applicantId: userProfile.id,
+      // Handle cover letter: if file exists, use file URL and set text to undefined
+      ...(coverLetterFileUrl 
+        ? { 
+            coverLetterFileUrl, 
+            coverLetter: undefined // or null, depending on your schema
+          } 
+        : { 
+            coverLetter: transformedData.application.coverLetter,
+            coverLetterFileUrl: undefined // or null
+          }
+      )
+    };
+
     const application = await tx.application.create({
-      data: {
-        ...transformedData.application,
-        applicantId: userProfile.id, 
-      },
+      data: applicationData,
       include: {
         job: {
           select: {
@@ -208,7 +233,8 @@ async function processApplication(transformedData: any, userProfile: any) {
     return {
       application,
       profile: updatedProfile,
-      updatedFields: Object.keys(finalProfileUpdates), // For debugging
+      updatedFields: Object.keys(cleanProfileUpdates),
+      coverLetterType: coverLetterFileUrl ? 'file' : 'text', // For debugging
     };
   });
 }
@@ -223,7 +249,7 @@ function transformFormDataToApplicationModel(formData: FormData, jobId: string, 
   const avatarFile = formData.get('avatar') as File | null;
   const resumeFile = formData.get('resume') as File | null;
   const coverLetterFile = formData.get('coverLetterFile') as File | null;
-
+  
   // Extract dynamic file fields
   const dynamicFiles: Record<string, File> = {};
   for (const [key, value] of formData.entries()) {
@@ -239,9 +265,11 @@ function transformFormDataToApplicationModel(formData: FormData, jobId: string, 
     status: 'PENDING' as const,
     formResponse: formDataJson.formResponse,
     coverLetter: formDataJson.coverLetter || null,
+    coverLetterFileUrl: null,
     source: formDataJson.source || 'direct',
     appliedAt: new Date(),
   };
+
   if(profileUpdates.gender) {
     if(profileUpdates.gender === "female")  profileUpdates.gender = "WANITA"
     if(profileUpdates.gender === "male")  profileUpdates.gender = "PRIA"
@@ -301,7 +329,6 @@ function transformFormDataToApplicationModel(formData: FormData, jobId: string, 
     
     // Raw form data for reference
     rawFormData: formDataJson.formResponse,
-    coverLetterContent: formDataJson.coverLetter,
     source: formDataJson.source,
   };
 }

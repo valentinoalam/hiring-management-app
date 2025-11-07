@@ -308,6 +308,7 @@ model Application {
   formResponse Json
   // Application content
   coverLetter  String?           @db.Text    // Added cover letter support
+  coverLetterFileUrl String?        // Or store file URL here
   source       String?           @default("direct") // "referral", "linkedin", etc.
   
   // Timestamps

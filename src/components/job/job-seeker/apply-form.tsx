@@ -21,6 +21,7 @@ import { AppFormField, ApplicantData, ApplicationData, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
+import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -228,141 +229,24 @@ interface JobApplicationFormProps {
   onSubmit: (applicationData: FormData) => Promise<unknown>;
   onCancel: () => void;
 }
+// function getInitialValues(appFormFields: AppFormField[], profile: Profile | null | undefined): ApplicationFormData {
+//   const initialValues: ApplicationFormData = {
+//     resume: undefined,
+//     coverLetter: '',
+//     coverLetterFile: undefined,
+//     source: '',
+//   };
 
-// Gesture Profile Capture Component
-function GestureProfileCapture({ 
-  onSave, 
-  onClose 
-}: { 
-  onSave?: (imageData: string) => void; 
-  onClose?: () => void;
-}) {
-  const videoRef = useRef<HTMLVideoElement | null>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const [capturedImage, setCapturedImage] = useState<string | null>(null);
-  const [cameraActive, setCameraActive] = useState(false);
-  const [message, setMessage] = useState<string>("");
+//   appFormFields.forEach((appField: AppFormField) => {
+//     if (appField.fieldState !== "off") {
+//       const fieldKey = appField.field.key;
+//       const fieldValue = profile?.otherInfo?.find((info: OtherInfoData) => info.field.key === fieldKey)?.infoFieldAnswer;
+//       initialValues[fieldKey] = fieldValue || '';
+//     }
+//   });
 
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "user" },
-      });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-        setMessage("Show your hand to capture profile picture");
-      }
-    } catch (err) {
-      console.error("Camera access error:", err);
-      setMessage("Unable to access camera. Please check permissions.");
-    }
-  };
-
-  const stopCamera = () => {
-    if (videoRef.current && videoRef.current.srcObject) {
-      const stream = videoRef.current.srcObject as MediaStream;
-      stream.getTracks().forEach((track) => track.stop());
-      setCameraActive(false);
-    }
-  };
-
-  const capturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const context = canvasRef.current.getContext("2d");
-    if (context) {
-      canvasRef.current.width = videoRef.current.videoWidth;
-      canvasRef.current.height = videoRef.current.videoHeight;
-      context.drawImage(videoRef.current, 0, 0);
-      const imageData = canvasRef.current.toDataURL("image/jpeg");
-      setCapturedImage(imageData);
-      setMessage("✓ Photo captured! Review and save.");
-      stopCamera();
-    }
-  };
-
-  const handleSave = () => {
-    if (capturedImage && onSave) {
-      onSave(capturedImage);
-      setMessage("✓ Profile picture saved!");
-    }
-  };
-
-  const handleReset = () => {
-    setCapturedImage(null);
-    setMessage("");
-    startCamera();
-  };
-
-  return (
-    <Card className="w-full max-w-md mx-auto p-6 bg-white">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-2xl font-bold text-gray-900">Capture Profile Picture</h2>
-        {onClose && (
-          <button onClick={onClose} className="p-1 hover:bg-gray-100 rounded">
-            <X className="w-5 h-5" />
-          </button>
-        )}
-      </div>
-
-      <div className="relative w-full aspect-square bg-black rounded-lg overflow-hidden mb-4">
-        {!capturedImage ? (
-          <video 
-            ref={videoRef} 
-            autoPlay 
-            playsInline 
-            className="w-full h-full object-cover" 
-          />
-        ) : (
-          <Image 
-            width={300} 
-            height={300}
-            src={capturedImage || "/placeholder.svg"}
-            alt="Captured profile"
-            className="w-full h-full object-cover"
-          />
-        )}
-      </div>
-
-      <canvas ref={canvasRef} className="hidden" />
-
-      {message && <p className="text-center text-sm font-medium mb-4 text-blue-600">{message}</p>}
-
-      <div className="flex gap-3">
-        {!cameraActive && !capturedImage ? (
-          <Button onClick={startCamera} className="flex-1 gap-2">
-            <Camera className="w-4 h-4" />
-            Start Camera
-          </Button>
-        ) : cameraActive ? (
-          <>
-            <Button onClick={stopCamera} variant="outline" className="flex-1 gap-2">
-              <X className="w-4 h-4" />
-              Cancel
-            </Button>
-            <Button onClick={capturePhoto} className="flex-1 gap-2">
-              <Camera className="w-4 h-4" />
-              Capture
-            </Button>
-          </>
-        ) : (
-          <>
-            <Button onClick={handleReset} variant="outline" className="flex-1 gap-2">
-              <X className="w-4 h-4" />
-              Retake
-            </Button>
-            <Button onClick={handleSave} className="flex-1 gap-2">
-              <Upload className="w-4 h-4" />
-              Save
-            </Button>
-          </>
-        )}
-      </div>
-    </Card>
-  );
-}
-
+//   return initialValues;
+// }
 export default function JobApplicationForm({
   job,
   appFormFields,
