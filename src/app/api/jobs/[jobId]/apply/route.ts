@@ -3,16 +3,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { uploadToVercelBlob as uploadFile } from '@/lib/upload';
-import { ApplicantData, ApplicationData } from '@/types/job';
-import { OtherInfo, Profile } from '@/types/user';
+import { OtherInfo } from '@/types/user';
 
 export async function POST(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     const session = await auth();
-    
+    const { jobId } = await params;
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
@@ -25,7 +24,7 @@ export async function POST(
     // Transform FormData to application model
     const applicationModel = transformFormDataToApplicationModel(
       formData, 
-      params.jobId, 
+      jobId, 
       session.user.id
     );
     // Get user's profile
@@ -44,7 +43,7 @@ export async function POST(
     const existingApplication = await prisma.application.findUnique({
       where: {
         jobId_applicantId: {
-          jobId: params.jobId,
+          jobId,
           applicantId: userProfile.id,
         },
       },
