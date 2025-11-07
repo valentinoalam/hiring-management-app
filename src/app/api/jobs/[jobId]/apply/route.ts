@@ -81,12 +81,12 @@ export async function POST(
 
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function processApplication(applicationModel: any, userProfile: any) {
+async function processApplication(transformedData: any, userProfile: any) {
   return await prisma.$transaction(async (tx) => {
     // 1. Handle file uploads
     const fileUploads: Record<string, string> = {};
-    const avatarFile = applicationModel.files.avatar
-    if (applicationModel.files.avatar && avatarFile.size > 0) {
+    const avatarFile = transformedData.files.avatar
+    if (transformedData.files.avatar && avatarFile.size > 0) {
       const allowedMimeType = ['image/jpeg', 'image/png', 'image/webp']
         if(allowedMimeType.includes(avatarFile.type)) {
           const uploadResult = await uploadFile(avatarFile, {
@@ -96,7 +96,7 @@ async function processApplication(applicationModel: any, userProfile: any) {
         }
     }
 
-    const resumeFile = applicationModel.files.resume
+    const resumeFile = transformedData.files.resume
     if (resumeFile && resumeFile.size > 0) {
       const allowedMimeTypes = ['application/pdf', 'application/msword', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'];
       if(allowedMimeTypes.includes(resumeFile.type)) {
@@ -108,29 +108,58 @@ async function processApplication(applicationModel: any, userProfile: any) {
       }
     }
 
+    for (const [fieldKey, file] of Object.entries(transformedData.files.dynamic)) {
+      if (file instanceof File) {
+        const uploadResult = await uploadFile(file, {
+          folder: 'application-files',  
+        });
+        fileUploads[fieldKey] = uploadResult.url;
+      }
+    }
+    
     // 2. Merge profile updates with file uploads
     const finalProfileUpdates = {
-      ...applicationModel.applicant,
+      ...transformedData.profileUpdates,
       ...fileUploads,
     };
 
-    // 3. Update profile ONLY if there are changes
+    // Remove undefined values and check if there are actual updates
+    const cleanProfileUpdates: Record<string, unknown> = {};
+    Object.keys(finalProfileUpdates).forEach(key => {
+      if (finalProfileUpdates[key] !== undefined && finalProfileUpdates[key] !== null) {
+        cleanProfileUpdates[key] = finalProfileUpdates[key];
+      }
+    });
+
     let updatedProfile = userProfile;
-    if (Object.keys(finalProfileUpdates).length > 0) {
-      const prismaProfile = await tx.profile.update({
-        where: { id: userProfile.id },
-        data: finalProfileUpdates,
+
+    // Only update if there are actual changes
+    if (Object.keys(cleanProfileUpdates).length > 0) {
+      // Optional: Check if values are actually different from current profile
+      const hasRealChanges = Object.keys(cleanProfileUpdates).some(key => {
+        const newValue = cleanProfileUpdates[key];
+        const currentValue = userProfile[key];
+        
+        // Handle date comparison
+        if (newValue instanceof Date && currentValue instanceof Date) {
+          return newValue.getTime() !== currentValue.getTime();
+        }
+        
+        return newValue !== currentValue;
       });
-      
-      // Convert Prisma profile to Profile interface
-      updatedProfile = {
-        ...prismaProfile,
-        gender: prismaProfile.gender || undefined,
-      } as Profile;
+
+      if (hasRealChanges) {
+        updatedProfile = await tx.profile.update({
+          where: { id: userProfile.id },
+          data: cleanProfileUpdates,
+        });
+      }
+      // If no real changes, updatedProfile remains userProfile
     }
 
+
     // 4. Update or create user info records ONLY for changed fields
-    for (const userInfoUpdate of applicationModel.userInfoUpdates) {
+    for (const userInfoUpdate of transformedData.userInfoUpdates) {
       if (userInfoUpdate.id) {
         // Update existing record
         await tx.otherUserInfo.update({
@@ -152,12 +181,8 @@ async function processApplication(applicationModel: any, userProfile: any) {
     // 5. Create application
     const application = await tx.application.create({
       data: {
-        jobId: applicationModel.jobId,
-        applicantId: userProfile.id,
-        formResponse: applicationModel.formResponse,
-        coverLetter: applicationModel.coverLetter,
-        status: 'PENDING',
-        source: applicationModel.source || 'direct',
+        ...transformedData.application,
+        applicantId: userProfile.id, 
       },
       include: {
         job: {
@@ -175,7 +200,7 @@ async function processApplication(applicationModel: any, userProfile: any) {
 
     // 6. Increment applications count
     await tx.job.update({
-      where: { id: applicationModel.jobId },
+      where: { id: transformedData.jobId },
       data: {
         applicationsCount: {
           increment: 1,
