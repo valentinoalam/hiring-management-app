@@ -7,6 +7,12 @@ import { useEffect, useRef, useState, useCallback } from "react"
 interface HandPose {
   fingers: number
   confidence: number
+  boundingBox?: {
+    x: number
+    y: number
+    width: number
+    height: number
+  }
 }
 
 export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoElement>) {
@@ -39,7 +45,7 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
         detectorRef.current = landmarker
         setIsLoading(false)
       } catch (err) {
-        console.error("[v0] Hand detection initialization error:", err)
+        console.error("Hand detection initialization error:", err)
         setError("Failed to load hand detection model")
         setIsLoading(false)
       }
@@ -62,14 +68,20 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
       const results = detectorRef.current.detectForVideo(videoRef.current, performance.now()) as {
         landmarks?: { x: number; y: number; z: number }[][];
         handedness?: { score: number }[];
+        handDetections?: { boundingBox?: { originX: number; originY: number; width: number; height: number } }[];
       }
 
       if (results.landmarks && results.landmarks.length > 0) {
         const landmarks = results.landmarks[0]
         const fingers = countExtendedFingers(landmarks)
+        
+        // Calculate bounding box from landmarks
+        const boundingBox = calculateBoundingBox(landmarks)
+        
         setHandPose({
           fingers,
           confidence: results.handedness?.[0]?.score || 0,
+          boundingBox,
         })
       } else {
         setHandPose(null)
@@ -103,9 +115,7 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
 function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]): number {
   if (!landmarks || landmarks.length < 21) return 0
 
-  // Finger tip indices: thumb=4, index=8, middle=12, ring=16, pinky=20
   const fingerTips = [4, 8, 12, 16, 20]
-  // PIP (Proximal Interphalangeal) joint indices
   const fingerPIPs = [3, 6, 10, 14, 18]
 
   let extendedCount = 0
@@ -114,11 +124,38 @@ function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]):
     const tip = landmarks[fingerTips[i]]
     const pip = landmarks[fingerPIPs[i]]
 
-    // Finger is extended if tip is above (lower y value) than PIP
     if (tip.y < pip.y) {
       extendedCount++
     }
   }
 
   return extendedCount
+}
+
+// Calculate bounding box from hand landmarks
+function calculateBoundingBox(landmarks: { x: number; y: number; z: number }[]): { x: number; y: number; width: number; height: number } {
+  if (!landmarks || landmarks.length === 0) {
+    return { x: 0, y: 0, width: 0, height: 0 }
+  }
+
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity
+
+  landmarks.forEach(landmark => {
+    minX = Math.min(minX, landmark.x)
+    minY = Math.min(minY, landmark.y)
+    maxX = Math.max(maxX, landmark.x)
+    maxY = Math.max(maxY, landmark.y)
+  })
+
+  // Add some padding around the hand
+  const padding = 0.05
+  const width = maxX - minX
+  const height = maxY - minY
+  
+  return {
+    x: Math.max(0, minX - width * padding),
+    y: Math.max(0, minY - height * padding),
+    width: Math.min(1, width * (1 + 2 * padding)),
+    height: Math.min(1, height * (1 + 2 * padding))
+  }
 }
