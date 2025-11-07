@@ -5,11 +5,11 @@ import { auth } from '@/auth';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { jobId: string } }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     const session = await auth();
-    
+    const { jobId } = await params;
     if (!session?.user?.id) {
       return NextResponse.json(
         { error: 'Unauthorized - Please log in' },
@@ -19,7 +19,7 @@ export async function GET(
 
     const applicationFormFields = await prisma.appFormField.findMany({
       where: {
-        jobId: params.jobId,
+        jobId,
       },
       include: {
         field: {
