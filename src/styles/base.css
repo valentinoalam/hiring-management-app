@@ -150,6 +150,8 @@
 
     /* Success / Focus - #731912, 20% opacity */
     --success-focus: hsla(152, 38%, 42%, 0.2);
+    /* For object detection box #008343       */
+    --detection-box: 	hsl(151, 100%, 26%);
     /* Sidebar */
     --sidebar-background: hsl(210, 50%, 95%);
     --sidebar-foreground: hsl(210, 50%, 25%);
