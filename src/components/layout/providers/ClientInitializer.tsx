@@ -5,7 +5,6 @@ import { useAuthStore } from '@/stores/auth-store';
 import { Session } from 'next-auth';
 import { ThemeProvider } from 'next-themes';
 import { NextAuthProvider } from './next-auth-provider';
-import { QueryProvider } from './query-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from 'sonner';
 import { useUserProfile } from '@/hooks/queries/application-queries';

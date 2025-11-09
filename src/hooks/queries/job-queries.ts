@@ -6,20 +6,14 @@ import { JobFormData } from '@/components/job/recruiter/JobOpeningModal';
 import { apiFetch } from '@/lib/api';
 
 // API functions for Jobs
-// const fetchAllJobs = async (filters?: JobFilters): Promise<JobListResponse> => {
-//   const params = new URLSearchParams();
-//   if (filters?.status) filters.status.forEach(s => params.append('status', s));
-//   if (filters?.employmentType) filters.employmentType.forEach(t => params.append('employmentType', t));
-//   if (filters?.department) filters.department.forEach(d => params.append('department', d));
-//   if (filters?.location) filters.location.forEach(l => params.append('location', l));
-//   if (filters?.companyId) filters.companyId.forEach(c => params.append('companyId', c));
-//   if (filters?.search) params.append('search', filters.search);
-//   return apiFetch(`/api/jobs?${params.toString()}`);
-// };
-
-const fetchAllJobs = async (filters?: Omit<JobFilters, 'companyId'> & { page?: number }): Promise<JobListResponse> => {
+const fetchAllJobs = async (filters?: JobFilters & { page?: number }): Promise<JobListResponse> => {
   const params = new URLSearchParams();
   if (filters?.employmentType) filters.employmentType.forEach(t => params.append('employmentType', t));
+  if (filters?.status) filters.status.forEach(s => params.append('status', s));
+  if (filters?.employmentType) filters.employmentType.forEach(t => params.append('employmentType', t));
+  if (filters?.department) filters.department.forEach(d => params.append('department', d));
+  if (filters?.location) filters.location.forEach(l => params.append('location', l));
+  if (filters?.companyId) filters.companyId.forEach(c => params.append('companyId', c));
   if (filters?.department) filters.department.forEach(d => params.append('department', d));
   if (filters?.location) filters.location.forEach(l => params.append('location', l));
   if (filters?.search) params.append('search', filters.search);
@@ -72,11 +66,27 @@ const deleteJob = async (jobId: string): Promise<string> => {
 export const useAllJobs = () => {
   return useQuery<Job[], Error>({
     queryKey: queryKeys.jobs.all,
-    queryFn: async () => {
-      const result = await fetchAllJobs();
-      return result.jobs;
+    queryFn: async (): Promise<Job[]> => {
+      try {
+        const result = await fetchAllJobs();
+        // Handle both Job[] and JobListResponse formats
+        if (Array.isArray(result)) {
+          return result;
+        } else if (result && typeof result === 'object' && 'jobs' in result) {
+          return result.jobs || [];
+        } else {
+          console.warn('Unexpected response format from fetchAllJobs:', result);
+          return [];
+        }
+      } catch (error) {
+        console.error('Error fetching all jobs:', error);
+        return [];
+      }
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes cache time
+    refetchOnMount: false, // Don't refetch immediately when component mounts if we have cached data
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };
 
@@ -98,6 +108,7 @@ export const useJobDetail = (jobId: string) => {
     queryKey: queryKeys.jobs.detail(jobId),
     queryFn: () => fetchJobDetail(jobId),
     enabled: !!jobId,
+    staleTime: 1000 * 60 * 10, // 10 minutes stale time for details
   });
 };
 

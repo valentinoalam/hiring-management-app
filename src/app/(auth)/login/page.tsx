@@ -1,9 +1,9 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useForm } from "react-hook-form"
+import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
 import { Button } from "@/components/ui/button"
 import {
@@ -14,14 +14,6 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { signInCredentials, signInOAuth, signInMagicLink } from "./action"
@@ -31,6 +23,7 @@ import Logo from "@/components/layout/logo"
 import { Separator } from "@/components/ui/separator"
 import { KeyRound, Mail, Lock } from "lucide-react"
 import LinkSentSuccess from "@/components/layout/link-sent"
+import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field"
 
 const emailSchema = z.object({
   email: z.email({
@@ -223,38 +216,126 @@ export default function SignInPage() {
               )}
 
               {/* Magic Link Form */}
-              <Form {...magicLinkForm}>
-                <form onSubmit={magicLinkForm.handleSubmit(onSubmitMagicLink)} className="space-y-6">
-                  <FormField
-                    control={magicLinkForm.control}
+              {/* Magic Link Form - Updated with Field components */}
+              <form onSubmit={magicLinkForm.handleSubmit(onSubmitMagicLink)} className="space-y-6">
+                <FieldGroup>
+                  <Controller
                     name="email"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-neutral-90 text-s">Alamat email</FormLabel>
-                        <FormControl>
+                    control={magicLinkForm.control}
+                    render={({ field, fieldState }) => (
+                      <Field data-invalid={fieldState.invalid}>
+                        <FieldLabel className="text-neutral-90 text-s">Alamat email</FieldLabel>
+                        <Input
+                          type="email"
+                          className="rounded-xl border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
+                          placeholder="Enter your email"
+                          // Fix: Use isMounted for the activeMethod check to prevent hydration mismatch
+                          disabled={isLoading ||  activeMethod === "password"} 
+                          {...field}
+                          onChange={(e) => {
+                            field.onChange(e)
+                            setEmail(e.target.value)
+                          }}
+                        />
+                        {fieldState.invalid && (
+                          <FieldError errors={[fieldState.error]} />
+                        )}
+                      </Field>
+                    )}
+                  />
+                </FieldGroup>
+                
+                {activeMethod === "magic-link" && (
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    disabled={isLoading}
+                    className="w-full rounded-xl font-bold"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Mengirim...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-5 h-5 mr-2" />
+                        Kirim link
+                      </>
+                    )}
+                  </Button>
+                )}
+              </form>
+
+              {/* Password Form - Updated with Field components */}
+              {activeMethod === "password" && (
+                <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6 mt-6">
+                  <FieldGroup>
+                    {/* Email field (re-used structure) */}
+                    <Controller
+                      name="email"
+                      control={passwordForm.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel className="text-neutral-90 text-s">Alamat email</FieldLabel>
                           <Input
                             type="email"
                             className="rounded-xl border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
                             placeholder="Enter your email"
-                            disabled={isLoading || activeMethod === "password"}
+                            disabled={isLoading}
                             {...field}
                             onChange={(e) => {
                               field.onChange(e)
                               setEmail(e.target.value)
                             }}
                           />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
+                    
+                    {/* Password Field */}
+                    <Controller
+                      name="password"
+                      control={passwordForm.control}
+                      render={({ field, fieldState }) => (
+                        <Field data-invalid={fieldState.invalid}>
+                          <FieldLabel>Password</FieldLabel>
+                          <Input
+                            type="password"
+                            placeholder="Enter your password"
+                            disabled={isLoading}
+                            className="rounded-xl border-primary border-2 placeholder:text-gray-500"
+                            {...field}
+                          />
+                          {fieldState.invalid && (
+                            <FieldError errors={[fieldState.error]} />
+                          )}
+                        </Field>
+                      )}
+                    />
+                  </FieldGroup>
 
-                  {activeMethod === "magic-link" && (
+                  <div className="flex gap-3">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={switchToMagicLink}
+                      disabled={isLoading}
+                      className="flex-1 rounded-xl"
+                    >
+                      Kembali
+                    </Button>
                     <Button
                       type="submit"
                       variant="secondary"
                       disabled={isLoading}
-                      className="w-full rounded-xl font-bold"
+                      className="flex-1 rounded-xl font-bold"
                     >
                       {isLoading ? (
                         <>
@@ -262,77 +343,17 @@ export default function SignInPage() {
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                           </svg>
-                          <span>Mengirim...</span>
+                          <span>Masuk...</span>
                         </>
                       ) : (
                         <>
-                          <Mail className="w-5 h-5 mr-2" />
-                          Kirim link
+                          <Lock className="w-5 h-5 mr-2" />
+                          Masuk dengan Password
                         </>
                       )}
                     </Button>
-                  )}
+                  </div>
                 </form>
-              </Form>
-
-              {/* Password Form */}
-              {activeMethod === "password" && (
-                <Form {...passwordForm}>
-                  <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6 mt-6">
-                    <FormField
-                      control={passwordForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input
-                              type="password"
-                              placeholder="Enter your password"
-                              disabled={isLoading}
-                              className="rounded-xl border-primary border-2 placeholder:text-gray-500"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <div className="flex gap-3">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={switchToMagicLink}
-                        disabled={isLoading}
-                        className="flex-1 rounded-xl"
-                      >
-                        Kembali
-                      </Button>
-                      <Button
-                        type="submit"
-                        variant="secondary"
-                        disabled={isLoading}
-                        className="flex-1 rounded-xl font-bold"
-                      >
-                        {isLoading ? (
-                          <>
-                            <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                            </svg>
-                            <span>Masuk...</span>
-                          </>
-                        ) : (
-                          <>
-                            <Lock className="w-5 h-5 mr-2" />
-                            Masuk dengan Password
-                          </>
-                        )}
-                      </Button>
-                    </div>
-                  </form>
-                </Form>
               )}
             </CardContent>
             

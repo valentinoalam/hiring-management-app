@@ -15,9 +15,10 @@ export default function JobApplicationPage() {
   const jobId = Array.isArray(params.jobId) ? params.jobId[0] : params.jobId as string;
   const router = useRouter();
   const { data: session, status } = useSession();
-  if(!session) {
-    router.push('/login');
-  }
+  useEffect(() => {
+    if(status && status === "unauthenticated") 
+      router.push('/login');
+    }, [router, session, status])
   const user = session?.user;
   const userId = user?.id;
 

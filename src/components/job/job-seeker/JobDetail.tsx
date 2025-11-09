@@ -63,7 +63,14 @@ export default function JobDetail({
 
       <div className="flex flex-col gap-6">
         <div className="text-neutral-90 text-sm leading-6 whitespace-pre-line">
-          {description}
+          <p>{description}</p>
+          {/* <p>This role involves developing cutting-edge software solutions and collaborating with cross-functional teams. We are looking for a candidate with strong problem-solving skills and a passion for technology.</p>
+          <h3 className="mt-4 font-semibold text-lg">Requirements</h3>
+          <ul>
+              <li>5+ years of experience in relevant field.</li>
+              <li>Proficiency in modern web frameworks (e.g., React, Next.js).</li>
+              <li>Strong knowledge of database design and SQL.</li>
+          </ul> */}
         </div>
       </div>
     </div>
