@@ -82,7 +82,7 @@ export async function GET(
         },
       ];
     }
-
+    console.log('Where:', where)
     const [candidates, totalCount]  = await Promise.all([ 
       prisma.application.findMany({
         where,
@@ -144,21 +144,12 @@ export async function GET(
               },
             },
           },
-          _count: {
-            select: {
-              notes: true,
-            },
-          },
-          
         },
-        orderBy: {
-          [sortBy]: sortOrder,
-        },
-        skip,
-        take: limit,}),
+      }),
       prisma.application.count({ where }),
     ]);
-
+    console.log('Candidates:', candidates)
+    console.log('Total Count:', totalCount)
     return NextResponse.json({
       candidates,
       pagination: {

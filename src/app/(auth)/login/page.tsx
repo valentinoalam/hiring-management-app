@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
@@ -17,22 +17,23 @@ import {
 import { Input } from "@/components/ui/input"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { signInCredentials, signInOAuth, signInMagicLink } from "./action"
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation'
 import Link from "next/link"
 import Logo from "@/components/layout/logo"
 import { Separator } from "@/components/ui/separator"
-import { KeyRound, Mail, Lock } from "lucide-react"
+import { KeyRound, Mail, Lock, Edit } from "lucide-react"
 import LinkSentSuccess from "@/components/layout/link-sent"
 import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field"
 
+// Separate schemas for different auth methods
 const emailSchema = z.object({
-  email: z.email({
+  email: z.string().email({
     message: "Please enter a valid email address.",
   }),
 })
 
 const passwordSchema = z.object({
-  email: z.email({
+  email: z.string().email({
     message: "Please enter a valid email address.",
   }),
   password: z.string().min(6, {
@@ -42,47 +43,46 @@ const passwordSchema = z.object({
 
 const providerMap = [
   { id: "google", name: "Google" },
-]
+] as const
 
 type AuthMethod = "magic-link" | "password"
+type ProviderId = typeof providerMap[number]['id']
 
 export default function SignInPage() {
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams.get('callbackUrl')|| '/'; // Keep as string or null
+  const searchParams = useSearchParams()
+  const callbackUrl = searchParams.get('callbackUrl') || '/'
   const router = useRouter()
+  
   const [isLoading, setIsLoading] = useState(false)
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
   const [error, setError] = useState("")
   const [magicLinkSent, setMagicLinkSent] = useState(false)
-  const [email, setEmail] = useState("")
   const [showAnimation, setShowAnimation] = useState(false)
 
+  // Separate forms for each auth method
   const magicLinkForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
-    defaultValues: {
-      email: "",
-    },
+    defaultValues: { email: "" },
   })
 
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
     resolver: zodResolver(passwordSchema),
-    defaultValues: {
-      email: "",
-      password: "",
-    },
+    defaultValues: { email: "", password: "" },
   })
 
-  async function onSubmitMagicLink(values: z.infer<typeof emailSchema>) {
+  const magicLinkEmail = magicLinkForm.watch("email")
+  const passwordEmail = passwordForm.watch("email")
+  const currentEmail = activeMethod === "magic-link" ? magicLinkEmail : passwordEmail
+
+  // Reset errors when user interacts with forms
+  const clearError = () => setError("")
+
+  async function handleMagicLinkSubmit(values: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError("")
-    setEmail(values.email)
     
     try {
-      // Only pass callbackUrl if it exists, otherwise let NextAuth use default
-      const result = await signInMagicLink(
-        values.email, 
-        callbackUrl || undefined // Convert null to undefined
-      )
+      const result = await signInMagicLink(values.email, callbackUrl || undefined)
       
       if (result?.error) {
         setError("Failed to send magic link. Please try again.")
@@ -92,6 +92,8 @@ export default function SignInPage() {
           setMagicLinkSent(true)
           setShowAnimation(false)
         }, 600)
+      } else {
+        setError("An unexpected error occurred. Please try again.")
       }
     } catch (err) {
       console.error("Magic link error:", err)
@@ -101,7 +103,7 @@ export default function SignInPage() {
     }
   }
 
-  async function onSubmitPassword(values: z.infer<typeof passwordSchema>) {
+  async function handlePasswordSubmit(values: z.infer<typeof passwordSchema>) {
     setIsLoading(true)
     setError("")
     
@@ -110,11 +112,7 @@ export default function SignInPage() {
       formData.append('email', values.email)
       formData.append('password', values.password)
       
-      // Only pass callbackUrl if it exists
-      const result = await signInCredentials(
-        formData, 
-        callbackUrl || undefined // Convert null to undefined
-      )
+      const result = await signInCredentials(formData, callbackUrl || undefined)
       
       if (result?.error) {
         switch (result.error) {
@@ -126,14 +124,17 @@ export default function SignInPage() {
             break
           case 'INVALID_CREDENTIALS':
           case 'CredentialsSignin':
-          default:
             setError("Invalid email or password. Please try again.")
+            break
+          default:
+            setError("An unexpected error occurred. Please try again.")
             break
         }
       } else if (result?.success) {
-        // Use the callbackUrl if provided, otherwise default to "/"
-        router.push(callbackUrl || "/")
+        router.push(callbackUrl)
         router.refresh()
+      } else {
+        setError("An unexpected error occurred. Please try again.")
       }
     } catch (err) {
       console.error("Sign in error:", err)
@@ -143,178 +144,200 @@ export default function SignInPage() {
     }
   }
 
-  async function handleProviderSignIn(providerId: string) {
+  async function handleProviderSignIn(providerId: ProviderId) {
     setIsLoading(true)
     setError("")
     
     try {
-      // Only pass callbackUrl if it exists
       await signInOAuth(providerId, callbackUrl || undefined)
       // Note: This will redirect, so code after won't execute
     } catch (err: unknown) {
       // Only handle actual errors, not redirects
-      if (!(err as { url?: string; cause?: { url?: string } })?.url && !(err as { url?: string; cause?: { url?: string } })?.cause?.url) {
+      const error = err as { url?: string; cause?: { url?: string } }
+      if (!error?.url && !error?.cause?.url) {
         console.error("OAuth error:", err)
         setError("An error occurred with OAuth sign in. Please try again.")
+        setIsLoading(false)
       }
       // If it's a redirect error, let it propagate
-      throw err
-    } finally {
-      setIsLoading(false)
     }
   }
 
   const switchToPassword = () => {
-    setActiveMethod("password")
-    if (email) {
-      passwordForm.setValue("email", email)
+    if (magicLinkEmail) {
+      passwordForm.setValue("email", magicLinkEmail)
     }
+    setActiveMethod("password")
+    clearError()
   }
 
   const switchToMagicLink = () => {
     setActiveMethod("magic-link")
     setMagicLinkSent(false)
+    clearError()
   }
 
+  const handleEditEmail = () => {
+    setActiveMethod("magic-link")
+    clearError()
+  }
+
+  // Loading spinner component
+  const LoadingSpinner = () => (
+    <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
+      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+    </svg>
+  )
+
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center px-auto">
+    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
       <div className="max-w-md w-full mx-auto">
-        <Logo withName={false} />
+        <div className="flex justify-left mb-8">
+          <Logo withName={false} />
+        </div>
+        
         {/* Magic Link Sent Success Card */}
         {magicLinkSent ? (
           <div className={`
             transform transition-all duration-500 ease-out
             ${showAnimation ? 'scale-95 opacity-0' : 'scale-100 opacity-100'}
           `}> 
-            <LinkSentSuccess email={email} />
+            <LinkSentSuccess email={currentEmail} />
           </div>
-        ) : 
-          <Card className="max-h-[444px] md:w-[500px] border-none *:px-11 overflow-y-scroll">
-            <CardHeader className="p-0 pt-6">
-              <CardTitle className="font-bold text-xl">Masuk ke Rakamin</CardTitle>
-              <CardDescription className="text-neutral-100">
+        ) : (
+          <Card className="w-full max-w-md border-none shadow-lg">
+            <CardHeader className="text-center pb-4">
+              <CardTitle className="font-bold text-2xl">Masuk ke Rakamin</CardTitle>
+              <CardDescription className="text-gray-600 mt-2">
                 Belum punya akun?{" "}
                 <Link 
                   href={{
                     pathname: '/sign-up',
                     query: callbackUrl ? { callbackUrl } : {}
                   }}
-                  className="text-primary hover:underline"
+                  className="text-primary hover:underline font-medium"
                 >
                   Daftar menggunakan email
                 </Link>
               </CardDescription>
             </CardHeader>
-            <CardContent className="p-0 pb-6">
+            
+            <CardContent className="space-y-6">
               {error && (
-                <Alert variant="destructive" className="mb-6">
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                  <AlertDescription>{error}</AlertDescription>
+                <Alert variant="destructive" className="mb-4">
+                  <AlertDescription className="flex items-center gap-2">
+                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    {error}
+                  </AlertDescription>
                 </Alert>
               )}
 
               {/* Magic Link Form */}
-              {/* Magic Link Form - Updated with Field components */}
-              <form onSubmit={magicLinkForm.handleSubmit(onSubmitMagicLink)} className="space-y-6">
-                <FieldGroup>
-                  <Controller
-                    name="email"
-                    control={magicLinkForm.control}
-                    render={({ field, fieldState }) => (
-                      <Field data-invalid={fieldState.invalid}>
-                        <FieldLabel className="text-neutral-90 text-s">Alamat email</FieldLabel>
-                        <Input
-                          type="email"
-                          className="rounded-xl border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
-                          placeholder="Enter your email"
-                          // Fix: Use isMounted for the activeMethod check to prevent hydration mismatch
-                          disabled={isLoading ||  activeMethod === "password"} 
-                          {...field}
-                          onChange={(e) => {
-                            field.onChange(e)
-                            setEmail(e.target.value)
-                          }}
-                        />
-                        {fieldState.invalid && (
-                          <FieldError errors={[fieldState.error]} />
-                        )}
-                      </Field>
-                    )}
-                  />
-                </FieldGroup>
-                
-                {activeMethod === "magic-link" && (
-                  <Button
-                    type="submit"
-                    variant="secondary"
-                    disabled={isLoading}
-                    className="w-full rounded-xl font-bold"
-                  >
-                    {isLoading ? (
-                      <>
-                        <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
-                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                        </svg>
-                        <span>Mengirim...</span>
-                      </>
-                    ) : (
-                      <>
-                        <Mail className="w-5 h-5 mr-2" />
-                        Kirim link
-                      </>
-                    )}
-                  </Button>
-                )}
-              </form>
-
-              {/* Password Form - Updated with Field components */}
-              {activeMethod === "password" && (
-                <form onSubmit={passwordForm.handleSubmit(onSubmitPassword)} className="space-y-6 mt-6">
+              {activeMethod === "magic-link" && (
+                <form onSubmit={magicLinkForm.handleSubmit(handleMagicLinkSubmit)} className="space-y-4">
                   <FieldGroup>
-                    {/* Email field (re-used structure) */}
                     <Controller
                       name="email"
-                      control={passwordForm.control}
+                      control={magicLinkForm.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel className="text-neutral-90 text-s">Alamat email</FieldLabel>
+                          <FieldLabel className="text-gray-700 text-sm font-medium">
+                            Alamat email
+                          </FieldLabel>
                           <Input
                             type="email"
-                            className="rounded-xl border-neutral-40 hover:border-primary border-2 placeholder:text-gray-500"
+                            className="rounded-lg border-gray-300 hover:border-primary focus:border-primary transition-colors"
                             placeholder="Enter your email"
                             disabled={isLoading}
                             {...field}
                             onChange={(e) => {
                               field.onChange(e)
-                              setEmail(e.target.value)
+                              clearError()
                             }}
                           />
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
+                          {fieldState.invalid && fieldState.error?.message && (
+                            <FieldError errors={[{ message: fieldState.error.message }]} />
                           )}
                         </Field>
                       )}
                     />
-                    
-                    {/* Password Field */}
+                  </FieldGroup>
+                  
+                  <Button
+                    type="submit"
+                    variant="secondary"
+                    disabled={isLoading || !magicLinkEmail}
+                    className="w-full rounded-lg font-semibold h-11"
+                  >
+                    {isLoading ? (
+                      <>
+                        <LoadingSpinner />
+                        <span>Mengirim...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Mail className="w-5 h-5 mr-2" />
+                        Kirim link ajaib
+                      </>
+                    )}
+                  </Button>
+                </form>
+              )}
+
+              {/* Password Form */}
+              {activeMethod === "password" && (
+                <form onSubmit={passwordForm.handleSubmit(handlePasswordSubmit)} className="space-y-4">
+                  {/* Email Display */}
+                  <FieldGroup>
+                    <Field>
+                      <div className="flex items-center justify-between mb-2">
+                        <FieldLabel className="text-gray-700 text-sm font-medium">
+                          Alamat email
+                        </FieldLabel>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={handleEditEmail}
+                          className="h-auto p-0 text-primary hover:text-primary/80 text-xs font-medium"
+                        >
+                          <Edit className="w-3 h-3 mr-1" />
+                          Ubah
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-700">
+                        <Mail className="w-4 h-4 text-gray-500" />
+                        <span className="flex-1">{passwordEmail}</span>
+                      </div>
+                    </Field>
+                  </FieldGroup>
+
+                  {/* Password Field */}
+                  <FieldGroup>
                     <Controller
                       name="password"
                       control={passwordForm.control}
                       render={({ field, fieldState }) => (
                         <Field data-invalid={fieldState.invalid}>
-                          <FieldLabel>Password</FieldLabel>
+                          <FieldLabel className="text-gray-700 text-sm font-medium">
+                            Password
+                          </FieldLabel>
                           <Input
                             type="password"
                             placeholder="Enter your password"
                             disabled={isLoading}
-                            className="rounded-xl border-primary border-2 placeholder:text-gray-500"
+                            className="rounded-lg border-gray-300 hover:border-primary focus:border-primary transition-colors"
                             {...field}
+                            onChange={(e) => {
+                              field.onChange(e)
+                              clearError()
+                            }}
                           />
-                          {fieldState.invalid && (
-                            <FieldError errors={[fieldState.error]} />
+                          {fieldState.invalid && fieldState.error?.message && (
+                            <FieldError errors={[{ message: fieldState.error.message }]} />
                           )}
                         </Field>
                       )}
@@ -327,28 +350,25 @@ export default function SignInPage() {
                       variant="outline"
                       onClick={switchToMagicLink}
                       disabled={isLoading}
-                      className="flex-1 rounded-xl"
+                      className="flex-1 rounded-lg h-11"
                     >
                       Kembali
                     </Button>
                     <Button
                       type="submit"
                       variant="secondary"
-                      disabled={isLoading}
-                      className="flex-1 rounded-xl font-bold"
+                      disabled={isLoading || !passwordForm.formState.isValid}
+                      className="flex-1 rounded-lg font-semibold h-11"
                     >
                       {isLoading ? (
                         <>
-                          <svg className="animate-spin h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                          </svg>
+                          <LoadingSpinner />
                           <span>Masuk...</span>
                         </>
                       ) : (
                         <>
                           <Lock className="w-5 h-5 mr-2" />
-                          Masuk dengan Password
+                          Masuk
                         </>
                       )}
                     </Button>
@@ -357,27 +377,25 @@ export default function SignInPage() {
               )}
             </CardContent>
             
-            <CardFooter className="flex-col gap-6">
+            <CardFooter className="flex-col gap-4 pt-4">
               {/* Separator and Password Option */}
-              {activeMethod === "magic-link" && (
-                <div className="space-y-6 w-full *:font-bold">
+              {activeMethod === "magic-link" && magicLinkEmail && !magicLinkForm.formState.errors.email && (
+                <div className="space-y-4 w-full">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <Separator className="border-gray-500 bg-gray-500" />
+                      <Separator className="bg-gray-300" />
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <div className="w-6 h-6 rounded-full bg-white content-evenly text-center">
-                        <span className="text-gray-500">Or</span>
-                      </div>
+                    <div className="relative flex justify-center">
+                      <span className="bg-white px-3 text-sm text-gray-500">Atau</span>
                     </div>
                   </div>
                   
                   <Button
                     onClick={switchToPassword}
-                    disabled={isLoading || !email}
+                    disabled={isLoading}
                     type="button"
                     variant="outline"
-                    className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 ease-in-out"
+                    className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 font-medium shadow-sm hover:shadow-md transition-all duration-200"
                   >
                     <KeyRound className="w-5 h-5" />
                     Masuk dengan Password
@@ -386,7 +404,7 @@ export default function SignInPage() {
               )}
 
               {/* OAuth Providers */}
-              <div className="space-y-3 w-full *:font-bold">
+              <div className="space-y-3 w-full">
                 {providerMap.map((provider) => (
                   <Button
                     key={provider.id}
@@ -394,23 +412,23 @@ export default function SignInPage() {
                     disabled={isLoading}
                     type="button"
                     variant="outline"
-                    className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 font-medium shadow-md hover:shadow-lg hover:-translate-y-0.5 active:translate-y-0 active:shadow-md transition-all duration-200 ease-in-out"
+                    className="w-full flex items-center gap-3 bg-white border border-gray-300 rounded-lg px-6 py-3 text-gray-700 font-medium shadow-sm hover:shadow-md transition-all duration-200"
                   >
-                    {provider.name === "Google" && 
+                    {provider.name === "Google" && (
                       <svg className="w-5 h-5" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                         <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
                         <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
                         <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
                         <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
                       </svg>
-                    }
+                    )}
                     Masuk dengan {provider.name}
                   </Button>
                 ))}
               </div>
             </CardFooter>
           </Card>
-        }
+        )}
       </div>
     </div>
   )

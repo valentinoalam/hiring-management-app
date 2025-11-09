@@ -13,8 +13,8 @@ import {
 } from 'lucide-react';
 
 // 💡 Import TanStack Query hooks
-import { useAllJobs, useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
-import { Job, NewJobData } from '@/types/job';
+import { useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
+import { Job } from '@/types/job';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/job/recruiter/job-list';
 import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal';
@@ -32,75 +32,11 @@ const StatCard = ({ title, value, icon: Icon, colorClass }: { title: string, val
   </div>
 );
 
-const JobRow = ({ job, onEdit }: { job: Job, onEdit: (id: string) => void }) => {
-  const statusClass = {
-    ACTIVE: "bg-green-100 text-green-700 border-green-300",
-    DRAFT: "bg-yellow-100 text-yellow-700 border-yellow-300",
-    INACTIVE: "bg-red-100 text-red-700 border-red-300",
-    ARCHIVED: "bg-gray-100 text-gray-700 border-gray-300",
-  }[job.status];
-
-  return (
-    <div className="grid grid-cols-12 gap-4 p-4 items-center bg-card hover:bg-secondary/50 transition-colors border-b last:border-b-0">
-      
-      {/* Title and Status (Col 1-5) */}
-      <div className="col-span-5 flex flex-col">
-        <Link href={`/recruiter/jobs/${job.id}/applicants`} className="text-lg font-semibold hover:text-primary transition-colors line-clamp-1">
-          {job.title}
-        </Link>
-        <div className="flex items-center space-x-2 text-sm text-muted-foreground mt-1">
-          <span className={`px-2 py-0.5 text-xs font-semibold rounded-full border ${statusClass}`}>
-            {job.status}
-          </span>
-          <span className="flex items-center">
-            <Calendar className="w-3 h-3 mr-1" />
-            {new Date(job.createdAt).toLocaleDateString()}
-          </span>
-        </div>
-      </div>
-
-      {/* Location & Salary (Col 6-8) */}
-      <div className="col-span-3 text-sm text-muted-foreground hidden md:block">
-          <span className="flex items-center">
-            <MapPin className="w-4 h-4 mr-1.5 text-blue-500" />{job.location}
-          </span>
-          <span className="flex items-center mt-1">
-            {salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}
-          </span>
-      </div>
-      
-      {/* Applicants (Col 9-10) */}
-      <div className="col-span-2 text-center">
-        <span className="text-xl font-bold text-primary">{job.candidatesCount}</span>
-        <p className="text-xs text-muted-foreground">Applicants</p>
-      </div>
-
-      {/* Actions (Col 11-12) */}
-      <div className="col-span-2 flex justify-end space-x-2">
-        <button 
-          title="Edit Job"
-          className="p-2 rounded-full text-primary hover:bg-primary/10 transition-colors"
-          onClick={() => onEdit(job.id)}
-        >
-          <Edit className="w-5 h-5" />
-        </button>
-        <button 
-          title="Delete Job"
-          className="p-2 rounded-full text-red-500 hover:bg-red-100 transition-colors"
-          onClick={() => { /* Implement useMutation for deletion here */ }}
-        >
-          <Trash2 className="w-5 h-5" />
-        </button>
-      </div>
-    </div>
-  );
-};
-
 export default function RecruiterJobsPage() {
   const router = useRouter();
   const { data: session, status } = useSession();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  if(!session) {
+  if(status === "unauthenticated") {
     router.push('/login');
   }
   // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)

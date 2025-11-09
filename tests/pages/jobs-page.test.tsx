@@ -3,7 +3,7 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import JobsPage from '@/app/jobs/page';
+import JobsPage from '@/app/(default)/jobs/page';
 import { useAllJobs } from '@/hooks/queries/job-queries';
 
 // Mock the dependencies

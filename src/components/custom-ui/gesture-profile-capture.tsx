@@ -297,7 +297,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                 {/* Face Detection Rectangle */}
                 {isDebug && cameraActive && faceDetection && faceDetection.confidence > 0.5 && (
                   <div
-                    className="absolute border-2 border-blue-400 pointer-events-none"
+                    className="absolute aspect-square border-2 border-blue-400 pointer-events-none"
                     style={{
                       left: `${faceDetection.boundingBox.x * 100}%`,
                       top: `${faceDetection.boundingBox.y * 100}%`,
@@ -315,7 +315,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                 {/* Hand Detection Rectangle */}
                 {cameraActive && faceDetected && handPose?.boundingBox && (
                   <div
-                    className="absolute aspect-square border-2 border-detection-box pointer-events-none"
+                    className={`absolute aspect-square border-2 ${[1,2,3].includes(handPose.fingers)? 'border-detection-box' : 'border-danger'} pointer-events-none`}
                     style={{
                       left: `${((handPose.boundingBox.x - (handPose.boundingBox.width/2))* 100)}%`,
                       top: `${(handPose.boundingBox.y * 100)-2}%`,
@@ -323,17 +323,23 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                       height: `${handPose.boundingBox.height * 100}%`,
                     }}
                   >
-                    {[1,2,3].includes(handPose.fingers) && (
+                    {[1,2,3].includes(handPose.fingers) ? (
                       <div className="absolute left-0 -top-6 bg-detection-box px-2 gap-2 inline-flex items-center justify-center self-start">
                         <span className="text-white text-sm font-bold leading-6">
                           Pose {handPose.fingers}
                         </span>
                       </div>
+                    ): (
+                      <div className="absolute left-0 -top-6 bg-danger px-2 gap-2 inline-flex items-center justify-center self-start">
+                        <span className="text-white text-sm font-bold leading-6">
+                          False Pose
+                        </span>
+                      </div>
                     )}
-                    <div className="absolute -top-1 -left-1 w-2 h-2 bg-detection-box"></div>
+                    {/* <div className="absolute -top-1 -left-1 w-2 h-2 bg-detection-box"></div>
                     <div className="absolute -top-1 -right-1 w-2 h-2 bg-detection-box"></div>
                     <div className="absolute -bottom-1 -left-1 w-2 h-2 bg-detection-box"></div>
-                    <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-detection-box"></div>
+                    <div className="absolute -bottom-1 -right-1 w-2 h-2 bg-detection-box"></div> */}
                   </div>
                 )}
 

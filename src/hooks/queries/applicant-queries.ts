@@ -14,23 +14,116 @@ const fetchJobApplicants = async (jobId: string, filters?: {
   source?: string;
   page?: number;
 }): Promise<ApplicantListResponse> => {
-  const params = new URLSearchParams();
-  if (filters?.status) params.append('status', filters.status);
-  if (filters?.search) params.append('search', filters.search);
-  if (filters?.source) params.append('source', filters.source);
-  if (filters?.page) params.append('page', filters.page.toString());
+  try {
+    const params = new URLSearchParams();
+    if (filters?.status) params.append('status', filters.status);
+    if (filters?.search) params.append('search', filters.search);
+    if (filters?.source) params.append('source', filters.source);
+    if (filters?.page) params.append('page', filters.page.toString());
 
-  const applicantsData = await apiFetch(`/api/jobs/${jobId}/applications?${params.toString()}`) as ApplicantListData;
+    console.log('Fetching applicants from:', `/api/jobs/${jobId}/applications?${params.toString()}`);
   
-  // Transform ApplicantData to flat Applicant structure
-  const applicants = applicantsData.applicants.map(translateApplicantData);
-  
-  return {
-    applicants,
-    pagination: {
-      ...applicantsData.pagination,
-      totalCount: applicantsData.pagination.total
+    const response = await apiFetch(`/api/jobs/${jobId}/applications?${params.toString()}`);
+    console.log('Raw API response:', response);
+
+    if (!response) {
+      throw new Error('No response received from server');
     }
+
+    // Handle different response formats
+    let applicantsData: ApplicantListData;
+    
+    if (Array.isArray(response)) {
+      // If response is directly an array
+      applicantsData = {
+        applicants: response,
+        pagination: {
+          total: response.length,
+          page: 1,
+          limit: response.length,
+          totalPages: 1
+        }
+      };
+    } else if (response.applicants) {
+      // If response has applicants property
+      applicantsData = response;
+    } else {
+      // If response is already in ApplicantData format
+      applicantsData = {
+        applicants: [response],
+        pagination: response.pagination || {
+          total: 1,
+          page: 1,
+          limit: 1,
+          totalPages: 1
+        }
+      };
+    }
+    
+    // Transform ApplicantData to flat Applicant structure
+    const applicants = applicantsData.applicants.map(applicantData => {
+      try {
+        return translateApplicantData(applicantData);
+      } catch (error) {
+        console.error('Error transforming applicant data:', error, applicantData);
+        // Return a fallback applicant object to prevent complete failure
+        return createFallbackApplicant(applicantData);
+      }
+    });
+    
+    return {
+      applicants,
+      pagination: {
+        ...applicantsData.pagination,
+        totalCount: applicantsData.pagination.total
+      }
+    };
+  } catch (error) {
+    console.error('Error in fetchJobApplicants:', error);
+    throw error;
+  }
+};
+
+// Fallback function in case transformation fails
+const createFallbackApplicant = (applicantData: ApplicantData): Applicant => {
+  // Transform userInfo array to expected object format
+  const userInfo: Record<string, { [key: string]: string; answer: string }> = {};
+  if (Array.isArray(applicantData.applicant?.userInfo)) {
+    for (const info of applicantData.applicant.userInfo) {
+      const key = info.field?.key ?? "";
+      const label = info.field?.label ?? "";
+      const type = info.field?.fieldType ?? "";
+      const answer = info.infoFieldAnswer ?? "";
+
+      if (key) {
+        userInfo[key] = {
+          [label]: type,
+          answer,
+        };
+      }
+    }
+  }
+
+  return {
+    id: applicantData.id || 'unknown',
+    applicantId: applicantData.applicantId || applicantData.id || 'unknown',
+    jobId: applicantData.jobId || 'unknown',
+    status: applicantData.status || 'PENDING',
+    coverLetter: applicantData.coverLetter || '',
+    source: applicantData.source || 'unknown',
+    appliedAt: applicantData.appliedAt || new Date().toISOString(),
+    viewedAt: applicantData.viewedAt,
+    statusUpdatedAt: applicantData.statusUpdatedAt,
+    fullname: applicantData.applicant?.fullname || 'Unknown Applicant',
+    email: applicantData.applicant?.user?.email || '',
+    phone: applicantData.applicant?.phone || '',
+    location: applicantData.applicant?.location || '',
+    gender: applicantData.applicant?.gender || '',
+    linkedin: applicantData.applicant?.linkedin  || '',
+    avatarUrl: applicantData.applicant?.avatarUrl || '',
+    resumeUrl: applicantData.applicant?.resumeUrl || '',
+    job: applicantData.job,
+    userInfo: Object.keys(userInfo).length > 0 ? userInfo : undefined
   };
 };
 
@@ -188,14 +281,14 @@ export const useJobApplicants = (jobId: string, filters?: {
     queryKey: queryKeys.applicants.byJob(jobId, filters),
     queryFn: () => fetchJobApplicants(jobId, filters),
     enabled: !!jobId,
-    staleTime: 30 * 1000, // 30 seconds
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes cache time
     retry: (failureCount, error: Error) => {
       if (error.message.includes('404')) return false;
       return failureCount < 3;
     },
   });
 };
-
 export const useApplicantDetail = (applicantId: string) => {
   return useQuery<Applicant, Error>({
     queryKey: queryKeys.applicants.detail(applicantId),

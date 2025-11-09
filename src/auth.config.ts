@@ -56,7 +56,7 @@ export const authConfig: NextAuthConfig = {
           if (!credentials?.email || !credentials?.password) {
             throw new Error('Email and password are required.')
           }
-
+          console.log("doila")
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           })
@@ -70,16 +70,16 @@ export const authConfig: NextAuthConfig = {
           }
           
           // 💡 NEW CHECK: Stop login if email is not verified
-          if (!user.emailVerified) {
-              // This error message will be displayed on the sign-in error page
-              throw new Error('Email not verified. Please check your inbox for the verification link.')
-          }
+          // if (!user.emailVerified) {
+          //     // This error message will be displayed on the sign-in error page
+          //     throw new Error('Email not verified. Please check your inbox for the verification link.')
+          // }
 
           const isPasswordValid = await compare(credentials.password as string, user.password)
           if (!isPasswordValid) {
             throw new Error('Invalid password.')
           }
-
+          console.log("voila")
           // 💡 Return user object matching your schema and custom types
           return {
             id: user.id,
@@ -87,7 +87,7 @@ export const authConfig: NextAuthConfig = {
             name: user.name, // Map name to the standard 'name' property
             role: user.role,
             image: user.image, // No image field in your DB user model directly
-            emailVerified: user.emailVerified,
+            emailVerified: user.emailVerified || undefined,
           }
         } catch (error) {
           console.error('Authentication error:', error)

@@ -1,4 +1,4 @@
-import { ApplicantData, ApplicationData, FormField } from "@/types/job"
+import { ApplicantData, FormField } from "@/types/job"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
@@ -180,7 +180,10 @@ export const useApplicationFormFields = (jobId: string) => {
     queryKey: queryKeys.applicants.formFields(jobId),
     queryFn: () => fetchApplicationFormFields(jobId),
     enabled: !!jobId,
-    staleTime: 10 * 60 * 1000, // 10 minutes
+    staleTime: 1000 * 60 * 5, // 5 minutes
+    gcTime: 1000 * 60 * 30, // 30 minutes cache time
+    refetchOnMount: false, // Don't refetch immediately when component mounts if we have cached data
+    refetchOnWindowFocus: false, // Don't refetch on window focus
   });
 };
 

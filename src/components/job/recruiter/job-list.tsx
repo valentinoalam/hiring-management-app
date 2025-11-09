@@ -1,6 +1,8 @@
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Search, Loader2, Briefcase } from 'lucide-react'; // Using Lucide icons for aesthetics
 import { Job } from '@/types/job';
+import Image from 'next/image';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
 const LazyJobCard = lazy(() => import('./job-card'));
 
@@ -33,6 +35,7 @@ const NoJobsHero = ({onCreateJob}: {onCreateJob: () => void}) => (
       </button>
   </div>
 );
+
 const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [visibleJobsCount, setVisibleJobsCount] = useState(10); // Start with 10 jobs visible
@@ -122,27 +125,28 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
           <aside className="hidden lg:flex flex-col gap-6 w-[300px]">
             {/* The 'top-4' class is critical for making 'sticky' work effectively inside a flexible container */}
             <div className="sticky top-4">
-              <div
-                className="flex flex-col items-end justify-center gap-6 rounded-2xl p-6 shadow-2xl"
-                style={{
-                  backgroundImage:
-                    "linear-gradient(0deg, rgba(0, 0, 0, 0.72) 0%, rgba(0, 0, 0, 0.72) 100%), url('https://api.builder.io/api/v1/image/assets/TEMP/3ecfcde75f4a68c505478c3cb850d6305db5abe2?width=600')",
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
-                }}
+              <Card className="relative flex flex-col items-end justify-center gap-6 overflow-clip rounded-[16px] p-6 shadow-2xl"
               >
-                <div className="flex flex-col gap-1 self-stretch">
-                  <h2 className="text-xl font-bold leading-7 text-white">
-                    Recruit the best candidates
-                  </h2>
-                  <p className="text-sm font-medium leading-6 text-gray-200">
-                    Create jobs, invite, and hire with ease
-                  </p>
+                <Image src={'/bg.jpg'} fill
+                  quality={80} priority={true} alt={'Background image for container'} 
+                  className='absolute w-full h-full object-cover' />
+                <div className="absolute w-full h-full inset-0 z-10 rounded-2xl bg-neutral-100 opacity-72" />
+                <div className="relative flex flex-col z-20 gap-6 text-white">
+                  <CardHeader className="flex flex-col p-0 gap-1 space-y-0 self-stretch">
+                    <CardTitle className="text-xl font-bold leading-7 text-neutral-40">
+                      Recruit the best candidates
+                    </CardTitle>
+                    <CardDescription className="text-sm font-bold leading-6 text-gray-200">
+                      Create jobs, invite, and hire with ease
+                    </CardDescription>
+                  </CardHeader>
+                  <CardFooter className='p-0'>
+                    <button onClick={onCreateJob} className="flex h-10 w-full items-center justify-center gap-1 self-stretch rounded-xl bg-primary px-4 py-1.5 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90">
+                      Create a new job
+                    </button>
+                  </CardFooter>
                 </div>
-                <button onClick={onCreateJob} className="flex h-10 w-full items-center justify-center gap-1 self-stretch rounded-lg bg-primary px-4 py-1.5 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90">
-                  Create a new job
-                </button>
-              </div>
+              </Card>
             </div>
             <div className="sticky top-[150px] p-4 bg-white rounded-xl shadow-md border border-gray-100">
                 <p className="font-semibold text-gray-700">Analytics Summary</p>

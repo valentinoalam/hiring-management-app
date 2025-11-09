@@ -1,8 +1,7 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/no-unused-vars */
+// applicants-table.tsx
 'use client';
 
-import { useState, useMemo, useCallback } from 'react';
+import { useMemo, useState, useEffect, useRef } from 'react';
 import {
   ColumnDef,
   ColumnOrderState,
@@ -19,6 +18,8 @@ import {
   useSensor,
   useSensors,
   closestCenter,
+  DragStartEvent,
+  DragEndEvent,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -29,6 +30,7 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+
 import { Checkbox } from '@/components/ui/checkbox';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -57,27 +59,21 @@ import {
   Trash2,
   Filter,
   Loader2,
-  AlertCircle,
   GripVertical,
   Linkedin,
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ApplicationStatus, Applicant, ApplicantData } from '@/types/job';
-import { useBulkActionApplicants, useJobApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
-import { useApplicationFormFields } from '@/hooks/queries/application-queries';
+import { ApplicationStatus, Applicant, AppFormField } from '@/types/job';
 
-interface ApplicantsTableProps {
-  jobId: string;
-}
-
+// Constants
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
   PENDING: 'bg-yellow-100 text-yellow-800 border-yellow-200',
   UNDER_REVIEW: 'bg-blue-100 text-blue-800 border-blue-200',
   SHORTLISTED: 'bg-purple-100 text-purple-800 border-purple-200',
   REJECTED: 'bg-red-100 text-red-800 border-red-200',
   ACCEPTED: 'bg-green-100 text-green-800 border-green-200',
-  WITHDRAWN: ''
+  WITHDRAWN: 'bg-gray-100 text-gray-800 border-gray-200'
 };
 
 const STATUS_LABELS: Record<ApplicationStatus, string> = {
@@ -89,17 +85,39 @@ const STATUS_LABELS: Record<ApplicationStatus, string> = {
   WITHDRAWN: 'Withdrawn'
 };
 
-const MOCK_STATUSES: ApplicationStatus[] = ['PENDING', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED'];
+const STATUS_OPTIONS: (ApplicationStatus | 'ALL')[] = ['ALL', 'PENDING', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED'];
+
+// Props interface
+interface ApplicantsTableProps {
+  applicants: (Applicant & { matchRate?: number })[];
+  visibleFields: AppFormField[];
+  selectedApplicants: string[];
+  statusFilter: ApplicationStatus | 'ALL';
+  isLoading?: boolean;
+  isUpdatingStatus?: boolean;
+  isPerformingBulkAction?: boolean;
+  jobTitle?: string;
+  totalApplicants?: number;
+  onSelectAll: () => void;
+  onSelectApplicant: (applicantId: string) => void;
+  onStatusChange: (status: ApplicationStatus) => void;
+  onBulkAction: (action: string) => void;
+  onStatusFilterChange: (status: ApplicationStatus | 'ALL') => void;
+}
 
 // Sortable Table Header Component
-function SortableTableHeader({ header, children }: { header: { column: { id: string }; colSpan?: number }; children: React.ReactNode }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({
+const SortableTableHeader = ({ header, children }: { 
+  header: { column: { id: string }; colSpan?: number }; 
+  children: React.ReactNode 
+}) => {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: header.column.id,
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
+    opacity: isDragging ? 0.5 : 1,
   };
 
   return (
@@ -121,115 +139,72 @@ function SortableTableHeader({ header, children }: { header: { column: { id: str
       </div>
     </TableHead>
   );
-}
+};
 
-export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
-  const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
-  const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL');
-  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
+// Presentational components
+const ApplicantAvatar = ({ applicant }: { applicant: Applicant }) => (
+  <Avatar>
+    <AvatarImage src={applicant.avatarUrl} alt={applicant.fullname} />
+    <AvatarFallback>{applicant.fullname?.charAt(0)}</AvatarFallback>
+  </Avatar>
+);
+
+const StatusBadge = ({ status }: { status: ApplicationStatus }) => (
+  <Badge variant="outline" className={STATUS_COLORS[status]}>
+    {STATUS_LABELS[status]}
+  </Badge>
+);
+
+const MatchRateIndicator = ({ matchRate }: { matchRate?: number }) => {
+  const rate = matchRate || 0;
+  return (
+    <div className="flex items-center space-x-2">
+      <div className="w-16 bg-gray-200 rounded-full h-2">
+        <div
+          className="bg-green-600 h-2 rounded-full transition-all duration-300"
+          style={{ width: `${rate}%` }}
+        />
+      </div>
+      <span className="text-sm font-medium text-gray-900">
+        {rate}%
+      </span>
+    </div>
+  );
+};
+
+export default function ApplicantsTable({
+  applicants,
+  visibleFields,
+  selectedApplicants,
+  statusFilter,
+  isLoading = false,
+  isUpdatingStatus = false,
+  isPerformingBulkAction = false,
+  jobTitle = "this position",
+  totalApplicants = 0,
+  onSelectAll,
+  onSelectApplicant,
+  onStatusChange,
+  onBulkAction,
+  onStatusFilterChange,
+}: ApplicantsTableProps) {
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
-  const [applicantDataMap, setApplicantDataMap] = useState<Map<string, ApplicantData>>(new Map());
+  const [isMounted, setIsMounted] = useState(false);
 
-  // TanStack Query hooks
-  const {
-    data: applicants = [],
-    isLoading: isLoadingApplicants,
-    isError: isApplicantsError,
-    error: applicantsError,
-  } = useJobApplicants(jobId);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-  const {
-    data: applicationFormFields = [],
-    isLoading: isLoadingFormFields,
-    isError: isFormFieldsError,
-  } = useApplicationFormFields(jobId);
-
-  const updateStatusMutation = useUpdateApplicantStatus(jobId);
-  const bulkActionMutation = useBulkActionApplicants();
-
-
-  // Get visible fields from application form configuration
-  const visibleFields = useMemo(() => {
-    return applicationFormFields
-      .filter((field: { fieldState: string }) => field.fieldState !== 'off')
-      .sort((a: { sortOrder?: number }, b: { sortOrder?: number }) => (a.sortOrder || 0) - (b.sortOrder || 0));
-  }, [applicationFormFields]);
-
-  // Filter applicants by status
-  const filteredApplicants = useMemo(() => {
-    const applicantArray = Array.isArray(applicants) ? applicants : [];
-    if (statusFilter === 'ALL') return applicantArray;
-    return applicantArray.filter((applicant: Applicant) => applicant.status === statusFilter);
-  }, [applicants, statusFilter]);
-  
-  const handleStatusFilterChange = (status: ApplicationStatus | 'ALL') => {
-    setStatusFilter(status);
-  };
-
-  // Toggle select all
-  const toggleSelectAll = useCallback(() => {
-    if (selectedApplicants.length === filteredApplicants.length) {
-      setSelectedApplicants([]);
-    } else {
-      setSelectedApplicants(filteredApplicants.map((applicant: Applicant) => applicant.id));
-    }
-  },[filteredApplicants, selectedApplicants.length]);
-
-  // Toggle single applicant selection
-  const toggleApplicantSelection = (applicantId: string) => {
-    setSelectedApplicants(prev =>
-      prev.includes(applicantId)
-        ? prev.filter(id => id !== applicantId)
-        : [...prev, applicantId]
-    );
-  };
-
-  // Calculate match rate (mock implementation)
-  const calculateMatchRate = (applicant: Applicant): number => {
-    const hash = applicant.id.split('').reduce((a, b) => {
-      a = ((a << 5) - a) + b.charCodeAt(0);
-      return a & a;
-    }, 0);
-    const baseRate = 70 + (Math.abs(hash) % 30);
-    return Math.round(baseRate);
-  };
-
-  // Define columns
-  const columns = useMemo<ColumnDef<Applicant>[]>(() => {
-    // Get applicant's answer for a specific field using ApplicantData
-    const getApplicantAnswer = (applicant: Applicant, fieldKey: string): string => {
-      // For now, we'll use a mock implementation since we don't have the full ApplicantData
-      // In a real implementation, you would fetch the full ApplicantData or store custom field answers
-      const applicantData = applicantDataMap.get(applicant.id);
-      
-      if (applicantData) {
-        const userInfo = applicantData.applicant.userInfo?.find(
-          (info: any) => info.field.key === fieldKey
-        );
-        return userInfo?.infoFieldAnswer || '-';
-      }
-      
-      // Mock data for demonstration - replace with actual data fetching
-      const mockAnswers: Record<string, string> = {
-        'education': 'Bachelor\'s Degree',
-        'experience': '3 years',
-        'skills': 'JavaScript, React, TypeScript',
-        'salary_expectation': '$50,000 - $70,000',
-      };
-      
-      return mockAnswers[fieldKey] || '-';
-    };
-    const baseColumns: ColumnDef<Applicant>[] = [
+  // Column definitions - purely presentational
+  const columns = useMemo<ColumnDef<Applicant & { matchRate?: number }>[]>(() => {
+    const baseColumns: ColumnDef<Applicant & { matchRate?: number }>[] = [
       {
         id: 'select',
         header: () => (
           <div className="flex items-center space-x-2">
             <Checkbox
-              checked={
-                filteredApplicants.length > 0 &&
-                selectedApplicants.length === filteredApplicants.length
-              }
-              onCheckedChange={toggleSelectAll}
+              checked={applicants.length > 0 && selectedApplicants.length === applicants.length}
+              onCheckedChange={onSelectAll}
               aria-label="Select all applicants"
             />
           </div>
@@ -239,7 +214,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
           return (
             <Checkbox
               checked={selectedApplicants.includes(applicant.id)}
-              onCheckedChange={() => toggleApplicantSelection(applicant.id)}
+              onCheckedChange={() => onSelectApplicant(applicant.id)}
               aria-label={`Select ${applicant.fullname}`}
             />
           );
@@ -249,16 +224,13 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
         size: 50,
       },
       {
-        accessorKey: 'name',
+        id: 'name',
         header: 'NAMA LENGKAP',
         cell: ({ row }) => {
           const applicant = row.original;
           return (
             <div className="flex items-center space-x-3">
-              <Avatar>
-                <AvatarImage src={applicant.avatarUrl} alt={applicant.fullname} />
-                <AvatarFallback>{applicant.fullname.charAt(0)}</AvatarFallback>
-              </Avatar>
+              <ApplicantAvatar applicant={applicant} />
               <div>
                 <div className="font-medium text-gray-900">
                   {applicant.fullname}
@@ -286,84 +258,73 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
         size: 300,
       },
       {
-        accessorKey: 'matchRate',
+        id: 'matchRate',
         header: 'MATCH RATE',
-        cell: ({ row }) => {
-          const applicant = row.original;
-          const matchRate = calculateMatchRate(applicant);
-          return (
-            <div className="flex items-center space-x-2">
-              <div className="w-16 bg-gray-200 rounded-full h-2">
-                <div
-                  className="bg-green-600 h-2 rounded-full"
-                  style={{ width: `${matchRate}%` }}
-                />
-              </div>
-              <span className="text-sm font-medium text-gray-900">
-                {matchRate}%
-              </span>
-            </div>
-          );
-        },
+        cell: ({ row }) => <MatchRateIndicator matchRate={row.original.matchRate} />,
         size: 150,
       },
     ];
 
-    // Add dynamic columns for application form fields
-    const dynamicColumns: ColumnDef<Applicant>[] = visibleFields.map((field: { field: { key: string; label: string }; sortOrder?: number }) => ({
-      accessorKey: `field_${field.field.key}`,
-      header: field.field.label.toUpperCase(),
-      cell: ({ row }: { row: { original: Applicant } }) => {
-        const applicant = row.original;
-        return (
-          <div className="text-sm text-gray-900">
-            {getApplicantAnswer(applicant, field.field.key)}
-          </div>
-        );
-      },
-      size: 200,
-    }));
-
-    // Add additional applicant info columns
-    const infoColumns: ColumnDef<Applicant>[] = [
+    const infoColumns: ColumnDef<Applicant & { matchRate?: number }>[] = [
       {
-        accessorKey: 'location',
+        id: 'location',
         header: 'LOCATION',
-        cell: ({ row }) => (
+        accessorKey: 'location',
+        cell: ({ getValue }) => (
           <div className="text-sm text-gray-900">
-            {row.original.location || '-'}
+            {getValue() ? String(getValue()) : '-'}
           </div>
         ),
         size: 150,
       },
       {
-        accessorKey: 'gender',
+        id: 'gender',
         header: 'GENDER',
-        cell: ({ row }) => (
+        accessorKey: 'gender',
+        cell: ({ getValue }) => (
           <div className="text-sm text-gray-900">
-            {row.original.gender || '-'}
+            {getValue() ? String(getValue()) : '-'}
           </div>
         ),
         size: 120,
       },
     ];
 
-    // Add status and actions columns
-    const endColumns: ColumnDef<Applicant>[] = [
+    const dynamicColumns: ColumnDef<Applicant & { matchRate?: number }>[] = visibleFields.map((field: { field: { key: string; label: string } }) => ({
+      id: `field_${field.field.key}`,
+      header: field.field.label.toUpperCase(),
+      cell: ({ row }) => {
+        const applicant = row.original;
+        
+        let answer = '-';
+        
+        if (applicant.userInfo && applicant.userInfo[field.field.key]) {
+          answer = applicant.userInfo[field.field.key].answer || '-';
+        } else if (applicant[field.field.key as keyof Applicant]) {
+          answer = String(applicant[field.field.key as keyof Applicant]) || '-';
+        } else if (field.field.key === 'education' && field.field.key in applicant) {
+          answer = String(applicant[field.field.key as keyof typeof applicant]);
+        } else if (field.field.key === 'experience' && field.field.key in applicant) {
+          answer = String(applicant[field.field.key as keyof typeof applicant]);
+        } else if (field.field.key === 'skills' && field.field.key in applicant) {
+          answer = String(applicant[field.field.key as keyof typeof applicant]);
+        }
+        
+        return (
+          <div className="text-sm text-gray-900">
+            {answer}
+          </div>
+        );
+      },
+      size: 200,
+    }));
+
+    const endColumns: ColumnDef<Applicant & { matchRate?: number }>[] = [
       {
-        accessorKey: 'status',
+        id: 'status',
         header: 'TAHAPAN',
-        cell: ({ row }) => {
-          const applicant = row.original;
-          return (
-            <Badge 
-              variant="outline" 
-              className={STATUS_COLORS[applicant.status]}
-            >
-              {STATUS_LABELS[applicant.status]}
-            </Badge>
-          );
-        },
+        accessorKey: 'status',
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
         size: 150,
       },
       {
@@ -412,27 +373,21 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
     ];
 
     return [...baseColumns, ...infoColumns, ...dynamicColumns, ...endColumns];
-  }, [visibleFields, applicantDataMap, filteredApplicants.length, selectedApplicants, toggleSelectAll]);
+  }, [applicants, selectedApplicants, visibleFields, onSelectAll, onSelectApplicant]);
 
-  // Initialize column order
-  const initializedColumnOrder = useMemo(() => {
-    if (columnOrder.length === 0) {
-      return columns.map(column => column.id as string);
-    }
-    return columnOrder;
-  }, [columnOrder, columns]);
+  // Get all column IDs
+  const columnIds = useMemo(() => columns.map(col => col.id!), [columns]);
+  
+  // Column order state - initialize with empty array to avoid hydration issues
+  const [columnOrder, setColumnOrder] = useState<ColumnOrderState>([]);
 
-  // @non-memoized
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const table = useReactTable({
-    data: filteredApplicants,
-    columns,
-    state: {
-      columnOrder: initializedColumnOrder,
-    },
-    onColumnOrderChange: setColumnOrder,
-    getCoreRowModel: getCoreRowModel(),
-  });
+  // Update column order when columns change - only after mount
+  useEffect(() => {
+    setColumnOrder(columnIds);
+  }, [columnIds]);
+
+  // Use columnIds as fallback during initial render
+  const activeColumnOrder = columnOrder.length > 0 ? columnOrder : columnIds;
 
   // DnD Sensors
   const sensors = useSensors(
@@ -441,75 +396,40 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
     useSensor(KeyboardSensor, {})
   );
 
-  // Handle drag start
-  const handleDragStart = (event: any) => {
+  // React Table instance
+  const table = useReactTable({
+    data: applicants,
+    columns,
+    state: {
+      columnOrder: activeColumnOrder,
+    },
+    onColumnOrderChange: setColumnOrder,
+    getCoreRowModel: getCoreRowModel(),
+  });
+
+  // Drag handlers
+  const handleDragStart = (event: DragStartEvent) => {
     setActiveColumn(event.active.id as string);
   };
 
-  // Handle drag end
-  const handleDragEnd = (event: any) => {
+  const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-
-    if (active.id !== over?.id) {
-      setColumnOrder((columnOrder) => {
-        const oldIndex = columnOrder.indexOf(active.id);
-        const newIndex = columnOrder.indexOf(over.id);
-
-        return arrayMove(columnOrder, oldIndex, newIndex);
+    if (active && over && active.id !== over.id) {
+      setColumnOrder((currentOrder) => {
+        const oldIndex = currentOrder.indexOf(active.id as string);
+        const newIndex = currentOrder.indexOf(over.id as string);
+        return arrayMove(currentOrder, oldIndex, newIndex);
       });
     }
-
     setActiveColumn(null);
   };
 
-  // Handle status change for selected applicants
-  const handleStatusChange = (newStatus: ApplicationStatus) => {
-    updateStatusMutation.mutate({
-      jobId,
-      applicantIds: selectedApplicants,
-      status: newStatus,
-    });
-    setSelectedApplicants([]);
-  };
-
-  // Handle bulk actions
-  const handleBulkAction = (action: string) => {
-    bulkActionMutation.mutate({
-      applicantIds: selectedApplicants,
-      action,
-    });
-    setSelectedApplicants([]);
-  };
-
-  // Loading state
-  if (isLoadingApplicants || isLoadingFormFields) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <div className="text-center">
           <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
           <p className="text-gray-600">Loading applicants data...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isApplicantsError || isFormFieldsError) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center text-red-600">
-          <AlertCircle className="h-8 w-8 mx-auto mb-4" />
-          <h3 className="text-lg font-semibold mb-2">Failed to load applicants</h3>
-          <p className="text-sm text-gray-600 max-w-md">
-            {applicantsError?.message || 'Unable to load applicant data. Please try again later.'}
-          </p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            className="mt-4"
-            variant="outline"
-          >
-            Retry
-          </Button>
         </div>
       </div>
     );
@@ -523,11 +443,8 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
           <div className="flex items-center space-x-4">
             <div className="flex items-center space-x-2">
               <Checkbox
-                checked={
-                  filteredApplicants.length > 0 &&
-                  selectedApplicants.length === filteredApplicants.length
-                }
-                onCheckedChange={toggleSelectAll}
+                checked={applicants.length > 0 && selectedApplicants.length === applicants.length}
+                onCheckedChange={onSelectAll}
                 aria-label="Select all applicants"
               />
               <span className="text-sm font-medium text-gray-700">
@@ -537,16 +454,15 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
 
             {selectedApplicants.length > 0 && (
               <div className="flex items-center space-x-2">
-                {/* Status Change Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="h-8"
-                      disabled={updateStatusMutation.isPending}
+                      disabled={isUpdatingStatus}
                     >
-                      {updateStatusMutation.isPending ? (
+                      {isUpdatingStatus ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-1" />
                       ) : (
                         <ChevronDown className="ml-1 h-4 w-4" />
@@ -555,27 +471,26 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    {MOCK_STATUSES.map(status => (
+                    {STATUS_OPTIONS.filter(opt => opt !== 'ALL').map(status => (
                       <DropdownMenuItem
                         key={status}
-                        onClick={() => handleStatusChange(status)}
+                        onClick={() => onStatusChange(status as ApplicationStatus)}
                       >
-                        {STATUS_LABELS[status]}
+                        {STATUS_LABELS[status as ApplicationStatus]}
                       </DropdownMenuItem>
                     ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
 
-                {/* Bulk Actions Dropdown */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button 
                       variant="outline" 
                       size="sm" 
                       className="h-8"
-                      disabled={bulkActionMutation.isPending}
+                      disabled={isPerformingBulkAction}
                     >
-                      {bulkActionMutation.isPending ? (
+                      {isPerformingBulkAction ? (
                         <Loader2 className="h-4 w-4 animate-spin mr-1" />
                       ) : (
                         <ChevronDown className="ml-1 h-4 w-4" />
@@ -584,20 +499,20 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="start">
-                    <DropdownMenuItem onClick={() => handleBulkAction('download-resumes')}>
+                    <DropdownMenuItem onClick={() => onBulkAction('download-resumes')}>
                       <Download className="h-4 w-4 mr-2" />
                       Download Resumes
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkAction('send-email')}>
+                    <DropdownMenuItem onClick={() => onBulkAction('send-email')}>
                       <Mail className="h-4 w-4 mr-2" />
                       Send Email
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleBulkAction('archive')}>
+                    <DropdownMenuItem onClick={() => onBulkAction('archive')}>
                       <Archive className="h-4 w-4 mr-2" />
                       Archive
                     </DropdownMenuItem>
                     <DropdownMenuItem 
-                      onClick={() => handleBulkAction('delete')}
+                      onClick={() => onBulkAction('delete')}
                       className="text-red-600"
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
@@ -614,13 +529,12 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
             <Filter className="h-4 w-4 text-gray-500" />
             <select
               value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as ApplicationStatus | 'ALL')}
+              onChange={(e) => onStatusFilterChange(e.target.value as ApplicationStatus | 'ALL')}
               className="text-sm border border-gray-300 rounded-md px-3 py-1 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
             >
-              <option value="ALL">All Status</option>
-              {MOCK_STATUSES.map(status => (
+              {STATUS_OPTIONS.map(status => (
                 <option key={status} value={status}>
-                  {STATUS_LABELS[status]}
+                  {status === 'ALL' ? 'All Status' : STATUS_LABELS[status as ApplicationStatus]}
                 </option>
               ))}
             </select>
@@ -641,7 +555,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
               {table.getHeaderGroups().map((headerGroup) => (
                 <TableRow key={headerGroup.id}>
                   <SortableContext
-                    items={initializedColumnOrder}
+                    items={activeColumnOrder}
                     strategy={horizontalListSortingStrategy}
                   >
                     {headerGroup.headers.map((header) => (
@@ -664,6 +578,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
                   <TableRow
                     key={row.id}
                     className="hover:bg-gray-50 transition-colors"
+                    data-state={selectedApplicants.includes(row.original.id) && "selected"}
                   >
                     {row.getVisibleCells().map((cell) => (
                       <TableCell key={cell.id}>
@@ -686,12 +601,12 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
                         <Mail className="h-12 w-12 mx-auto" />
                       </div>
                       <h3 className="text-lg font-medium text-gray-900 mb-2">
-                        {(Array.isArray(applicants) ? applicants.length : 0) === 0 ? 'No applicants found' : 'No applicants match your filters'}
+                        {applicants.length === 0 ? 'No applicants found' : 'No applicants match your filters'}
                       </h3>
                       <p className="text-gray-500 max-w-sm mx-auto">
-                        {(Array.isArray(applicants) ? applicants.length : 0) === 0 
-                          ? "No applicants have applied for this job yet."
-                          : `No applicants with status "${STATUS_LABELS[statusFilter as ApplicationStatus]}" found.`
+                        {applicants.length === 0 
+                          ? `No applicants have applied for "${jobTitle}" yet.`
+                          : `No applicants with status "${statusFilter === 'ALL' ? 'any status' : STATUS_LABELS[statusFilter]}" found.`
                         }
                       </p>
                     </div>
@@ -700,13 +615,21 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
               )}
             </TableBody>
           </Table>
-          <DragOverlay>
-            {activeColumn ? (
-              <TableHead className="bg-blue-50 border border-blue-200 shadow-md">
-                {activeColumn}
-              </TableHead>
-            ) : null}
-          </DragOverlay>
+          {isMounted && (
+              <DragOverlay>
+                {activeColumn ? (
+                  <table>
+                    <thead>
+                      <tr>
+                        <TableHead className="bg-blue-50 border border-blue-200 shadow-md">
+                          {activeColumn}
+                        </TableHead>
+                      </tr>
+                    </thead>
+                  </table>
+                ) : null}
+              </DragOverlay>
+          )}
         </DndContext>
       </div>
 
@@ -714,7 +637,7 @@ export default function ApplicantsTable({ jobId }: ApplicantsTableProps) {
       <div className="px-4 py-3 border-t border-gray-200 bg-gray-50 rounded-b-lg">
         <div className="flex items-center justify-between">
           <div className="text-sm text-gray-700">
-            Showing {filteredApplicants.length} of {Array.isArray(applicants) ? applicants.length : 0} applicants
+            Showing {applicants.length} of {totalApplicants} applicants
           </div>
           <div className="text-sm text-gray-500">
             Updated just now

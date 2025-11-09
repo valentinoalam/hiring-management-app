@@ -3,7 +3,7 @@
 import { usePathname } from "next/navigation";
 import Link from 'next/link';
 import { useSession, signOut } from "next-auth/react"; // 💡 Import useSession and signOut
-import { LogOut, Loader2, User as UserIcon } from "lucide-react"; // Added Lucide icons for better UX
+import { LogOut, Loader2 } from "lucide-react"; // Added Lucide icons for better UX
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -127,8 +127,8 @@ export default function Header() {
               <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
             </div>
           </DropdownMenuLabel>
-          <DropdownMenuSeparator />
-          <DropdownMenuItem asChild>
+          {/* <DropdownMenuSeparator /> */}
+          {/* <DropdownMenuItem asChild>
             <Link href="/settings" className="flex items-center">
               <UserIcon className="mr-2 h-4 w-4" />
               Profile
@@ -138,7 +138,7 @@ export default function Header() {
             <Link href="/settings" className="flex items-center">
               Settings
             </Link>
-          </DropdownMenuItem>
+          </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           {/* 💡 Connect Log out to NextAuth signOut function */}
           <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })} className="cursor-pointer text-red-500 focus:text-red-600">
@@ -153,18 +153,14 @@ export default function Header() {
   
 
   return (
-    <header className="h-16 border-neutral-40 sticky top-0 z-40 border-b bg-background">
+    <header className="h-16 border-neutral-40 sticky top-0 z-40 border-b bg-background shadow-[0px_4px_8px_rgba(0,0,0,0.1)]">
       <div className="container flex h-14 items-center justify-between px-4 md:px-6">
         {/* 💡 Left side: Breadcrumbs */}
         {showBreadcrumb ?
         <div className="flex items-center">
           {renderBreadcrumbs()}
         </div> :
-        <div className="flex items-center py-2.5">
-          <h1 className="text-lg font-bold leading-7 text-[#1E1F21]">
-            Job List
-          </h1>
-        </div>
+        <div className="flex flex-1"></div>
         }
         
 

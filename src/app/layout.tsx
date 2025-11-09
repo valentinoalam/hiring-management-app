@@ -34,12 +34,7 @@ export default async function RootLayout({
       <body className={nunitoSans.className}>
         <QueryProvider> 
           <ClientInitializer session={session}>
-          <div className="flex-1 grow flex flex-col min-w-0 relative">
-            {session && <Header /> }
-            <main className="relative flex flex-1 flex-col overflow-auto gap-4 md:p-4 no-scrollbar">
-              {children}
-            </main>
-          </div>
+            {children}
           </ClientInitializer>
         </QueryProvider>
       </body>

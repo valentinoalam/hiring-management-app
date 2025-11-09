@@ -1,32 +1,36 @@
+import { Button } from '@/components/ui/button';
 import { Job } from '@/types/job';
-import { formatSalary } from '@/utils/formatters/salaryFormatter';
+import { formatDate } from '@/utils/formatters/formatDate';
+import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
+import { useRouter } from 'next/navigation';
 import React from 'react'
 
 
 function JobCard({ job }: { job: Job }) {
+  const router = useRouter();
   const statusConfig = {
     active: {
       label: "Active",
-      textColor: "text-success-main",
+      textColor: "text-success",
       bgColor: "bg-success-surface",
       borderColor: "border-success-border",
     },
     inactive: {
       label: "Inactive",
-      textColor: "text-danger-main",
+      textColor: "text-danger",
       bgColor: "bg-danger-surface",
       borderColor: "border-danger-border",
     },
     draft: {
       label: "Draft",
-      textColor: "text-warning-main",
-      bgColor: "bg-warning-surface",
-      borderColor: "border-warning-border",
+      textColor: "text-secondary",
+      bgColor: "bg-secondary-surface",
+      borderColor: "border-secondary-border",
     },
   };
 
   const status = statusConfig[job.status.toLowerCase() as keyof typeof statusConfig] || statusConfig.draft;
-
+  
   return (
     <div className="flex flex-col gap-3 rounded-2xl bg-white p-6 shadow-md">
       <div className="flex items-start justify-between">
@@ -40,8 +44,13 @@ function JobCard({ job }: { job: Job }) {
           </div>
           <div className="flex items-center gap-2 rounded border border-neutral-40 px-4 py-1">
             <span className="text-sm leading-6 text-neutral-90">
-              started on {job.createdAt}
+              started on {formatDate(job.createdAt)}
             </span>
+          </div>
+          {/* Applicants (Col 9-10) */}
+          <div className="text-center leading-tight tracking-loose">
+            <span className="text-xl font-bold text-primary">{job.candidatesCount}</span>
+            <p className="text-xs text-muted-foreground">Applicants</p>
           </div>
         </div>
       </div>
@@ -54,21 +63,17 @@ function JobCard({ job }: { job: Job }) {
             </h3>
             <div className="flex items-start gap-1">
               <span className="text-base leading-7 text-neutral-80">
-                {formatSalary(job.salaryMin || 0, job.salaryCurrency)}
-              </span>
-              <span className="text-base leading-7 text-neutral-80">-</span>
-              <span className="text-base leading-7 text-neutral-80">
-                {formatSalary(job.salaryMax || 0, job.salaryCurrency)}
+                {salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}
               </span>
             </div>
           </div>
         </div>
-
+      
         <div className="flex flex-col items-end justify-end gap-2.5">
           <div className="flex items-end justify-end gap-3">
-            <button className="flex items-center justify-center gap-1 rounded-lg bg-primary px-4 py-1 text-xs font-bold leading-5 text-white shadow-sm transition-colors hover:bg-primary/90">
+            <Button onClick={()=>router.push(`/recruiter/jobs/${job.id}`)} className="flex items-center justify-center gap-1 rounded-xl bg-primary px-4 text-s font-bold leading-5 text-white shadow-sm transition-colors hover:bg-primary/90">
               Manage Job
-            </button>
+            </Button>
           </div>
         </div>
       </div>

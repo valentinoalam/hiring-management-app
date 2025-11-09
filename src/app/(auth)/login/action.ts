@@ -27,13 +27,13 @@ export async function signInMagicLink(email: string, callbackUrl?: string) {
 
 export async function signInCredentials(formData: FormData, callbackUrl?: string) {
   try {
-    const result = await signIn("password", {
+    const result = await signIn("credentials", {
       email: formData.get('email') as string,
       password: formData.get('password') as string,
       redirect: false,
       redirectTo: callbackUrl || "/",
     })
-    
+    console.log(result)
     if (result?.error) {
       return { success: false, error: result.error }
     }

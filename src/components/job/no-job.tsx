@@ -25,7 +25,7 @@ const NoData = () => {
       {userRole === 'RECRUITER' && (
         <Button 
           onClick={() => {}}
-          className="bg-secondary-main hover:bg-secondary-hover active:bg-secondary-pressed text-m-bold text-black px-8 h-11 rounded-lg"
+          className="bg-secondary hover:bg-secondary-hover active:bg-secondary-pressed text-m-bold text-neutral-90 px-8 h-11 rounded-lg"
         >
           Create a new job
         </Button>
