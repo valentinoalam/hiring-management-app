@@ -1,7 +1,7 @@
 // applicants-table.tsx
 'use client';
 
-import { useMemo, useState, useEffect, useRef } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import {
   ColumnDef,
   ColumnOrderState,
@@ -397,6 +397,7 @@ export default function ApplicantsTable({
   );
 
   // React Table instance
+  // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: applicants,
     columns,
