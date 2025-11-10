@@ -33,7 +33,7 @@ const emailSchema = z.object({
 })
 
 const passwordSchema = z.object({
-  email: z.string().email({
+  email: z.email({
     message: "Please enter a valid email address.",
   }),
   password: z.string().min(6, {
@@ -57,6 +57,7 @@ export default function SignInPage() {
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
   const [error, setError] = useState("")
   const [magicLinkSent, setMagicLinkSent] = useState(false)
+  const [email, setEmail] = useState("")
   const [showAnimation, setShowAnimation] = useState(false)
 
   // Separate forms for each auth method
@@ -80,7 +81,7 @@ export default function SignInPage() {
   async function handleMagicLinkSubmit(values: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError("")
-    
+    setEmail(values.email)
     try {
       const result = await signInMagicLink(values.email, callbackUrl || undefined)
       
@@ -206,10 +207,10 @@ export default function SignInPage() {
             <LinkSentSuccess email={currentEmail} />
           </div>
         ) : (
-          <Card className="w-full max-w-md border-none shadow-lg">
-            <CardHeader className="text-center pb-4">
-              <CardTitle className="font-bold text-2xl">Masuk ke Rakamin</CardTitle>
-              <CardDescription className="text-gray-600 mt-2">
+          <Card className="max-h-[444px] md:w-[500px] border-none *:px-11 overflow-y-scroll no-scrollbar shadow-lg">
+            <CardHeader className="p-0 pt-6">
+              <CardTitle className="font-bold text-xl">Masuk ke Rakamin</CardTitle>
+              <CardDescription className="text-neutral-100">
                 Belum punya akun?{" "}
                 <Link 
                   href={{
@@ -223,18 +224,27 @@ export default function SignInPage() {
               </CardDescription>
             </CardHeader>
             
-            <CardContent className="space-y-6">
+            <CardContent className="p-0 pb-6">
               {error && (
-                <Alert variant="destructive" className="mb-4">
+                <Alert variant="destructive" className="mb-6">
                   <AlertDescription className="flex items-center gap-2">
-                    <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <svg className="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     {error}
                   </AlertDescription>
                 </Alert>
               )}
-
+              {magicLinkSent && (
+                <Alert className="mb-6 bg-green-50 border-green-200">
+                  <svg className="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  <AlertDescription className="text-green-800">
+                    Link telah dikirim! Silakan periksa email Anda untuk link masuk.
+                  </AlertDescription>
+                </Alert>
+              )}
               {/* Magic Link Form */}
               {activeMethod === "magic-link" && (
                 <form onSubmit={magicLinkForm.handleSubmit(handleMagicLinkSubmit)} className="space-y-4">
@@ -270,7 +280,7 @@ export default function SignInPage() {
                     type="submit"
                     variant="secondary"
                     disabled={isLoading || !magicLinkEmail}
-                    className="w-full rounded-lg font-semibold h-11"
+                    className="w-full rounded-lg font-bold"
                   >
                     {isLoading ? (
                       <>
@@ -280,7 +290,7 @@ export default function SignInPage() {
                     ) : (
                       <>
                         <Mail className="w-5 h-5 mr-2" />
-                        Kirim link ajaib
+                        Kirim link
                       </>
                     )}
                   </Button>
@@ -377,16 +387,18 @@ export default function SignInPage() {
               )}
             </CardContent>
             
-            <CardFooter className="flex-col gap-4 pt-4">
+            <CardFooter className="flex-col gap-6">
               {/* Separator and Password Option */}
-              {activeMethod === "magic-link" && magicLinkEmail && !magicLinkForm.formState.errors.email && (
-                <div className="space-y-4 w-full">
+              {activeMethod === "magic-link" && !magicLinkForm.formState.errors.email && (
+                <div className="pace-y-6 w-full *:font-bold">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <Separator className="bg-gray-300" />
+                      <Separator className="border-gray-500 bg-gray-500" />
                     </div>
-                    <div className="relative flex justify-center">
-                      <span className="bg-white px-3 text-sm text-gray-500">Atau</span>
+                    <div className="relative flex justify-center text-sm">
+                      <div className="w-6 h-6 rounded-full bg-white content-evenly text-center">
+                        <span className="text-gray-500">Or</span>
+                      </div>
                     </div>
                   </div>
                   
@@ -404,7 +416,7 @@ export default function SignInPage() {
               )}
 
               {/* OAuth Providers */}
-              <div className="space-y-3 w-full">
+              <div className="space-y-3 w-full *:font-bold">
                 {providerMap.map((provider) => (
                   <Button
                     key={provider.id}

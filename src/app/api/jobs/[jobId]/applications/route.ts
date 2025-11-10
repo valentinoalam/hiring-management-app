@@ -144,7 +144,18 @@ export async function GET(
               },
             },
           },
+          _count: {
+            select: {
+              notes: true,
+            },
+          },
+          
         },
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+        skip,
+        take: limit,
       }),
       prisma.application.count({ where }),
     ]);
