@@ -256,5 +256,7 @@
   input[type="checkbox"] {
     @apply rounded-lg
   }
-
+  button {
+    @apply shadow-[0_1px_2px_rgba(0,0,0,0.12)]
+  }
 }

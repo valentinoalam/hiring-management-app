@@ -207,7 +207,7 @@ export default function SignInPage() {
             <LinkSentSuccess email={currentEmail} />
           </div>
         ) : (
-          <Card className="max-h-[444px] md:w-[500px] border-none *:px-11 overflow-y-scroll no-scrollbar shadow-lg">
+          <Card className="max-h-[444px] md:w-[500px] border-none *:px-11 overflow-y-scroll no-scrollbar">
             <CardHeader className="p-0 pt-6">
               <CardTitle className="font-bold text-xl">Masuk ke Rakamin</CardTitle>
               <CardDescription className="text-neutral-100">
@@ -263,10 +263,10 @@ export default function SignInPage() {
                             placeholder="Enter your email"
                             disabled={isLoading}
                             {...field}
-                            onChange={(e) => {
-                              field.onChange(e)
-                              clearError()
-                            }}
+                            // onChange={(e) => {
+                            //   field.onChange(e)
+                            //   clearError()
+                            // }}
                           />
                           {fieldState.invalid && fieldState.error?.message && (
                             <FieldError errors={[{ message: fieldState.error.message }]} />
@@ -319,7 +319,7 @@ export default function SignInPage() {
                         </Button>
                       </div>
                       <div className="flex items-center gap-2 p-3 rounded-lg bg-gray-50 border border-gray-200 text-gray-700">
-                        <Mail className="w-4 h-4 text-gray-500" />
+                        <Mail className="w-4 h-4 text-neutral-60" />
                         <span className="flex-1">{passwordEmail}</span>
                       </div>
                     </Field>
@@ -390,14 +390,14 @@ export default function SignInPage() {
             <CardFooter className="flex-col gap-6">
               {/* Separator and Password Option */}
               {activeMethod === "magic-link" && !magicLinkForm.formState.errors.email && (
-                <div className="pace-y-6 w-full *:font-bold">
+                <div className="space-y-6 w-full *:font-bold">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <Separator className="border-gray-500 bg-gray-500" />
+                      <Separator className="border-neutral-60 bg-neutral-60" />
                     </div>
                     <div className="relative flex justify-center text-sm">
                       <div className="w-6 h-6 rounded-full bg-white content-evenly text-center">
-                        <span className="text-gray-500">Or</span>
+                        <span className="text-neutral-60">Or</span>
                       </div>
                     </div>
                   </div>
@@ -414,9 +414,21 @@ export default function SignInPage() {
                   </Button>
                 </div>
               )}
-
+              
               {/* OAuth Providers */}
               <div className="space-y-3 w-full *:font-bold">
+                {activeMethod === "password" && (
+                  <div className="relative">
+                    <div className="absolute inset-0 flex items-center">
+                      <Separator className="border-neutral-60 bg-neutral-60" />
+                    </div>
+                    <div className="relative flex justify-center text-sm">
+                      <div className="w-6 h-6 rounded-full bg-white content-evenly text-center">
+                        <span className="text-neutral-60">Or</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
                 {providerMap.map((provider) => (
                   <Button
                     key={provider.id}
