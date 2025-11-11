@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import wilayahData from '@/data/wilayah.json';
-import * as fs from 'fs';
-import * as path from 'path';
+
 
 interface WilayahItem {
   kode: string;
@@ -102,9 +101,6 @@ class WilayahSearchEngine {
     return score;
   }
 }
-
-const dataPath = path.join(process.cwd(), 'wilayah.json');
-const allWilayah: WilayahItem[] = JSON.parse(fs.readFileSync(dataPath, 'utf-8'));
 
 // Create singleton instance
 const searchEngine = new WilayahSearchEngine(wilayahData as WilayahItem[]);
