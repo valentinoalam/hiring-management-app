@@ -35,7 +35,7 @@ export default function Header() {
   const showBreadcrumb = isRecruiterPage && !hideHeaderOn.includes(pathname)
   // Filter(Boolean) removes empty strings (e.g., from leading or trailing '/')
   const pathSegments = pathname.split("/").filter(Boolean) 
-
+  console.log(pathSegments)
   // Use a temporary user object based on the Session structure defined in next-auth.d.ts
   const user = session?.user;
   const isAuthenticated = status === 'authenticated';
@@ -51,20 +51,23 @@ export default function Header() {
             </BreadcrumbLink>
           </BreadcrumbItem>
           
-          {pathSegments.map((segment, index) => {
+          {pathSegments.filter((_, index)=>{
+            const isLast = index === pathSegments.length - 1;
+            const isFirst = index === 0;
+            return isFirst || isLast
+          }).map((segment, index) => {
             const href = `/${pathSegments.slice(0, index + 1).join("/")}`;
             const displaySegment = segment
               .split('-')
               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
-            const isLast = index === pathSegments.length - 1;
-            
+            const isLast = index ===  1;
             return (
               <React.Fragment key={segment}>
                 <BreadcrumbSeparator />
                 <BreadcrumbItem >
-                  {isLast ? (
-                    <BreadcrumbPage className="block border my-1 px-2 h-8 content-center border-neutral-50 bg-neutral-30 rounded-xl">{displaySegment}</BreadcrumbPage>
+                  {pathname.startsWith("/recruiter/jobs/") && isLast? (
+                    <BreadcrumbPage className="block border my-1 px-2 h-8 content-center border-neutral-50 bg-neutral-30 rounded-xl">Manage Candidate</BreadcrumbPage>
                   ) : (
                     <BreadcrumbLink className="border my-1 px-2 h-8 block content-center border-neutral-40 bg-neutral-10 rounded-xl" asChild>
                       <Link href={href}>{displaySegment}</Link>
