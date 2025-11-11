@@ -10,7 +10,7 @@ import { Job } from '@/types/job';
 import Drawer from '@/components/custom-ui/drawer';
 import JobDetail from '@/components/job/job-seeker/JobDetail';
 import JobCard from '@/components/job/job-seeker/JobCard';
-import NoData from '@/components/job/no-job';
+import NoJobsHero from '@/components/job/no-job';
 
 // --- Type Definitions ---
 
@@ -279,7 +279,7 @@ export default function JobsPage() {
   // --- Empty Data State ---
   // Only show empty state when we're not loading AND there's truly no data
   if (!isLoading && allJobs && allJobs.length === 0) {
-    return <NoData />;
+    return <NoJobsHero />;
   }
 
   // --- Loading State ---

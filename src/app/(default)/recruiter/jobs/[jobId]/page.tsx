@@ -1,6 +1,6 @@
 // page.tsx
 "use client"
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import ApplicantsTable from "@/components/job/recruiter/applicants-table";
 import { Button } from "@/components/ui/button";
 import { useJobDetail } from "@/hooks/queries/job-queries";
@@ -10,15 +10,17 @@ import { useParams } from "next/navigation";
 import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
 import { useApplicationFormFields } from '@/hooks/queries/application-queries';
 import { ApplicationStatus, Applicant } from '@/types/job';
+import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants';
+import NoApplicantsHero from '@/components/job/recruiter/no-applicant';
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>()
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL');
-
+  const [useMock, setUseMock] = useState<boolean>(false)
   // All data fetching happens in the page component
   const { data: job, isLoading: isLoadingJob, isError: isJobError, error: jobError } = useJobDetail(params.jobId);
-  console.log(params.jobId)
+
   const { 
     data: applicantsResponse, 
     isLoading: isLoadingApplicants, 
@@ -96,13 +98,15 @@ export default function JobApplicantsPage() {
     }));
   }, [applicants]);
 
+  const applicantData = applicantsWithMatchRates && applicantsWithMatchRates.length > 1 ?
+    applicantsWithMatchRates: mockApplicants;
   // Loading state
   if (isLoadingJob || isLoadingApplicants || isLoadingFormFields) {
     return (
       <div className="container mx-auto p-6">
         <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mr-2" />
-          <p className="text-gray-600">Loading job details...</p>
+          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
+          <p className="text-gray-600">Loading applicants data...</p>
         </div>
       </div>
     );
@@ -149,20 +153,26 @@ export default function JobApplicantsPage() {
     );
   }
 
+  if(!useMock && applicants && applicants.length <= 1 ) {
+    return <NoApplicantsHero onUseMock={()=>setUseMock(!useMock)}/>;
+
+  }
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
         <h1 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h1>
         <p className="text-gray-600">Manage applications for this position</p>
       </div>
-      
-      {/* Applicants Table - Now purely presentational */}
+      <Button variant={'outline'} onClick={()=>setUseMock(!useMock)}
+        className="absolute top-5 right-5 flex items-center justify-center text-s font-medium leading-7 transition-colors active:bg-secondary-pressed text-neutral-80 rounded-lg"
+      >
+        Back to Real Data
+      </Button>
       <ApplicantsTable 
-        applicants={applicantsWithMatchRates}
-        visibleFields={visibleFields}
+        applicants={applicantData}
+        visibleFields={visibleFields || mockVisibleFields}
         selectedApplicants={selectedApplicants}
         statusFilter={statusFilter}
-        isLoading={false} // Already handled loading state above
         onSelectAll={toggleSelectAll}
         onSelectApplicant={toggleApplicantSelection}
         onStatusChange={handleStatusChange}
@@ -171,7 +181,7 @@ export default function JobApplicantsPage() {
         isUpdatingStatus={updateStatusMutation.isPending}
         isPerformingBulkAction={bulkActionMutation.isPending}
         jobTitle={job.title}
-        totalApplicants={applicantsResponse?.pagination?.totalCount || applicants.length}
+        totalApplicants={applicantsResponse?.pagination?.totalCount || applicants.length || mockTotalApplicants}
       />
     </div>
   );

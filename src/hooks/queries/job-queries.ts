@@ -116,7 +116,6 @@ export const useRecruiterJobs = (filters?: { status?: string; search?: string })
   return useQuery<JobListResponse, Error>({
     queryKey: queryKeys.jobs.recruiter(filters),
     queryFn: () => fetchRecruiterJobs(filters),
-    staleTime: 1000 * 60 * 2, // 2 minutes for recruiter jobs
   });
 };
 

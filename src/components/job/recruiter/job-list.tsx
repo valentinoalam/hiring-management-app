@@ -1,40 +1,14 @@
+'use client'
 import React, { useState, useMemo, lazy, Suspense } from 'react';
-import { Search, Loader2, Briefcase } from 'lucide-react'; // Using Lucide icons for aesthetics
+import { Search, Loader2 } from 'lucide-react'; // Using Lucide icons for aesthetics
 import { Job } from '@/types/job';
 import Image from 'next/image';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const LazyJobCard = lazy(() => import('./job-card'));
-
-const ScrollArea = ({ children, onScroll, className }: { children: React.ReactNode; onScroll: (e: React.UIEvent<HTMLDivElement>) => void, className: string }) => (
-<div
-    className={`overflow-y-auto h-full ${className}`}
-    style={{
-      /* Hide scrollbar for IE, Edge and Firefox */
-      msOverflowStyle: 'none',  /* IE and Edge */
-      scrollbarWidth: 'none',  /* Firefox */
-      /* Hide scrollbar for Chrome, Safari and Opera */
-      WebkitOverflowScrolling: 'touch',
-    }}
-    onScroll={onScroll}
-  >
-    {children}
-  </div>
-);
-// --- Hero Content for No Jobs ---
-const NoJobsHero = ({onCreateJob}: {onCreateJob: () => void}) => (
-  <div className="flex flex-col items-center justify-center h-full p-16 bg-white rounded-xl shadow-lg border border-gray-100 text-center">
-      <Briefcase className="h-16 w-16 text-primary mb-4 opacity-70" />
-      <h2 className="text-xl font-bold text-gray-800 mb-2">There are no job listings right now.</h2>
-      <p className="text-gray-500 mb-6">Start by creating your first job post to attract top talent.</p>
-      <button 
-          className="flex h-10 items-center justify-center rounded-lg bg-primary px-6 py-2 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90"
-          onClick={onCreateJob}
-      >
-          Create Now
-      </button>
-  </div>
-);
 
 const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -62,99 +36,89 @@ const JobList = ({ jobs, onCreateJob } : { jobs: Job[], onCreateJob: () => void 
   }, [jobs, searchTerm]);
 
 
-  // --- Conditional Rendered Content for Job Listings ---
-  const jobListContent = (
-    <ScrollArea onScroll={handleScroll} className="no-scrollbar">
-        <div className="flex flex-col gap-4 pb-4">
-        {filteredJobs.slice(0, visibleJobsCount).map((job) => (
-            <Suspense 
-            key={job.id} 
-            fallback={
-                <div className="p-4 bg-gray-200 rounded-xl animate-pulse h-28">
-                <div className="h-4 bg-gray-300 rounded w-3/4"></div>
-                <div className="h-3 bg-gray-300 rounded w-1/2 mt-2"></div>
-                <div className="h-4 bg-gray-300 rounded w-1/3 mt-4"></div>
-                </div>
-            }
-            >
-            <LazyJobCard job={job} />
-            </Suspense>
-        ))}
-        
-        {visibleJobsCount < filteredJobs.length && (
-            <div className="flex justify-center items-center p-4">
-            <Loader2 className="h-6 w-6 animate-spin text-primary" />
-            <span className="ml-2 text-sm text-gray-500">Loading more jobs...</span>
-            </div>
-        )}
-
-        {filteredJobs.length === 0 && searchTerm.length > 0 && (
-            <div className="text-center p-10 text-gray-500 bg-white rounded-xl shadow-lg">
-            No jobs match your search criteria. Try a different search term.
-            </div>
-        )}
-        </div>
-    </ScrollArea>
-  );
-
   return (
-    <div className="min-h-screen bg-gray-50 font-sans">
-      <div className="max-w-7xl mx-auto px-6 pt-4 h-full">
-        <main className="flex gap-8 h-[calc(100vh-2rem)]"> {/* Set height for the main container */}
-          
-          {/* LEFT COLUMN: Job Listings (Scrollable) */}
-          <div className="flex flex-1 flex-col gap-6 min-w-0">
-            <div className="flex flex-col gap-4">
-              <div className="relative flex items-center">
-                <input
-                  type="text"
-                  placeholder="Search by job details (50 mock jobs loaded)"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="h-12 w-full rounded-xl border-2 border-gray-200 bg-white px-4 pr-12 text-base leading-6 text-gray-700 placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none transition-shadow"
-                />
-                <Search className="absolute right-4 h-5 w-5 text-primary" />
-              </div>
+    <div className="max-w-7xl mx-auto px-6 pt-4">
+      <div className="relative flex flex-col lg:flex-row gap-8"> {/* Set height for the main container */}
+        
+        {/* LEFT COLUMN: Job Listings (Scrollable) */}
+        <div className="flex flex-1 flex-col gap-6 min-w-0">
+          <div className="flex flex-col gap-4">
+            <div className="relative flex items-center">
+              <Input suppressHydrationWarning
+                type="text"
+                placeholder="Search by job details (50 mock jobs loaded)"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="h-12 w-full rounded-xl border-2 border-neutral-20 bg-white px-4 pr-12 text-base leading-6 text-gray-700 placeholder:text-gray-400 focus:border-primary focus:ring-2 focus:ring-primary/50 focus:outline-none transition-shadow"
+              />
+              <Search className="absolute right-4 h-5 w-5 text-primary" />
             </div>
-            
-             {/* Conditional Rendering of Job List or Hero Section */}
-            {jobs.length === 0 ? <NoJobsHero onCreateJob={onCreateJob} /> : jobListContent}
           </div>
-
-          {/* RIGHT COLUMN: Sticky Aside Card */}
-          <aside className="hidden lg:flex flex-col gap-6 w-[300px]">
-            {/* The 'top-4' class is critical for making 'sticky' work effectively inside a flexible container */}
-            <div className="sticky top-4">
-              <Card className="relative flex flex-col items-end justify-center gap-6 overflow-clip rounded-[16px] p-6 shadow-2xl"
+          <ScrollArea onScroll={handleScroll} className="h-[84%] no-scrollbar">
+            <div className="flex flex-col gap-4 pb-4">
+            {filteredJobs.slice(0, visibleJobsCount).map((job) => (
+              <Suspense 
+              key={job.id} 
+              fallback={
+                  <div className="p-4 bg-gray-200 rounded-xl animate-pulse h-28">
+                  <div className="h-4 bg-gray-300 rounded w-3/4"></div>
+                  <div className="h-3 bg-gray-300 rounded w-1/2 mt-2"></div>
+                  <div className="h-4 bg-gray-300 rounded w-1/3 mt-4"></div>
+                  </div>
+              }
               >
-                <Image src={'/bg.jpg'} fill
-                  quality={80} priority={true} alt={'Background image for container'} 
-                  className='absolute w-full h-full object-cover' />
-                <div className="absolute w-full h-full inset-0 z-10 rounded-2xl bg-neutral-100 opacity-72" />
-                <div className="relative flex flex-col z-20 gap-6 text-white">
-                  <CardHeader className="flex flex-col p-0 gap-1 space-y-0 self-stretch">
-                    <CardTitle className="text-xl font-bold leading-7 text-neutral-40">
-                      Recruit the best candidates
-                    </CardTitle>
-                    <CardDescription className="text-sm font-bold leading-6 text-gray-200">
-                      Create jobs, invite, and hire with ease
-                    </CardDescription>
-                  </CardHeader>
-                  <CardFooter className='p-0'>
-                    <button onClick={onCreateJob} className="flex h-10 w-full items-center justify-center gap-1 self-stretch rounded-xl bg-primary px-4 py-1.5 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90">
-                      Create a new job
-                    </button>
-                  </CardFooter>
+              <LazyJobCard job={job} />
+              </Suspense>
+            ))}
+            
+            {visibleJobsCount < filteredJobs.length && (
+              <div className="flex justify-center items-center p-4">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span className="ml-2 text-sm text-gray-500">Loading more jobs...</span>
+              </div>
+            )}
+
+            {filteredJobs.length === 0 && searchTerm.length > 0 && (
+                <div className="text-center p-10 text-gray-500 bg-white rounded-xl shadow-lg">
+                No jobs match your search criteria. Try a different search term.
                 </div>
-              </Card>
+            )}
             </div>
-            <div className="sticky top-[150px] p-4 bg-white rounded-xl shadow-md border border-gray-100">
-                <p className="font-semibold text-gray-700">Analytics Summary</p>
-                <p className="text-2xl mt-1 text-primary">{jobs.length}</p>
-                <p className="text-sm text-gray-500">Total Listings</p>
+          </ScrollArea>
+        </div>
+
+        {/* RIGHT COLUMN: Sticky Aside Card */}
+        <aside className="flex flex-col gap-6 w-[300px]">
+          <div className="sticky lg:fixed top-4 lg:top-[110px] space-y-6">
+            <Card className="relative flex flex-col items-end justify-center gap-6 overflow-clip rounded-[16px] p-6 shadow-2xl"
+            >
+              <Image src={'/bg.jpg'} fill
+                quality={80} priority={true} alt={'Background image for container'} 
+                className='absolute w-full h-full object-cover' />
+              <div className="absolute w-full h-full inset-0 z-10 rounded-2xl bg-neutral-100 opacity-72" />
+              <div className="relative flex flex-col z-20 gap-6 text-white">
+                <CardHeader className="flex flex-col p-0 gap-1 space-y-0 self-stretch">
+                  <CardTitle className="text-xl font-bold leading-7 text-neutral-40">
+                    Recruit the best candidates
+                  </CardTitle>
+                  <CardDescription className="text-sm font-bold leading-6 text-gray-200">
+                    Create jobs, invite, and hire with ease
+                  </CardDescription>
+                </CardHeader>
+                <CardFooter className='p-0'>
+                  <Button onClick={onCreateJob} className="flex h-10 w-full items-center justify-center gap-1 self-stretch rounded-xl bg-primary px-4 py-1.5 text-base font-bold leading-7 text-white shadow-md transition-colors hover:bg-primary/90">
+                    Create a new job
+                  </Button>
+                </CardFooter>
+              </div>
+            </Card>
+            <div className="sticky p-4 bg-white rounded-xl shadow-md border border-gray-100">
+              <p className="font-semibold text-gray-700">Analytics Summary</p>
+              <p className="text-2xl mt-1 text-primary">{jobs.length}</p>
+              <p className="text-sm text-gray-500">Total Listings</p>
             </div>
-          </aside>
-        </main>
+          </div>
+        </aside>
       </div>
     </div>
   );

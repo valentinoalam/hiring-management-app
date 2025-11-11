@@ -83,7 +83,7 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
       }
       console.log("[v0] Detection results:", results)
       //    Ensure 'confidence' is 0 if handedness score is missing, resolving the type issue.
-      const baseConfidence = results.handedness?.[0]?.score || 0;  // OPTIONAL: Can set to 1.0 if you only want the gesture confidence
+      const baseConfidence = results.handedness?.[0]?.score || 0.8; 
       if (results.landmarks && results.landmarks.length > 0) {
         const landmarks = results.landmarks[0]
         const { count: fingers, confidence: gestureConfidence } = countExtendedFingers(landmarks)
@@ -175,91 +175,201 @@ export function useHandGestureDetection(videoRef: React.RefObject<HTMLVideoEleme
 }
 
 // Count extended fingers based on hand landmarks AND calculate a confidence score
-function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]): { count: number; confidence: number } {
+// function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]): { count: number; confidence: number } {
+//   if (!landmarks || landmarks.length < 21) {
+//     return { count: 0, confidence: 0 };
+//   }
+
+//   let extendedCount = 0;
+//   let totalConfidence = 0;
+  
+//   // Define the required landmarks for each finger:
+//   // Tip, PIP (middle knuckle), and MCP (knuckle connecting to hand)
+//   const fingerLandmarks = [
+//     // Thumb: (Tip=4, IP=3, MCP=2). Note: The thumb is handled separately due to its orientation.
+//     { tip: landmarks[4], joint: landmarks[3], mcp: landmarks[2], isThumb: true, name: 'Thumb' }, 
+//     // Index: (Tip=8, PIP=6, MCP=5)
+//     { tip: landmarks[8], joint: landmarks[6], mcp: landmarks[5], isThumb: false, name: 'Index' },
+//     // Middle: (Tip=12, PIP=10, MCP=9)
+//     { tip: landmarks[12], joint: landmarks[10], mcp: landmarks[9], isThumb: false, name: 'Middle' },
+//     // Ring: (Tip=16, PIP=14, MCP=13)
+//     { tip: landmarks[16], joint: landmarks[14], mcp: landmarks[13], isThumb: false, name: 'Ring' },
+//     // Pinky: (Tip=20, PIP=18, MCP=17)
+//     { tip: landmarks[20], joint: landmarks[18], mcp: landmarks[17], isThumb: false, name: 'Pinky' },
+//   ];
+
+//   for (const finger of fingerLandmarks) {
+//     let fingerConfidence = 0;
+
+//     // 1. Calculate the full length of the finger (MCP to Tip)
+//     // This is the distance when the finger is fully extended (our maximum baseline)
+//     const fullExtensionLength = Math.hypot(finger.tip.x - finger.mcp.x, finger.tip.y - finger.mcp.y);
+
+//     // 2. Calculate the distance of the PIP joint to the MCP joint (segmentLength)
+//     // We use this as a rough measure of the hand size and segment length for normalization.
+//     const segmentLength = Math.hypot(finger.joint.x - finger.mcp.x, finger.joint.y - finger.mcp.y);
+
+//     // --- Extension Check: Thumb (Special Case) ---
+//     if (finger.isThumb) {
+//       // Simple check: If the tip is significantly further from the MCP joint than the PIP joint is, 
+//       // AND the tip is on the correct side of the hand's center line (simplified X check).
+//       if (fullExtensionLength > segmentLength * 1.5 && finger.tip.x < finger.mcp.x) {
+//          extendedCount++;
+//          // Thumb confidence based on how straight it is relative to its MCP joint
+//          fingerConfidence = Math.min(1.0, fullExtensionLength / (segmentLength * 2.0));
+//       } else {
+//          fingerConfidence = 0.1;
+//       }
+//     } 
+//     // --- Extension Check: Index, Middle, Ring, Pinky ---
+//     else {
+//       // Check for Extension: If the distance from Tip to MCP is greater than 
+//       // a certain ratio of the MCP-to-PIP segment, the finger is likely extended.
+//       // Use a multiplier (e.g., 1.8) to account for the two outer segments of the finger.
+//       if (fullExtensionLength > segmentLength * 1.8) {
+//         extendedCount++;
+        
+//         // Calculate Confidence (0.0 to 1.0): 
+//         // How close the current length (fullExtensionLength) is to a 'fully straight' length (segmentLength * 2.0).
+//         fingerConfidence = Math.min(1.0, (fullExtensionLength - segmentLength * 1.8) / (segmentLength * 0.2));
+//       } else {
+//         // Finger is bent or not extended. Low confidence that it IS extended.
+//         fingerConfidence = 0.1;
+//       }
+//     }
+
+//     // Accumulate confidence for the final average
+//     totalConfidence += fingerConfidence;
+//   }
+
+//   // Final gesture confidence is the average confidence of ALL fingers (extended or not)
+//   // to give a smooth score, or only the extended ones if you prefer a strict measure.
+//   // Using all 5 fingers for a smoother confidence output:
+//   const finalConfidence = totalConfidence / 5.0; 
+  
+//   return { 
+//     count: extendedCount, 
+//     confidence: finalConfidence 
+//   };
+// }
+interface FingerCountResult {
+  count: number;
+  confidence: number;
+}
+
+// Count extended fingers based on hand landmarks with confidence scoring
+function countExtendedFingers(landmarks: { x: number; y: number; z: number }[]): FingerCountResult {
   if (!landmarks || landmarks.length < 21) {
     return { count: 0, confidence: 0 };
   }
 
-  let extendedCount = 0;
-  let totalConfidence = 0;
-  
-  // Define the required landmarks for each finger:
-  // Tip, PIP (middle knuckle), and MCP (knuckle connecting to hand)
-  const fingerLandmarks = [
-    // Thumb: (Tip=4, IP=3, MCP=2). Note: The thumb is handled separately due to its orientation.
-    { tip: landmarks[4], joint: landmarks[3], mcp: landmarks[2], isThumb: true, name: 'Thumb' }, 
-    // Index: (Tip=8, PIP=6, MCP=5)
-    { tip: landmarks[8], joint: landmarks[6], mcp: landmarks[5], isThumb: false, name: 'Index' },
-    // Middle: (Tip=12, PIP=10, MCP=9)
-    { tip: landmarks[12], joint: landmarks[10], mcp: landmarks[9], isThumb: false, name: 'Middle' },
-    // Ring: (Tip=16, PIP=14, MCP=13)
-    { tip: landmarks[16], joint: landmarks[14], mcp: landmarks[13], isThumb: false, name: 'Ring' },
-    // Pinky: (Tip=20, PIP=18, MCP=17)
-    { tip: landmarks[20], joint: landmarks[18], mcp: landmarks[17], isThumb: false, name: 'Pinky' },
+  // Calculate hand size for normalization
+  const wrist = landmarks[0];
+  const middleMCP = landmarks[9];
+  const handSize = Math.sqrt(
+    Math.pow(wrist.x - middleMCP.x, 2) + 
+    Math.pow(wrist.y - middleMCP.y, 2)
+  );
+
+  const minFingerLength = handSize * 0.33; // 1/3 of hand size
+
+  // Define fingers we care about: index, middle, ring
+  const fingers = [
+    { 
+      name: 'index', 
+      tip: 8, dip: 7, pip: 6, mcp: 5,
+      tipLandmark: landmarks[8],
+      dipLandmark: landmarks[7],
+      pipLandmark: landmarks[6],
+      mcpLandmark: landmarks[5]
+    },
+    { 
+      name: 'middle', 
+      tip: 12, dip: 11, pip: 10, mcp: 9,
+      tipLandmark: landmarks[12],
+      dipLandmark: landmarks[11],
+      pipLandmark: landmarks[10],
+      mcpLandmark: landmarks[9]
+    },
+    { 
+      name: 'ring', 
+      tip: 16, dip: 15, pip: 14, mcp: 13,
+      tipLandmark: landmarks[16],
+      dipLandmark: landmarks[15],
+      pipLandmark: landmarks[14],
+      mcpLandmark: landmarks[13]
+    }
   ];
 
-  for (const finger of fingerLandmarks) {
-    let fingerConfidence = 0;
+  let extendedCount = 0;
+  let totalConfidence = 0;
+  const extendedFingers: Array<{name: string, confidence: number}> = [];
 
-    // 1. Calculate the full length of the finger (MCP to Tip)
-    // This is the distance when the finger is fully extended (our maximum baseline)
-    const fullExtensionLength = Math.hypot(finger.tip.x - finger.mcp.x, finger.tip.y - finger.mcp.y);
+  for (const finger of fingers) {
+    const { tipLandmark, dipLandmark, pipLandmark, mcpLandmark } = finger;
+    
+    // Calculate finger segment lengths
+    const pipToDipLength = Math.sqrt(
+      Math.pow(dipLandmark.x - pipLandmark.x, 2) + 
+      Math.pow(dipLandmark.y - pipLandmark.y, 2)
+    );
+    
+    const dipToTipLength = Math.sqrt(
+      Math.pow(tipLandmark.x - dipLandmark.x, 2) + 
+      Math.pow(tipLandmark.y - dipLandmark.y, 2)
+    );
 
-    // 2. Calculate the distance of the PIP joint to the MCP joint (segmentLength)
-    // We use this as a rough measure of the hand size and segment length for normalization.
-    const segmentLength = Math.hypot(finger.joint.x - finger.mcp.x, finger.joint.y - finger.mcp.y);
-
-    // --- Extension Check: Thumb (Special Case) ---
-    if (finger.isThumb) {
-      // Simple check: If the tip is significantly further from the MCP joint than the PIP joint is, 
-      // AND the tip is on the correct side of the hand's center line (simplified X check).
-      if (fullExtensionLength > segmentLength * 1.5 && finger.tip.x < finger.mcp.x) {
-         extendedCount++;
-         // Thumb confidence based on how straight it is relative to its MCP joint
-         fingerConfidence = Math.min(1.0, fullExtensionLength / (segmentLength * 2.0));
-      } else {
-         fingerConfidence = 0.1;
-      }
-    } 
-    // --- Extension Check: Index, Middle, Ring, Pinky ---
-    else {
-      // Check for Extension: If the distance from Tip to MCP is greater than 
-      // a certain ratio of the MCP-to-PIP segment, the finger is likely extended.
-      // Use a multiplier (e.g., 1.8) to account for the two outer segments of the finger.
-      if (fullExtensionLength > segmentLength * 1.8) {
-        extendedCount++;
-        
-        // Calculate Confidence (0.0 to 1.0): 
-        // How close the current length (fullExtensionLength) is to a 'fully straight' length (segmentLength * 2.0).
-        fingerConfidence = Math.min(1.0, (fullExtensionLength - segmentLength * 1.8) / (segmentLength * 0.2));
-      } else {
-        // Finger is bent or not extended. Low confidence that it IS extended.
-        fingerConfidence = 0.1;
-      }
+    // Check conditions for extended finger
+    const isTipTallerThanDip = tipLandmark.y < dipLandmark.y; // Lower y = higher position
+    const isDipTallerThanPip = dipLandmark.y < pipLandmark.y;
+    const isPipToDipLongEnough = pipToDipLength > minFingerLength;
+    
+    // Calculate individual confidence factors (0 to 1)
+    const heightConfidence = isTipTallerThanDip && isDipTallerThanPip ? 1.0 : 0.0;
+    const lengthConfidence = Math.min(pipToDipLength / minFingerLength, 1.0); // Cap at 1.0
+    
+    // Overall finger confidence (average of factors)
+    const fingerConfidence = (heightConfidence + lengthConfidence) / 2;
+    
+    // Consider finger extended if it meets the basic conditions with reasonable confidence
+    if (fingerConfidence > 0.6) {
+      extendedCount++;
+      extendedFingers.push({
+        name: finger.name,
+        confidence: fingerConfidence
+      });
+      totalConfidence += fingerConfidence;
     }
-
-    // Accumulate confidence for the final average
-    totalConfidence += fingerConfidence;
   }
 
-  // Final gesture confidence is the average confidence of ALL fingers (extended or not)
-  // to give a smooth score, or only the extended ones if you prefer a strict measure.
-  // Using all 5 fingers for a smoother confidence output:
-  const finalConfidence = totalConfidence / 5.0; 
-  
-  return { 
-    count: extendedCount, 
-    confidence: finalConfidence 
+  // Calculate overall confidence
+  const overallConfidence = extendedCount > 0 ? totalConfidence / extendedCount : 0;
+
+  // Special case: if we detect exactly 1, 2, or 3 fingers, validate the sequence
+  if (extendedCount >= 1 && extendedCount <= 3) {
+    const expectedFingers = ['index', 'middle', 'ring'].slice(0, extendedCount);
+    const detectedFingerNames = extendedFingers.map(f => f.name);
+    
+    // Check if we have the expected fingers in order
+    const isCorrectSequence = expectedFingers.every((expected, index) => 
+      detectedFingerNames[index] === expected
+    );
+    
+    // Adjust confidence based on sequence correctness
+    const sequenceConfidence = isCorrectSequence ? 1.0 : 0.5;
+    const finalConfidence = (overallConfidence + sequenceConfidence) / 2;
+    
+    return {
+      count: extendedCount,
+      confidence: finalConfidence
+    };
+  }
+
+  return {
+    count: extendedCount,
+    confidence: overallConfidence
   };
 }
-
-// NOTE: Remember to apply the changes from Step 2 of the previous response to the main hook 
-// to ensure the final confidence value is correctly integrated and the base confidence is handled:
-/*
-Inside detectHandPose function:
-
-}
-*/
 
 // Calculate bounding box from hand landmarks
 function calculateBoundingBox(landmarks: { x: number; y: number; z: number }[]): { x: number; y: number; width: number; height: number } {

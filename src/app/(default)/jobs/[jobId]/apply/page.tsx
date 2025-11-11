@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
 import { useSession } from 'next-auth/react';
-import { ApplicationData } from '@/types/job';
 import { useEffect } from 'react';
 
 export default function JobApplicationPage() {

@@ -3,34 +3,16 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { useToast } from '@/hooks/use-toast';
-import { 
-  Edit, Trash2, Loader2, X,
-  MapPin, Calendar,
-  Search
-} from 'lucide-react';
+import { Loader2, X } from 'lucide-react';
 
 // 💡 Import TanStack Query hooks
 import { useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
 import { Job } from '@/types/job';
-import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
 import JobList from '@/components/job/recruiter/job-list';
 import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal';
 import { toast } from 'sonner';
-
-// --- Helper Components ---
-
-const StatCard = ({ title, value, icon: Icon, colorClass }: { title: string, value: number, icon: React.ElementType, colorClass: string }) => (
-  <div className="bg-card p-6 rounded-xl shadow-md border flex items-center justify-between transition-all hover:shadow-lg">
-    <div>
-      <p className="text-sm font-medium text-muted-foreground">{title}</p>
-      <h3 className="text-3xl font-bold text-card-foreground mt-1">{value}</h3>
-    </div>
-    <Icon className={`w-8 h-8 ${colorClass}`} />
-  </div>
-);
+import NoJobsHero from '@/components/job/no-job';
 
 export default function RecruiterJobsPage() {
   const router = useRouter();
@@ -39,22 +21,26 @@ export default function RecruiterJobsPage() {
   if(status === "unauthenticated") {
     router.push('/login');
   }
-  // 💡 TanStack Query: Fetch all jobs (Recruiter's jobs)
-  // For a production app, we would ideally use a hook like useRecruiterJobs(session.user.id)
+  if(status === "authenticated" && session?.user?.role !== "RECRUITER") {
+    router.push('/');
+  }
   const { 
     data, 
+    isLoading: isJobsLoading,
+    isError: isJobsError,
+    error: jobsError
   } = useRecruiterJobs(); // Assuming this hook fetches the current user's jobs if they are a recruiter
   const allJobs = data?.jobs;
-  // 💡 TanStack Query: Mutation for creating a new job
   const { 
     mutate: createJob, 
-    isPending: isCreating 
+    isPending: isCreating, 
+    isError: createError,
+    error: createJobError
   } = useCreateJob();
 
   // --- Data Transformation & Stats ---
-  // Apply mock candidate counts and default status for visual purposes
   const jobs: Job[] = useMemo(() => {
-    return (allJobs || []).map((job: unknown) => {
+    return (allJobs || []).map((job: Job) => {
       const jobData = job as Job;
       return {
         ...jobData,
@@ -101,15 +87,7 @@ export default function RecruiterJobsPage() {
   
   // --- Role Check and Redirect ---
   const userRole = session?.user?.role;
-
-  if (status === 'loading') {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Loading session...</p>
-      </div>
-    );
-  }
+  const loading = status === 'loading' || isJobsLoading
 
   if (!session || userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
     router.push('/login?callbackUrl=/recruiter');
@@ -122,9 +100,52 @@ export default function RecruiterJobsPage() {
     );
   }
 
+  if (isJobsError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
+        <X className="h-10 w-10 mb-4" />
+        <p className="text-xl font-bold">Error Loading Jobs</p>
+        <p className="mt-2">An error occurred while fetching your jobs.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{jobsError?.message}</p>
+      </div>
+    );
+  }
+
+  if (isCreating) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">Creating job...</p>
+      </div>
+    );
+  }
+
+  if(createError) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
+        <X className="h-10 w-10 mb-4" />
+        <p className="text-xl font-bold">Error Creating Job</p>
+        <p className="mt-2">An error occurred while creating the job.</p>
+        <p className="mt-2 text-sm text-muted-foreground">{createJobError?.message}</p>
+      </div>
+    );
+  }
+
+  if (loading || !allJobs) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">Loading data...</p>
+      </div>
+    );
+  }
+
+  if (!loading && allJobs && allJobs.length === 0) {
+    return <NoJobsHero onCreateJob={() => setShowCreateModal(true)} />;
+  }
 
   return (
-    <div className="min-h-screen bg-muted/40 p-4 md:p-8">
+    <div className="min-h-[calc(100vh-2rem)] bg-muted/40 p-4 md:p-8">
       <JobList jobs={jobs} onCreateJob={() => setShowCreateModal(true) } />
       {/* --- Create Job Modal --- */}
       <JobOpeningModal 

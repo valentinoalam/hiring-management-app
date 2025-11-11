@@ -5,7 +5,7 @@ export default function Index() {
     <div className="min-h-screen flex items-center justify-center bg-[#FAFAFA] px-4 py-8">
       <div className="flex flex-col items-center justify-center gap-4 max-w-[606px] w-full">
         <Image width={214} height={214}
-          src="/illustration/Verified.svg"
+          src="/illustrations/Verified.svg"
           alt="Success celebration illustration"
           className="w-[214px] h-[214px] object-contain"
         />

@@ -109,14 +109,14 @@ export default function Header() {
     return (
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+          {/* <Button variant="ghost" className="relative h-8 w-8 rounded-full"> */}
             <Avatar className="h-8 w-8">
               {/* 💡 Use session.user.image */}
-              <AvatarImage src={user.image || undefined} alt={user.name || "nobody"} /> 
+              {user.image && <AvatarImage src={user.image} alt={user.name || "nobody"} /> }
               {/* 💡 Use session.user.name initials */}
               <AvatarFallback>{initials}</AvatarFallback>
             </Avatar>
-          </Button>
+          {/* </Button> */}
         </DropdownMenuTrigger>
         <DropdownMenuContent className="w-56" align="end" forceMount>
           <DropdownMenuLabel className="font-normal">

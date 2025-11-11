@@ -64,7 +64,7 @@ import {
 } from 'lucide-react';
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ApplicationStatus, Applicant, AppFormField } from '@/types/job';
+import { ApplicationStatus, Applicant, AppFormField, Candidate } from '@/types/job';
 
 // Constants
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -89,11 +89,11 @@ const STATUS_OPTIONS: (ApplicationStatus | 'ALL')[] = ['ALL', 'PENDING', 'UNDER_
 
 // Props interface
 interface ApplicantsTableProps {
-  applicants: (Applicant & { matchRate?: number })[];
+  applicants: Candidate[];
   visibleFields: AppFormField[];
   selectedApplicants: string[];
   statusFilter: ApplicationStatus | 'ALL';
-  isLoading?: boolean;
+  isFetching?: boolean;
   isUpdatingStatus?: boolean;
   isPerformingBulkAction?: boolean;
   jobTitle?: string;
@@ -177,11 +177,11 @@ export default function ApplicantsTable({
   visibleFields,
   selectedApplicants,
   statusFilter,
-  isLoading = false,
   isUpdatingStatus = false,
   isPerformingBulkAction = false,
   jobTitle = "this position",
   totalApplicants = 0,
+  isFetching,
   onSelectAll,
   onSelectApplicant,
   onStatusChange,
@@ -424,17 +424,6 @@ export default function ApplicantsTable({
     }
     setActiveColumn(null);
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <div className="text-center">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading applicants data...</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm">

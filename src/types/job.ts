@@ -241,7 +241,7 @@ export interface Applicant {
   };
 }
 
-
+export type Candidate = (Applicant & { matchRate?: number })
 export interface ApplicationSummary {
   id: string;
   jobTitle: string;

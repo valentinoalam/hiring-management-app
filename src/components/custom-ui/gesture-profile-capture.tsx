@@ -25,10 +25,11 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   const [message, setMessage] = useState<string>("")
   const [isCapturing, setIsCapturing] = useState(false)
   const [isInitializing, setIsInitializing] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
   const [lastGestureTime, setLastGestureTime] = useState<number>(0)
-  const [gestureTimeout, setGestureTimeout] = useState<NodeJS.Timeout | null>(null)
-  const [isGestureDetected, setIsGestureDetected] = useState(false)
+  // const [isSaving, setIsSaving] = useState(false)
+  // const [gestureTimeout, setGestureTimeout] = useState<NodeJS.Timeout | null>(null)
+  // const [isGestureDetected, setIsGestureDetected] = useState(false)
+  const [enableBackgroundBlur, setEnableBackgroundBlur] = useState(true)
   const [faceDetected, setFaceDetected] = useState(false)
   const [isDebug, setIsDebug] = useState(true)
   const { handPose, isLoading: handLoading, error: handError } = useHandGestureDetection(
@@ -40,7 +41,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   
   // Monitor face detection
   useEffect(() => {
-    if (faceDetection && faceDetection.confidence > 0.5) {
+    if (faceDetection && faceDetection.confidence > 0.6) {
       if (!faceDetected) {
         setFaceDetected(true)
         setMessage("Face detected! Now show 1 finger to start sequence...")
@@ -122,52 +123,116 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
     setFaceDetected(false)
   }
 
-  // Capture photo from video
+  // Improved capture and crop photo with face detection
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || isCapturing) return
+    if (!videoRef.current || !canvasRef.current || !cropCanvasRef.current || isCapturing) {
+      return
+    }
 
     setIsCapturing(true)
     const context = canvasRef.current.getContext("2d")
-    const cropContext = cropCanvasRef.current?.getContext("2d")
+    const cropContext = cropCanvasRef.current.getContext("2d")
+    
     if (context && cropContext) {
       const video = videoRef.current
-      canvasRef.current.width = video.videoWidth
-      canvasRef.current.height = video.videoHeight
+      const videoWidth = video.videoWidth
+      const videoHeight = video.videoHeight
+      
+      // Set canvas to video dimensions
+      canvasRef.current.width = videoWidth
+      canvasRef.current.height = videoHeight
       
       // Draw original image
-      context.drawImage(video, 0, 0)
+      context.drawImage(video, 0, 0, videoWidth, videoHeight)
       const originalImageData = canvasRef.current.toDataURL("image/jpeg")
       setCapturedImage(originalImageData)
 
       // Crop to face if detected
       if (faceDetection && faceDetection.confidence > 0.5) {
-        const cropSize = Math.max(faceDetection.boundingBox.width, faceDetection.boundingBox.height) * 1.8 // Add padding
-        const centerX = faceDetection.boundingBox.x + faceDetection.boundingBox.width / 2
-        const centerY = faceDetection.boundingBox.y + faceDetection.boundingBox.height / 2
+        const faceBox = faceDetection.boundingBox
         
-        const cropX = (centerX - cropSize / 2) * video.videoWidth
-        const cropY = (centerY - cropSize / 2) * video.videoHeight
-        const cropWidth = cropSize * video.videoWidth
-        const cropHeight = cropSize * video.videoHeight
-
-        // Set crop canvas size (square for avatar)
-        const avatarSize = 300
-        if (cropCanvasRef.current) {
+        // Calculate optimal crop area with better proportions
+        const faceWidth = faceBox.width * videoWidth
+        const faceHeight = faceBox.height * videoHeight
+        const faceCenterX = (faceBox.x + faceBox.width / 2) * videoWidth
+        const faceCenterY = (faceBox.y + faceBox.height / 2) * videoHeight
+        
+        // Use face dimensions to determine crop size
+        // Aim for a portrait-style crop that includes head and shoulders
+        const faceSize = Math.max(faceWidth, faceHeight)
+        const cropSize = {
+          width: faceSize * 2.2,  // Wider to include shoulders
+          height: faceSize * 2.8  // Taller to include hair and upper body
+        }
+        
+        // Calculate crop coordinates ensuring we stay within video bounds
+        const cropX = Math.max(0, faceCenterX - cropSize.width / 2)
+        const cropY = Math.max(0, faceCenterY - cropSize.height * 0.4) // Position face higher in frame
+        
+        // Ensure crop doesn't exceed video dimensions
+        const actualCropWidth = Math.min(cropSize.width, videoWidth - cropX)
+        const actualCropHeight = Math.min(cropSize.height, videoHeight - cropY)
+        
+        // Target avatar size
+        const avatarSize = 400 // Larger for better quality
+        
+        // Create temporary canvas for processing
+        const tempCanvas = document.createElement('canvas')
+        const tempContext = tempCanvas.getContext('2d')
+        
+        if (tempContext) {
+          // Set temp canvas to crop dimensions
+          tempCanvas.width = actualCropWidth
+          tempCanvas.height = actualCropHeight
+          
+          // Draw cropped area to temp canvas
+          tempContext.drawImage(
+            video,
+            cropX, cropY, actualCropWidth, actualCropHeight,
+            0, 0, actualCropWidth, actualCropHeight
+          )
+          
+          // Set final avatar canvas size (square)
           cropCanvasRef.current.width = avatarSize
           cropCanvasRef.current.height = avatarSize
+          
+          // Calculate aspect ratio and positioning for square crop
+          const sourceAspect = actualCropWidth / actualCropHeight
+          const targetAspect = 1 // Square
+          
+          let drawWidth, drawHeight, offsetX, offsetY
+          
+          if (sourceAspect > targetAspect) {
+            // Source is wider - crop horizontally
+            drawHeight = actualCropHeight
+            drawWidth = drawHeight * targetAspect
+            offsetX = (actualCropWidth - drawWidth) / 2
+            offsetY = 0
+          } else {
+            // Source is taller - crop vertically
+            drawWidth = actualCropWidth
+            drawHeight = drawWidth / targetAspect
+            offsetX = 0
+            offsetY = (actualCropHeight - drawHeight) / 3 // Keep face centered vertically
+          }
+          
+          // Apply background blur if requested
+          if (true) { // You can make this a state variable
+            applyBackgroundBlur(tempCanvas, cropContext, avatarSize, {
+              x: offsetX, y: offsetY, width: drawWidth, height: drawHeight
+            }, faceBox)
+          } else {
+            // Draw without blur
+            cropContext?.drawImage(
+              tempCanvas,
+              offsetX, offsetY, drawWidth, drawHeight,
+              0, 0, avatarSize, avatarSize
+            )
+          }
+          
+          const croppedImageData = cropCanvasRef.current.toDataURL("image/jpeg")
+          setCroppedImage(croppedImageData)
         }
-
-        // Draw cropped face
-        cropContext.drawImage(
-          video,
-          Math.max(0, cropX), Math.max(0, cropY), 
-          Math.min(cropWidth, video.videoWidth - cropX), 
-          Math.min(cropHeight, video.videoHeight - cropY),
-          0, 0, avatarSize, avatarSize
-        )
-
-        const croppedImageData = cropCanvasRef.current?.toDataURL("image/jpeg")
-        setCroppedImage(croppedImageData || null)
       } else {
         // Fallback: use original image if no face detected
         setCroppedImage(originalImageData)
@@ -177,7 +242,107 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
       stopCamera()
       setIsCapturing(false)
     }
-  }, [faceDetection, isCapturing]);
+  }, [faceDetection, isCapturing])
+
+  // Background blur function
+  function applyBackgroundBlur(
+    sourceCanvas: HTMLCanvasElement,
+    targetContext: CanvasRenderingContext2D,
+    avatarSize: number,
+    cropArea: { x: number; y: number; width: number; height: number },
+    faceBox: { x: number; y: number; width: number; height: number }
+  ) {
+    const tempBlurCanvas = document.createElement('canvas')
+    const blurContext = tempBlurCanvas.getContext('2d')
+    
+    if (!blurContext) return
+    
+    // Set blur canvas size
+    tempBlurCanvas.width = sourceCanvas.width
+    tempBlurCanvas.height = sourceCanvas.height
+    
+    // Draw original image to blur canvas
+    blurContext.drawImage(sourceCanvas, 0, 0)
+    
+    // Apply blur to the entire image
+    blurContext.filter = 'blur(8px)'
+    blurContext.drawImage(sourceCanvas, 0, 0)
+    blurContext.filter = 'none'
+    
+    // Draw the sharp face area back onto the blurred background
+    const facePadding = 0.1 // Add some padding around face
+    const faceX = (faceBox.x * sourceCanvas.width) - (faceBox.width * sourceCanvas.width * facePadding)
+    const faceY = (faceBox.y * sourceCanvas.height) - (faceBox.height * sourceCanvas.height * facePadding)
+    const faceWidth = faceBox.width * sourceCanvas.width * (1 + facePadding * 2)
+    const faceHeight = faceBox.height * sourceCanvas.height * (1 + facePadding * 2)
+    
+    // Draw sharp face area
+    blurContext.drawImage(
+      sourceCanvas,
+      faceX, faceY, faceWidth, faceHeight,
+      faceX, faceY, faceWidth, faceHeight
+    )
+    
+    // Draw the final result to target canvas
+    targetContext.drawImage(
+      tempBlurCanvas,
+      cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+      0, 0, avatarSize, avatarSize
+    )
+  }
+
+  // Alternative simpler blur function (faster performance)
+  function applySimpleBackgroundBlur(
+    sourceCanvas: HTMLCanvasElement,
+    targetContext: CanvasRenderingContext2D,
+    avatarSize: number,
+    cropArea: { x: number; y: number; width: number; height: number }
+  ) {
+    // Create two temporary canvases for blur effect
+    
+    let blurCanvas1 = document.createElement('canvas') as HTMLCanvasElement
+    let blurCanvas2 = document.createElement('canvas') as HTMLCanvasElement
+    let blurCtx1 = blurCanvas1.getContext('2d') as CanvasRenderingContext2D
+    let blurCtx2 = blurCanvas2.getContext('2d') as CanvasRenderingContext2D
+    
+    if (!blurCtx1 || !blurCtx2) return
+    
+    // Set canvas sizes
+    blurCanvas1.width = sourceCanvas.width
+    blurCanvas1.height = sourceCanvas.height
+    blurCanvas2.width = sourceCanvas.width
+    blurCanvas2.height = sourceCanvas.height
+    
+    // Draw original to first blur canvas
+    blurCtx1.drawImage(sourceCanvas, 0, 0)
+    
+    // Apply multiple passes of box blur for better effect
+    for (let i = 0; i < 2; i++) {
+      blurCtx2.drawImage(blurCanvas1, 0, 0)
+      blurCtx2.filter = 'blur(4px)'
+      blurCtx2.drawImage(blurCanvas1, 0, 0)
+      if (blurCtx2) {
+        // If blurCtx2 is a CanvasRenderingContext2D, it has the 'filter' property.
+        blurCtx2.filter = 'none'; 
+      }
+      
+      // Swap canvases for next pass
+      const tempCanvas = blurCanvas1
+      blurCanvas1 = blurCanvas2
+      blurCanvas2 = tempCanvas
+      
+      const tempCtx = blurCtx1
+      blurCtx1 = blurCtx2
+      blurCtx2 = tempCtx
+    }
+    
+    // Draw final blurred image to target
+    targetContext.drawImage(
+      blurCanvas1,
+      cropArea.x, cropArea.y, cropArea.width, cropArea.height,
+      0, 0, avatarSize, avatarSize
+    )
+  }
 
   // Monitor hand gesture sequence with improved detection
   useEffect(() => {
@@ -273,15 +438,26 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
       <div className="py-2 flex flex-col gap-4">
         {/* Camera Feed or Captured Image */}
         <div className="flex flex-col gap-0.5">
-          {!cameraActive ? (
             <div className="flex gap-2">
-              <Button variant={"outline"} className="flex max-w-22 h-min py-0 bg-transparent">test mode</Button>
+              <Button onClick={()=>setIsDebug(!isDebug)} variant={"outline"} className="flex max-w-22 h-full py-0 bg-transparent">test mode</Button>
               <Button onClick={handleReset} variant="outline" className="flex max-w-22 h-min py-0 bg-transparent">
                 <RotateCcw className="w-4 h-4" />
                 Restart
               </Button>
+              {/* Blur Toggle */}
+              <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                <span className="text-sm text-gray-700 dark:text-gray-300">Bg Blur</span>
+                <label className="relative inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={enableBackgroundBlur}
+                    onChange={(e) => setEnableBackgroundBlur(e.target.checked)}
+                    className="sr-only peer" 
+                  />
+                  <div className="w-8 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-border rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0 after:left-0 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
+                </label>
+              </div>
             </div>
-          ):<div className="flex justify-start h-4"></div>}
           <div className="relative w-full aspect-3/2 bg-black max-h-[400px] overflow-hidden rounded-lg">
             {!capturedImage ? (
               <>
@@ -352,7 +528,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                         Face OK
                       </div>
                     ) : (
-                      <div className="bg-yellow-500 text-white px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                      <div className="border border-secondary/30 text-neutral-10 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                         <Scan className="w-4 h-4" />
                         Find Face
                       </div>

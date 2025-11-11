@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
-import { useState, useEffect, useMemo, useRef, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Upload, Calendar, ChevronDown, FileText, X, Camera } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,16 +12,16 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Card } from "@/components/ui/card";
 import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OtherInfo, OtherInfoData, Profile, ProfileData, ProfileOtherInfo, transformProfileUserInfo } from "@/types/user";
-import { AppFormField, ApplicantData, ApplicationData, Job } from "@/types/job";
+import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
+import { AppFormField, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
 import { useRouter } from "next/navigation";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
+import PhoneInput from "@/components/custom-ui/phone-input";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -254,7 +254,7 @@ export default function JobApplicationForm({
   onSubmit,
   onCancel
 }: JobApplicationFormProps) {
-  const [avatarPreview, setAvatarPreview] = useState("");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
@@ -959,14 +959,14 @@ export default function JobApplicationForm({
       <div className="w-full max-w-[700px] border border-neutral-40 bg-neutral-10 rounded-none shadow-sm">
         <div className="p-6 sm:p-8 md:p-10 flex flex-col gap-6">
           <div className="flex items-start gap-4">
-            <button
+            <Button
               onClick={onCancel}
               className="flex items-center justify-center p-1 border border-neutral-40 bg-neutral-10 rounded-lg shadow-sm hover:bg-gray-50 transition-colors"
               aria-label="Go back"
               type="button"
             >
               <ArrowLeft className="w-5 h-5 text-neutral-100" strokeWidth={2} />
-            </button>
+            </Button>
             <div className="flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
               <h1 className="text-lg font-bold leading-7 text-neutral-100 font-sans">
                 Apply {job.title} at {job?.company?.name}
@@ -993,10 +993,8 @@ export default function JobApplicationForm({
                 <span className="text-danger">*</span>
                 </FieldLabel>
                 <div className="flex flex-col gap-2">
-                  <div
-                    className="w-32 h-32 rounded-full bg-cover bg-center"
-                    >
-                      <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? `url(${avatarPreview})` : "/avatar.svg"} alt={"avatar"} />
+                  <div className="w-32 h-32 rounded-full bg-cover bg-center">
+                    <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? avatarPreview : "/avatar.svg"} alt={"avatar"} />
                   </div>
                   <div className="flex gap-2">
                     {/* <input
@@ -1071,13 +1069,13 @@ export default function JobApplicationForm({
                     Phone Number
                     <span className="text-danger-main">*</span>
                   </FieldLabel>
-                  <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
+                  <PhoneInput />
+                  {/* <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
                     <div className="flex items-center gap-1 px-4 border-r border-neutral-40">
-                      <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 shrink-0">
+                      <div className="w-4 h-4 rounded-full overflow-hidden border border-neutral-50 bg-gray-200 shrink-0">
                         <svg viewBox="0 0 16 16" className="w-full h-full">
-                          <rect width="16" height="5.33" fill="#CE1126" />
-                          <rect y="10.67" width="16" height="5.33" fill="#CE1126" />
-                          <rect y="5.33" width="16" height="5.33" fill="#FFF" />
+                          <rect width="16" height="8" fill="#CE1126" />
+                          <rect y="8" width="16" height="8" fill="#FFF" />
                         </svg>
                       </div>
                       <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
@@ -1091,7 +1089,7 @@ export default function JobApplicationForm({
                       placeholder="81XXXXXXXXX"
                       className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
                     />
-                  </div>
+                  </div> */}
                   {errors.phone_number && (
                     <FieldDescription className="text-danger-main">
                       {errors.phone_number.message}

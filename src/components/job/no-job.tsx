@@ -3,7 +3,7 @@ import React from 'react'
 import { Button } from '@/components/ui/button'
 import { useSession } from 'next-auth/react';
 
-const NoData = () => {
+const NoJobsHero = ({onCreateJob}: {onCreateJob?: () => void}) => {
   const { data: session } = useSession();
   const user = session?.user;
   const userRole = user?.role;
@@ -24,8 +24,8 @@ const NoData = () => {
       
       {userRole === 'RECRUITER' && (
         <Button 
-          onClick={() => {}}
-          className="bg-secondary hover:bg-secondary-hover active:bg-secondary-pressed text-m-bold text-neutral-90 px-8 h-11 rounded-lg"
+          onClick={onCreateJob}
+          className="flex items-center justify-center py-2 text-base font-bold leading-7 shadow-md transition-colors bg-secondary hover:bg-secondary-hover active:bg-secondary-pressed text-bold text-neutral-90 px-8 h-11 rounded-lg"
         >
           Create a new job
         </Button>
@@ -35,4 +35,4 @@ const NoData = () => {
   )
 }
 
-export default NoData
+export default NoJobsHero
