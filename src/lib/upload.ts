@@ -18,7 +18,7 @@ export async function uploadToVercelBlob(
   const fileExtension = file instanceof File ? file.name.split('.').pop() || 'bin' : 'bin';
   const fileName = `${uuidv4()}.${fileExtension}`;
   const fullPath = `${folder}/${fileName}`;
-
+// const { url } = await put('articles/blob.txt', 'Hello World!', { access: 'public' });
   const blob = await put(fullPath, file, {
     access: 'public',
     token: process.env.BLOB_READ_WRITE_TOKEN!,
