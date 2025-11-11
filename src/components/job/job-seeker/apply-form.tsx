@@ -22,6 +22,7 @@ import React from "react";
 import { useRouter } from "next/navigation";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 import PhoneInput from "@/components/custom-ui/phone-input";
+import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
 
 // File validation constants
 const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
@@ -287,6 +288,7 @@ export default function JobApplicationForm({
     register,
     handleSubmit,
     setValue,
+    watch,
     control,
     formState: { errors, isSubmitting, isValid },
   } = useForm<ApplicationFormData>({
@@ -294,6 +296,7 @@ export default function JobApplicationForm({
     mode: 'onChange',
   });
   const formValues = useWatch({ control });
+  const domicileValue = watch("domicile");
   // Pre-fill form with existing profile data
   useEffect(() => {
     if (profile && appFormFields.length > 0) {
@@ -1166,23 +1169,10 @@ export default function JobApplicationForm({
                     Domicile
                     <span className="text-danger-main">*</span>
                   </FieldLabel>
-                  <div className="relative">
-                    <select
-                      {...register('domicile')}
-                      className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
-                    >
-                      <option value="">Choose your domicile</option>
-                      <option value="jakarta">Jakarta</option>
-                      <option value="bandung">Bandung</option>
-                      <option value="surabaya">Surabaya</option>
-                      <option value="yogyakarta">Yogyakarta</option>
-                      <option value="bali">Bali</option>
-                      <option value="medan">Medan</option>
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                      <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
-                    </div>
-                  </div>
+                  <WilayahAutocomplete
+                    onChange={(value) => setValue("domicile", value)}
+                    placeholder="Pilih domisili..."
+                  />
                   {errors.domicile && (
                     <FieldDescription className="text-danger-main">
                       {errors.domicile.message}

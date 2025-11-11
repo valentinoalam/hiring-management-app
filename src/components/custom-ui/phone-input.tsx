@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command';
-import { Button } from '../ui/button';
+import Image from 'next/image';
 
 // Helper to construct a free CDN URL based on the ISO code (e.g., US -> https://flagcdn.com/16x12/us.png)
 const getFlagUrl = (code: string) => `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
@@ -118,13 +118,14 @@ export default function PhoneInput() {
           <button
             type="button"
             role="combobox"
+            aria-controls=''
             aria-expanded={open}
             className="flex items-center gap-1 px-4 border-r border-neutral-40 bg-transparent hover:bg-neutral-20 transition-colors"
             disabled={!selectedCountry}
           >
             {/* --- FLAG IMAGE URL USED HERE --- */}
             {selectedCountry && (
-              <img
+              <Image width={16} height={12}
                 src={selectedCountry.flagUrl}
                 alt={`${selectedCountry.name} flag`}
                 className="w-4 h-3 rounded-sm object-cover"
@@ -151,7 +152,7 @@ export default function PhoneInput() {
                     className="cursor-pointer"
                   >
                     {/* --- FLAG IMAGE URL USED HERE (in the list) --- */}
-                    <img
+                    <Image width={16} height={12}
                       src={country.flagUrl}
                       alt={`${country.name} flag`}
                       className="w-4 h-3 rounded-sm object-cover mr-2"

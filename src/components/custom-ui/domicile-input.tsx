@@ -1,0 +1,255 @@
+"use client";
+
+import * as React from "react";
+import { Check, ChevronsUpDown, MapPin, Search, Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
+// import { Input } from "@/components/ui/input";
+import { useDebounce } from "@/hooks/use-debounce";
+
+interface WilayahItem {
+  kode: string;
+  nama: string;
+  tipe: string;
+}
+
+interface WilayahAutocompleteProps {
+  value?: string;
+  onChange?: (value: string) => void;
+  onBlur?: () => void;
+  disabled?: boolean;
+  placeholder?: string;
+  className?: string;
+}
+
+export function WilayahAutocomplete({
+  value,
+  onChange,
+  onBlur,
+  disabled = false,
+  placeholder = "Pilih domisili...",
+  className,
+}: WilayahAutocompleteProps) {
+  const [open, setOpen] = React.useState(false);
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [results, setResults] = React.useState<WilayahItem[]>([]);
+  const [loading, setLoading] = React.useState(false);
+  const [selectedItem, setSelectedItem] = React.useState<WilayahItem | null>(null);
+
+  const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Fetch search results
+  React.useEffect(() => {
+    const searchWilayah = async () => {
+      if (debouncedSearch.length < 2) {
+        setResults([]);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const response = await fetch(
+          `/api/wilayah/search?q=${encodeURIComponent(debouncedSearch)}&limit=10`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          setResults(data.data || []);
+        }
+      } catch (error) {
+        console.error("Search failed:", error);
+        setResults([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    searchWilayah();
+  }, [debouncedSearch]);
+
+  // Find selected item when value changes
+  React.useEffect(() => {
+    const findSelectedItem = async () => {
+      if (!value) {
+        setSelectedItem(null);
+        return;
+      }
+
+      // If we have a value but no selected item, try to find it
+      if (value && !selectedItem) {
+        try {
+          const response = await fetch(
+            `/api/wilayah/search?q=${encodeURIComponent(value)}&limit=1`
+          );
+          
+          if (response.ok) {
+            const data = await response.json();
+            if (data.data && data.data.length > 0) {
+              setSelectedItem(data.data[0]);
+            }
+          }
+        } catch (error) {
+          console.error("Failed to find selected item:", error);
+        }
+      }
+    };
+
+    findSelectedItem();
+  }, [value, selectedItem]);
+
+  const handleSelect = (item: WilayahItem) => {
+    setSelectedItem(item);
+    onChange?.(item.kode);
+    setOpen(false);
+    setSearchQuery("");
+  };
+
+  const getTypeIcon = (type: string) => {
+    const icons = {
+      provinsi: "🏛️",
+      kabupaten: "🏢", 
+      kecamatan: "🏠",
+      desa: "📍",
+    };
+    return icons[type as keyof typeof icons] || "📌";
+  };
+
+  const getTypeColor = (type: string) => {
+    const colors = {
+      provinsi: "text-blue-600 bg-blue-50",
+      kabupaten: "text-green-600 bg-green-50",
+      kecamatan: "text-purple-600 bg-purple-50", 
+      desa: "text-orange-600 bg-orange-50",
+    };
+    return colors[type as keyof typeof colors] || "text-gray-600 bg-gray-50";
+  };
+
+  return (
+    <div className={cn("space-y-2", className)}>
+      <Popover open={open} onOpenChange={setOpen}>
+        <PopoverTrigger asChild>
+          <Button
+            variant="outline"
+            role="combobox"
+            aria-expanded={open}
+            className={cn(
+              "w-full justify-between h-10 px-3 py-2 text-sm",
+              !selectedItem && "text-muted-foreground"
+            )}
+            disabled={disabled}
+            onBlur={onBlur}
+          >
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              {selectedItem ? (
+                <>
+                  <span className={cn("text-xs px-2 py-1 rounded", getTypeColor(selectedItem.tipe))}>
+                    {getTypeIcon(selectedItem.tipe)}
+                  </span>
+                  <span className="truncate">{selectedItem.nama}</span>
+                  <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
+                    ({selectedItem.kode})
+                  </span>
+                </>
+              ) : (
+                <span className="text-muted-foreground">{placeholder}</span>
+              )}
+            </div>
+            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+          </Button>
+        </PopoverTrigger>
+        <PopoverContent className="w-full p-0" align="start">
+          <Command shouldFilter={false}>
+            <div className="flex items-center border-b px-3">
+              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
+              <CommandInput
+                placeholder="Cari provinsi, kabupaten, kecamatan, atau desa..."
+                value={searchQuery}
+                onValueChange={setSearchQuery}
+                className="border-none focus:ring-0"
+              />
+              {loading && (
+                <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+              )}
+            </div>
+            <CommandList>
+              <CommandEmpty className="py-6 text-center text-sm">
+                {searchQuery.length < 2 ? (
+                  "Ketik minimal 2 karakter untuk mencari"
+                ) : loading ? (
+                  <div className="flex items-center justify-center gap-2">
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    Mencari...
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center gap-2">
+                    <MapPin className="h-8 w-8 text-muted-foreground" />
+                    <div>Tidak ada hasil untuk &quot;{searchQuery}&quot;</div>
+                    <div className="text-xs text-muted-foreground">
+                      Coba kata kunci lain
+                    </div>
+                  </div>
+                )}
+              </CommandEmpty>
+              {results.length > 0 && (
+                <CommandGroup>
+                  {results.map((item) => (
+                    <CommandItem
+                      key={item.kode}
+                      value={item.kode}
+                      onSelect={() => handleSelect(item)}
+                      className="flex items-center gap-3 py-3 cursor-pointer"
+                    >
+                      <div className={cn(
+                        "flex items-center justify-center w-8 h-8 rounded-full",
+                        getTypeColor(item.tipe)
+                      )}>
+                        <span className="text-sm">{getTypeIcon(item.tipe)}</span>
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="font-medium text-sm truncate">
+                            {item.nama}
+                          </span>
+                          {selectedItem?.kode === item.kode && (
+                            <Check className="h-4 w-4 shrink-0" />
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 mt-1">
+                          <span className={cn(
+                            "text-xs px-2 py-1 rounded-full capitalize",
+                            getTypeColor(item.tipe)
+                          )}>
+                            {item.tipe}
+                          </span>
+                          <span className="text-xs text-muted-foreground font-mono">
+                            {item.kode}
+                          </span>
+                        </div>
+                      </div>
+                    </CommandItem>
+                  ))}
+                </CommandGroup>
+              )}
+            </CommandList>
+          </Command>
+        </PopoverContent>
+      </Popover>
+
+      {/* Hidden input for form submission */}
+      <input type="hidden" name="domicile" value={value || ""} />
+    </div>
+  );
+}
