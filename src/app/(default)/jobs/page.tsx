@@ -382,38 +382,36 @@ export default function JobsPage() {
   );
 
   const renderJobList = () => (
-    <div className="w-full lg:w-96 xl:w-[400px] flex flex-col gap-6 space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)] no-scrollbar scrollbar-thin">
-      <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-2 ">
-      {/* Show background refetching indicator */}
-      {isFetching && (
-        <div className="p-4 bg-yellow-500/10 text-yellow-700 rounded-lg flex items-center gap-2 text-sm sticky top-0 z-10">
-          <Loader2 className="h-4 w-4 animate-spin" />
-          Refreshing data...
-        </div>
-      )}
-      
-      {filteredJobs.length === 0 ? (
-        <div className="p-6 text-center text-muted-foreground bg-card rounded-xl border border-dashed">
-          <Briefcase className="w-8 h-8 mx-auto mb-2" />
-          <p className="font-semibold">No Jobs Match Your Filters</p>
-          <p className="text-sm">Adjust your filters to see more openings.</p>
-        </div>
-      ) : (
-        filteredJobs.map(job => (
-          <JobCard
-            key={job.id}
-            title={job.title}
-            company={job.companyName || ""}
-            location={job.location || ""}
-            employmentType={job.employmentType || ""}
-            salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}
-            logo={job.company?.logo || "/logo.png"}
-            isActive={selectedJobId === job.id}
-            onClick={() => handleJobSelect(job.id)}
-          />
-        ))
-      )}
+    <div className="flex flex-col gap-6 lg:max-h-[calc(100vh-200px)] lg:overflow-y-auto lg:pr-2 no-scrollbar scrollbar-thin">
+    {/* Show background refetching indicator */}
+    {isFetching && (
+      <div className="p-4 bg-yellow-500/10 text-yellow-700 rounded-lg flex items-center gap-2 text-sm sticky top-0 z-10">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Refreshing data...
       </div>
+    )}
+    
+    {filteredJobs.length === 0 ? (
+      <div className="p-6 text-center text-muted-foreground bg-card rounded-xl border border-dashed">
+        <Briefcase className="w-8 h-8 mx-auto mb-2" />
+        <p className="font-semibold">No Jobs Match Your Filters</p>
+        <p className="text-sm">Adjust your filters to see more openings.</p>
+      </div>
+    ) : (
+      filteredJobs.map(job => (
+        <JobCard
+          key={job.id}
+          title={job.title}
+          company={job.companyName || ""}
+          location={job.location || ""}
+          employmentType={job.employmentType || ""}
+          salary={salaryDisplay(job.salaryMin, job.salaryMax, job.salaryCurrency)}
+          logo={job.company?.logo || "/logo.png"}
+          isActive={selectedJobId === job.id}
+          onClick={() => handleJobSelect(job.id)}
+        />
+      ))
+    )}
     </div>
   );
 
@@ -426,18 +424,13 @@ export default function JobsPage() {
         </Drawer>
 
         {/* 2. Job List */}
-        <div className="col-span-1">
-          {selectedJob? renderJobList() :(
-          <div className="w-full p-8 text-center text-muted-foreground bg-card rounded-xl border border-dashed flex flex-col items-center justify-center h-full">
-            <Briefcase className="w-10 h-10 mb-4" />
-            <p className="text-lg font-semibold">Select a Job</p>
-            <p>Click on a job listing on the left to view details.</p>
-          </div>
-          )} 
+        <div className="w-full lg:w-96 xl:w-[400px] flex flex-col gap-6 space-y-3 pr-2 overflow-y-auto max-h-[calc(100vh-100px)]">
+          {renderJobList()} 
         </div>
 
         {/* 3. Job Detail */}
-        <div className="col-span-1 lg:col-span-1 xl:col-span-1 hidden md:block">
+        <div className="flex-1">
+          {selectedJob? 
           <JobDetail
             title={selectedJob?.title || ""}
             company={selectedJob?.companyName || ""}
@@ -447,6 +440,13 @@ export default function JobsPage() {
             onApply={() => router.push(`/jobs/${selectedJobId}/apply`)}
             salary={ selectedJob? salaryDisplay(selectedJob.salaryMin, selectedJob.salaryMax, selectedJob?.salaryCurrency) : ""} 
             location={selectedJob?.location || ''}          />
+            :(
+          <div className="w-full p-8 text-center text-muted-foreground bg-card rounded-xl border border-dashed flex flex-col items-center justify-center h-full">
+            <Briefcase className="w-10 h-10 mb-4" />
+            <p className="text-lg font-semibold">Select a Job</p>
+            <p>Click on a job listing on the left to view details.</p>
+          </div>
+          )} 
         </div>
       </div>
     </div>
