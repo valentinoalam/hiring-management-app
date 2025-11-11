@@ -284,7 +284,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   // Save captured image
   const handleSave = () => {
     if (capturedImage && onSave) {
-      onSave(capturedImage)
+      onSave(croppedImage ?? capturedImage)
       setMessage("✓ Profile picture saved!")
       setTimeout(() => {
         setCapturedImage(null)
