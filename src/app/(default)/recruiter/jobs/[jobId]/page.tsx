@@ -1,10 +1,10 @@
 // page.tsx
 "use client"
-import { useState, useMemo, useCallback, useEffect, useRef } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import ApplicantsTable from "@/components/job/recruiter/applicants-table";
 import { Button } from "@/components/ui/button";
 import { useJobDetail } from "@/hooks/queries/job-queries";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
@@ -12,22 +12,21 @@ import { useApplicationFormFields } from '@/hooks/queries/application-queries';
 import { ApplicationStatus, Applicant } from '@/types/job';
 import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants';
 import NoApplicantsHero from '@/components/job/recruiter/no-applicant';
+import Loading from '@/components/layout/loading';
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>()
   const [selectedApplicants, setSelectedApplicants] = useState<string[]>([]);
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL');
   const [useMock, setUseMock] = useState<boolean>(false)
-  // All data fetching happens in the page component
-  const { data: job, isLoading: isLoadingJob, isError: isJobError, error: jobError } = useJobDetail(params.jobId);
 
+  const { data: job, isLoading: isLoadingJob, isError: isJobError, error: jobError } = useJobDetail(params.jobId);
   const { 
     data: applicantsResponse, 
     isLoading: isLoadingApplicants, 
     isError: isApplicantsError,
     error: applicantsError 
   } = useJobApplicants(params.jobId);
-
   const { 
     data: applicationFormFields = [], 
     isLoading: isLoadingFormFields,
@@ -40,7 +39,7 @@ export default function JobApplicantsPage() {
 
   // Memoized data transformations
   const applicants = useMemo(() => applicantsResponse?.applicants || [], [applicantsResponse]);
-    console.log(applicants)
+
   const visibleFields = useMemo(() => {
     return applicationFormFields
       .filter((field: { fieldState: string }) => field.fieldState !== 'off')
@@ -101,19 +100,12 @@ export default function JobApplicantsPage() {
   const applicantData = applicantsWithMatchRates && applicantsWithMatchRates.length > 1 ?
     applicantsWithMatchRates: mockApplicants;
   // Loading state
-  if (isLoadingJob || isLoadingApplicants || isLoadingFormFields) {
-    return (
-      <div className="container mx-auto p-6">
-        <div className="flex items-center justify-center py-12">
-          <Loader2 className="h-8 w-8 animate-spin text-blue-600 mx-auto mb-4" />
-          <p className="text-gray-600">Loading applicants data...</p>
-        </div>
-      </div>
-    );
+  if (isLoadingJob || isLoadingApplicants || isLoadingFormFields || !job) {
+    return <Loading message='Loading applicants data' />;
   }
 
   // Error states
-  if (isJobError || !job) {
+  if (isJobError) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-12 text-red-600">

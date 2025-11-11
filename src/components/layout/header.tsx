@@ -45,12 +45,6 @@ export default function Header() {
     return (
       <Breadcrumb>
         <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink asChild>
-              <Link href="../">Back</Link>
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          
           {pathSegments.filter((_, index)=>{
             const isLast = index === pathSegments.length - 1;
             const isFirst = index === 0;
@@ -62,14 +56,17 @@ export default function Header() {
               .map(word => word.charAt(0).toUpperCase() + word.slice(1))
               .join(' ');
             const isLast = index ===  1;
+            const isFirst = index === 0;
             return (
               <React.Fragment key={segment}>
-                <BreadcrumbSeparator />
+                {isFirst? null : (
+                  <BreadcrumbSeparator />
+                )}
                 <BreadcrumbItem >
                   {pathname.startsWith("/recruiter/jobs/") && isLast? (
-                    <BreadcrumbPage className="block border my-1 px-2 h-8 content-center border-neutral-50 bg-neutral-30 rounded-xl">Manage Candidate</BreadcrumbPage>
+                    <BreadcrumbPage className="block border my-1 px-2 h-8 content-center font-bold text-neutral-100 border-neutral-50 bg-neutral-30 rounded-xl">Manage Candidate</BreadcrumbPage>
                   ) : (
-                    <BreadcrumbLink className="border my-1 px-2 h-8 block content-center border-neutral-40 bg-neutral-10 rounded-xl" asChild>
+                    <BreadcrumbLink className="border my-1 px-2 h-8 block content-center font-bold text-neutral-100 border-neutral-40 bg-neutral-10 rounded-xl" asChild>
                       <Link href={href}>{displaySegment}</Link>
                     </BreadcrumbLink>
                   )}
@@ -154,9 +151,9 @@ export default function Header() {
   };
 
   
-
+  // shadow-[0px_4px_8px_rgba(0,0,0,0.1)]
   return (
-    <header className="h-16 border-neutral-40 sticky top-0 z-40 border-b bg-background shadow-[0px_4px_8px_rgba(0,0,0,0.1)]">
+    <header className="h-16 border-neutral-40 sticky top-0 z-40 border-b bg-background">
       <div className="container flex h-14 items-center justify-between px-4 md:px-6">
         {/* 💡 Left side: Breadcrumbs */}
         {showBreadcrumb ?

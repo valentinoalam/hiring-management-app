@@ -6,19 +6,14 @@ import { useJobDetail } from '@/hooks/queries/job-queries';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
-import { useSession } from 'next-auth/react';
 import { useEffect } from 'react';
+import { useAuthStore } from '@/stores/auth-store';
 
 export default function JobApplicationPage() {
   const params = useParams();
   const jobId = Array.isArray(params.jobId) ? params.jobId[0] : params.jobId as string;
   const router = useRouter();
-  const { data: session, status } = useSession();
-  useEffect(() => {
-    if(status && status === "unauthenticated") 
-      router.push('/login');
-    }, [router, session, status])
-  const user = session?.user;
+  const { user } = useAuthStore()
   const userId = user?.id;
 
   // Fetch job details

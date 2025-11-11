@@ -21,7 +21,7 @@ const NoApplicantsHero = ({onUseMock}: {onUseMock: () => void}) => {
       <Button variant={'outline'} onClick={onUseMock}
         className="absolute top-5 right-5 flex items-center justify-center text-s font-medium leading-7 transition-colors active:bg-secondary-pressed text-neutral-80 rounded-lg"
       >
-        View Mock data
+        Mock data View
       </Button>
     </div>
 

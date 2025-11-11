@@ -29,6 +29,28 @@
   scrollbar-width: none; /* Firefox */
 }
 
+@utility draggable-scroll {
+  cursor: grab;
+  user-select: none;
+  &:active {
+    cursor: grabbing;
+  }
+}
+
+@utility draggable-scroll-container {
+  scroll-behavior: smooth;
+  -webkit-overflow-scrolling: touch;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar  {
+    display: none;
+  }
+  .dragging {
+    cursor: grabbing !important;
+    user-select: none !important;
+  }
+}
+
 
 @layer base {
   /* Text XS */
@@ -202,15 +224,6 @@
     @apply bg-neutral-30 text-neutral-60 cursor-not-allowed;
   }
 
-  /* Hover states */
-  .hover-bg-neutral-20:hover {
-    @apply bg-neutral-20;
-  }
-
-  /* Active/Pressed states */
-  .active-bg-neutral-30:active {
-    @apply bg-neutral-30;
-  }
 
   /* Dividers */
   .divider {
@@ -224,11 +237,6 @@
   /* Cards and containers */
   .card {
     @apply bg-neutral-10 border border-neutral-40;
-  }
-
-  /* Secondary backgrounds */
-  .bg-secondary {
-    @apply bg-neutral-20;
   }
 
   input[type="text"],
@@ -260,3 +268,4 @@
     @apply shadow-[0_1px_2px_rgba(0,0,0,0.12)]
   }
 }
+

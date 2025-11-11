@@ -1,4 +1,3 @@
-// applicants-table.tsx
 'use client';
 
 import { useMemo, useState, useEffect } from 'react';
@@ -20,6 +19,8 @@ import {
   closestCenter,
   DragStartEvent,
   DragEndEvent,
+  DragMoveEvent,
+  PointerSensor,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -62,9 +63,9 @@ import {
   GripVertical,
   Linkedin,
 } from 'lucide-react';
-
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { ApplicationStatus, Applicant, AppFormField, Candidate } from '@/types/job';
+// import { useWindowSize } from '@/hooks/useWindowSize';
 
 // Constants
 const STATUS_COLORS: Record<ApplicationStatus, string> = {
@@ -112,26 +113,32 @@ const SortableTableHeader = ({ header, children }: {
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: header.column.id,
+    data: {
+      type: 'Column',
+      columnId: header.column.id,
+    },
   });
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isDragging ? 0.5 : 1,
+    cursor: isDragging ? 'grabbing' : 'auto',
   };
 
   return (
     <TableHead
       ref={setNodeRef}
       style={style}
-      className="relative group cursor-move"
+      className="relative group cursor-move select-none"
       colSpan={header.colSpan}
     >
       <div className="flex items-center space-x-2">
         <div
           {...attributes}
           {...listeners}
-          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded"
+          onClick={(e) => e.stopPropagation()}
+          className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-gray-100 rounded cursor-grab"
         >
           <GripVertical className="h-3 w-3 text-gray-400" />
         </div>
@@ -181,7 +188,7 @@ export default function ApplicantsTable({
   isPerformingBulkAction = false,
   jobTitle = "this position",
   totalApplicants = 0,
-  isFetching,
+  // isFetching,
   onSelectAll,
   onSelectApplicant,
   onStatusChange,
@@ -190,6 +197,7 @@ export default function ApplicantsTable({
 }: ApplicantsTableProps) {
   const [activeColumn, setActiveColumn] = useState<string | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [scrollContainer, setScrollContainer] = useState<HTMLElement | null>(null);
 
   useEffect(() => {
     setIsMounted(true);
@@ -388,15 +396,29 @@ export default function ApplicantsTable({
 
   // Use columnIds as fallback during initial render
   const activeColumnOrder = columnOrder.length > 0 ? columnOrder : columnIds;
-
+  
   // DnD Sensors
   const sensors = useSensors(
-    useSensor(MouseSensor, {}),
-    useSensor(TouchSensor, {}),
-    useSensor(KeyboardSensor, {})
+    useSensor(MouseSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: {
+        delay: 250,
+        tolerance: 5,
+      },
+    }),
+    useSensor(KeyboardSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8, // Only activate if moved 8px - prevents accidental drags
+      },
+    })
   );
 
-  // React Table instance
+
   // eslint-disable-next-line react-hooks/incompatible-library
   const table = useReactTable({
     data: applicants,
@@ -409,19 +431,44 @@ export default function ApplicantsTable({
   });
 
   // Drag handlers
+  
+  const handleDragMove = (event: DragMoveEvent) => {
+    const { active, delta } = event;
+    
+    // If dragging a column, don't pan
+    if (active.data.current?.sortable) {
+      return;
+    }
+    
+    // const scrollContainer = document.querySelector('.draggable-scroll-container') as HTMLElement;
+    
+    if (scrollContainer) {
+      scrollContainer.scrollLeft -= delta.x * 1.5;
+    }
+  };
   const handleDragStart = (event: DragStartEvent) => {
-    setActiveColumn(event.active.id as string);
+    const { active } = event;
+    
+    // Set active column for column reordering
+    if (active.data.current?.sortable) {
+      setActiveColumn(active.id as string);
+    }
   };
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
-    if (active && over && active.id !== over.id) {
-      setColumnOrder((currentOrder) => {
-        const oldIndex = currentOrder.indexOf(active.id as string);
-        const newIndex = currentOrder.indexOf(over.id as string);
-        return arrayMove(currentOrder, oldIndex, newIndex);
-      });
+    
+    // Handle column reordering
+    if (active.data.current?.sortable && over) {
+      if (active.id !== over.id) {
+        setColumnOrder((currentOrder) => {
+          const oldIndex = currentOrder.indexOf(active.id as string);
+          const newIndex = currentOrder.indexOf(over.id as string);
+          return arrayMove(currentOrder, oldIndex, newIndex);
+        });
+      }
     }
+    
     setActiveColumn(null);
   };
 
@@ -533,9 +580,12 @@ export default function ApplicantsTable({
       </div>
 
       {/* Table with DnD */}
-      <div className="overflow-x-auto">
+      <div ref={setScrollContainer}
+        className="overflow-x-auto w-full draggable-scroll-container draggable-scroll"
+      >
         <DndContext
           sensors={sensors}
+          onDragMove={handleDragMove}
           collisionDetection={closestCenter}
           onDragStart={handleDragStart}
           onDragEnd={handleDragEnd}

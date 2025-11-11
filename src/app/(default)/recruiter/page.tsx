@@ -3,7 +3,6 @@
 
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import { Loader2, X } from 'lucide-react';
 
 // 💡 Import TanStack Query hooks
@@ -13,17 +12,14 @@ import JobList from '@/components/job/recruiter/job-list';
 import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal';
 import { toast } from 'sonner';
 import NoJobsHero from '@/components/job/no-job';
+import Loading from '@/components/layout/loading';
+import { useAuthStore } from '@/stores/auth-store';
 
 export default function RecruiterJobsPage() {
   const router = useRouter();
-  const { data: session, status } = useSession();
+  const { user } = useAuthStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
-  if(status === "unauthenticated") {
-    router.push('/login');
-  }
-  if(status === "authenticated" && session?.user?.role !== "RECRUITER") {
-    router.push('/');
-  }
+
   const { 
     data, 
     isLoading: isJobsLoading,
@@ -86,10 +82,9 @@ export default function RecruiterJobsPage() {
   }, [createJob]);
   
   // --- Role Check and Redirect ---
-  const userRole = session?.user?.role;
-  const loading = status === 'loading' || isJobsLoading
+  const userRole = user?.role;
 
-  if (!session || userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
+  if (userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
     router.push('/login?callbackUrl=/recruiter');
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
@@ -131,16 +126,11 @@ export default function RecruiterJobsPage() {
     );
   }
 
-  if (loading || !allJobs) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Loading data...</p>
-      </div>
-    );
+  if (isJobsLoading || !allJobs) {
+    return <Loading message='Loading data' />;
   }
 
-  if (!loading && allJobs && allJobs.length === 0) {
+  if (!isJobsLoading && allJobs && allJobs.length === 0) {
     return <NoJobsHero onCreateJob={() => setShowCreateModal(true)} />;
   }
 

@@ -11,6 +11,7 @@ import Drawer from '@/components/custom-ui/drawer';
 import JobDetail from '@/components/job/job-seeker/JobDetail';
 import JobCard from '@/components/job/job-seeker/JobCard';
 import NoJobsHero from '@/components/job/no-job';
+import Loading from '@/components/layout/loading';
 
 // --- Type Definitions ---
 
@@ -285,12 +286,7 @@ export default function JobsPage() {
   // --- Loading State ---
   // Only show loading if there's no cached data at all
   if (isLoading || !allJobs) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Fetching latest job openings...</p>
-      </div>
-    );
+    return <Loading message='Fetching latest job openings' />;
   }
 
   // --- Render Functions ---
