@@ -29,7 +29,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
   // const [isSaving, setIsSaving] = useState(false)
   // const [gestureTimeout, setGestureTimeout] = useState<NodeJS.Timeout | null>(null)
   // const [isGestureDetected, setIsGestureDetected] = useState(false)
-  const [enableBackgroundBlur, setEnableBackgroundBlur] = useState(true)
+  // const [enableBackgroundBlur, setEnableBackgroundBlur] = useState(true)
   const [faceDetected, setFaceDetected] = useState(false)
   const [isDebug, setIsDebug] = useState(true)
   const { handPose, isLoading: handLoading, error: handError } = useHandGestureDetection(
@@ -45,6 +45,9 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
       if (!faceDetected) {
         setFaceDetected(true)
         setMessage("Face detected! Now show 1 finger to start sequence...")
+          setTimeout(() => {
+          setMessage(""); // Reset the message to an empty string (or a default message like "Waiting...")
+        }, 3000);
       }
     } else {
       if (faceDetected) {
@@ -52,7 +55,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
         setMessage("Please position your face in the camera view")
       }
     }
-  }, [faceDetection, faceDetected])
+  }, [faceDetection, faceDetected, gestureSequence])
 
   // Auto-start camera when component mounts
   useEffect(() => {
@@ -125,224 +128,112 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
 
   // Improved capture and crop photo with face detection
   const capturePhoto = useCallback(() => {
-    if (!videoRef.current || !canvasRef.current || !cropCanvasRef.current || isCapturing) {
-      return
-    }
+      if (!videoRef.current || !canvasRef.current || !cropCanvasRef.current || isCapturing) {
+        return
+      }
 
-    setIsCapturing(true)
-    const context = canvasRef.current.getContext("2d")
-    const cropContext = cropCanvasRef.current.getContext("2d")
-    
-    if (context && cropContext) {
-      const video = videoRef.current
-      const videoWidth = video.videoWidth
-      const videoHeight = video.videoHeight
+      setIsCapturing(true)
+      const context = canvasRef.current.getContext("2d")
+      const cropContext = cropCanvasRef.current.getContext("2d")
       
-      // Set canvas to video dimensions
-      canvasRef.current.width = videoWidth
-      canvasRef.current.height = videoHeight
-      
-      // Draw original image
-      context.drawImage(video, 0, 0, videoWidth, videoHeight)
-      const originalImageData = canvasRef.current.toDataURL("image/jpeg")
-      setCapturedImage(originalImageData)
+      if (context && cropContext) {
+        const video = videoRef.current
+        const videoWidth = video.videoWidth
+        const videoHeight = video.videoHeight
+        
+        // Set canvas to video dimensions
+        canvasRef.current.width = videoWidth
+        canvasRef.current.height = videoHeight
+        
+        // Draw original image
+        context.drawImage(video, 0, 0, videoWidth, videoHeight)
+        const originalImageData = canvasRef.current.toDataURL("image/jpeg")
+        setCapturedImage(originalImageData)
 
-      // Crop to face if detected
-      if (faceDetection && faceDetection.confidence > 0.5) {
-        const faceBox = faceDetection.boundingBox
-        
-        // Calculate optimal crop area with better proportions
-        const faceWidth = faceBox.width * videoWidth
-        const faceHeight = faceBox.height * videoHeight
-        const faceCenterX = (faceBox.x + faceBox.width / 2) * videoWidth
-        const faceCenterY = (faceBox.y + faceBox.height / 2) * videoHeight
-        
-        // Use face dimensions to determine crop size
-        // Aim for a portrait-style crop that includes head and shoulders
-        const faceSize = Math.max(faceWidth, faceHeight)
-        const cropSize = {
-          width: faceSize * 2.2,  // Wider to include shoulders
-          height: faceSize * 2.8  // Taller to include hair and upper body
-        }
-        
-        // Calculate crop coordinates ensuring we stay within video bounds
-        const cropX = Math.max(0, faceCenterX - cropSize.width / 2)
-        const cropY = Math.max(0, faceCenterY - cropSize.height * 0.4) // Position face higher in frame
-        
-        // Ensure crop doesn't exceed video dimensions
-        const actualCropWidth = Math.min(cropSize.width, videoWidth - cropX)
-        const actualCropHeight = Math.min(cropSize.height, videoHeight - cropY)
-        
-        // Target avatar size
-        const avatarSize = 400 // Larger for better quality
-        
-        // Create temporary canvas for processing
-        const tempCanvas = document.createElement('canvas')
-        const tempContext = tempCanvas.getContext('2d')
-        
-        if (tempContext) {
-          // Set temp canvas to crop dimensions
-          tempCanvas.width = actualCropWidth
-          tempCanvas.height = actualCropHeight
+        // Crop to face if detected
+        if (faceDetection && faceDetection.confidence > 0.5) {
+          const faceBox = faceDetection.boundingBox
           
-          // Draw cropped area to temp canvas
-          tempContext.drawImage(
-            video,
-            cropX, cropY, actualCropWidth, actualCropHeight,
-            0, 0, actualCropWidth, actualCropHeight
-          )
+          // 1. Calculate face dimensions and center in video pixels
+          const faceWidth = faceBox.width * videoWidth
+          const faceHeight = faceBox.height * videoHeight
+          const faceCenterX = (faceBox.x + faceBox.width / 2) * videoWidth
+          const faceCenterY = ((faceBox.y + faceBox.height / 2) * videoHeight)-150 
+          
+          // 2. Determine the optimal square size (S x S)
+          // INCREASED FACTOR: Scaling up to 2.6x to give more space around the face/shoulders.
+          const baseSize = Math.max(faceWidth, faceHeight)
+          const desiredSquareSize = baseSize * 2.6 
+
+          // 3. Define the desired vertical placement (Head Padding)
+          // ADJUSTED RATIO: We want the face center to be approximately 30% down from the top edge of the square,
+          // leaving 70% for the face/body below and maximizing space above the head.
+          const topMarginRatio = 0.30 // Adjusted for more top space
+          const verticalShift = topMarginRatio * desiredSquareSize 
+
+          // 4. Calculate the ideal crop coordinates (Top-Left corner of the S x S box)
+          const halfSquare = desiredSquareSize / 2
+          
+          // Horizontal (X): Center the face box within the square crop
+          const idealCropX = faceCenterX - halfSquare
+          
+          // Vertical (Y): Calculate the top edge based on the desired vertical shift
+          const idealCropY = faceCenterY - verticalShift
+          
+          // 5. Ensure the crop box stays within the video boundaries (Video Clamping)
+          let actualCropSize = desiredSquareSize
+          let cropX = idealCropX
+          let cropY = idealCropY
+          
+          // If the video is too small for the desired square, use the largest possible square centered in the video
+          if (desiredSquareSize > videoWidth || desiredSquareSize > videoHeight) {
+              actualCropSize = Math.min(videoWidth, videoHeight);
+              cropX = (videoWidth - actualCropSize) / 2;
+              cropY = (videoHeight - actualCropSize) / 2;
+              // Note: In this fallback, the custom head-padding is lost, prioritizing fitting the frame.
+          } else {
+              // Video is large enough, enforce the desired face positioning and clamp to edges if necessary.
+
+              // Clamp X: Cannot be negative, cannot exceed videoWidth on the right side
+              cropX = Math.max(0, cropX);
+              cropX = Math.min(cropX, videoWidth - actualCropSize);
+
+              // Clamp Y: Cannot be negative, cannot exceed videoHeight on the bottom side
+              cropY = Math.max(0, cropY);
+              cropY = Math.min(cropY, videoHeight - actualCropSize);
+          }
+
+          // --- Execute Cropping and Scaling ---
+          
+          // Target avatar size (e.g., 400x400)
+          const avatarSize = 400 
           
           // Set final avatar canvas size (square)
           cropCanvasRef.current.width = avatarSize
           cropCanvasRef.current.height = avatarSize
-          
-          // Calculate aspect ratio and positioning for square crop
-          const sourceAspect = actualCropWidth / actualCropHeight
-          const targetAspect = 1 // Square
-          
-          let drawWidth, drawHeight, offsetX, offsetY
-          
-          if (sourceAspect > targetAspect) {
-            // Source is wider - crop horizontally
-            drawHeight = actualCropHeight
-            drawWidth = drawHeight * targetAspect
-            offsetX = (actualCropWidth - drawWidth) / 2
-            offsetY = 0
-          } else {
-            // Source is taller - crop vertically
-            drawWidth = actualCropWidth
-            drawHeight = drawWidth / targetAspect
-            offsetX = 0
-            offsetY = (actualCropHeight - drawHeight) / 3 // Keep face centered vertically
-          }
-          
-          // Apply background blur if requested
-          if (true) { // You can make this a state variable
-            applyBackgroundBlur(tempCanvas, cropContext, avatarSize, {
-              x: offsetX, y: offsetY, width: drawWidth, height: drawHeight
-            }, faceBox)
-          } else {
-            // Draw without blur
-            cropContext?.drawImage(
-              tempCanvas,
-              offsetX, offsetY, drawWidth, drawHeight,
-              0, 0, avatarSize, avatarSize
-            )
-          }
+
+          // Draw the square-cropped area from the video (source)
+          // and scale it directly to the final avatar size (destination).
+          cropContext?.drawImage(
+            video,
+            // Source (S x S region from the video)
+            cropX, cropY, actualCropSize, actualCropSize,
+            // Destination (Scaled to the avatarSize on the cropCanvas)
+            0, 0, avatarSize, avatarSize
+          )
           
           const croppedImageData = cropCanvasRef.current.toDataURL("image/jpeg")
           setCroppedImage(croppedImageData)
+        } else {
+          // Fallback: use original image if no face detected
+          setCroppedImage(originalImageData)
         }
-      } else {
-        // Fallback: use original image if no face detected
-        setCroppedImage(originalImageData)
-      }
 
-      setMessage("✓ Photo captured! Review and save.")
-      stopCamera()
-      setIsCapturing(false)
-    }
+        setMessage("✓ Photo captured! Review and save.")
+        stopCamera()
+        setIsCapturing(false)
+      }
   }, [faceDetection, isCapturing])
-
-  // Background blur function
-  function applyBackgroundBlur(
-    sourceCanvas: HTMLCanvasElement,
-    targetContext: CanvasRenderingContext2D,
-    avatarSize: number,
-    cropArea: { x: number; y: number; width: number; height: number },
-    faceBox: { x: number; y: number; width: number; height: number }
-  ) {
-    const tempBlurCanvas = document.createElement('canvas')
-    const blurContext = tempBlurCanvas.getContext('2d')
-    
-    if (!blurContext) return
-    
-    // Set blur canvas size
-    tempBlurCanvas.width = sourceCanvas.width
-    tempBlurCanvas.height = sourceCanvas.height
-    
-    // Draw original image to blur canvas
-    blurContext.drawImage(sourceCanvas, 0, 0)
-    
-    // Apply blur to the entire image
-    blurContext.filter = 'blur(8px)'
-    blurContext.drawImage(sourceCanvas, 0, 0)
-    blurContext.filter = 'none'
-    
-    // Draw the sharp face area back onto the blurred background
-    const facePadding = 0.1 // Add some padding around face
-    const faceX = (faceBox.x * sourceCanvas.width) - (faceBox.width * sourceCanvas.width * facePadding)
-    const faceY = (faceBox.y * sourceCanvas.height) - (faceBox.height * sourceCanvas.height * facePadding)
-    const faceWidth = faceBox.width * sourceCanvas.width * (1 + facePadding * 2)
-    const faceHeight = faceBox.height * sourceCanvas.height * (1 + facePadding * 2)
-    
-    // Draw sharp face area
-    blurContext.drawImage(
-      sourceCanvas,
-      faceX, faceY, faceWidth, faceHeight,
-      faceX, faceY, faceWidth, faceHeight
-    )
-    
-    // Draw the final result to target canvas
-    targetContext.drawImage(
-      tempBlurCanvas,
-      cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-      0, 0, avatarSize, avatarSize
-    )
-  }
-
-  // Alternative simpler blur function (faster performance)
-  function applySimpleBackgroundBlur(
-    sourceCanvas: HTMLCanvasElement,
-    targetContext: CanvasRenderingContext2D,
-    avatarSize: number,
-    cropArea: { x: number; y: number; width: number; height: number }
-  ) {
-    // Create two temporary canvases for blur effect
-    
-    let blurCanvas1 = document.createElement('canvas') as HTMLCanvasElement
-    let blurCanvas2 = document.createElement('canvas') as HTMLCanvasElement
-    let blurCtx1 = blurCanvas1.getContext('2d') as CanvasRenderingContext2D
-    let blurCtx2 = blurCanvas2.getContext('2d') as CanvasRenderingContext2D
-    
-    if (!blurCtx1 || !blurCtx2) return
-    
-    // Set canvas sizes
-    blurCanvas1.width = sourceCanvas.width
-    blurCanvas1.height = sourceCanvas.height
-    blurCanvas2.width = sourceCanvas.width
-    blurCanvas2.height = sourceCanvas.height
-    
-    // Draw original to first blur canvas
-    blurCtx1.drawImage(sourceCanvas, 0, 0)
-    
-    // Apply multiple passes of box blur for better effect
-    for (let i = 0; i < 2; i++) {
-      blurCtx2.drawImage(blurCanvas1, 0, 0)
-      blurCtx2.filter = 'blur(4px)'
-      blurCtx2.drawImage(blurCanvas1, 0, 0)
-      if (blurCtx2) {
-        // If blurCtx2 is a CanvasRenderingContext2D, it has the 'filter' property.
-        blurCtx2.filter = 'none'; 
-      }
-      
-      // Swap canvases for next pass
-      const tempCanvas = blurCanvas1
-      blurCanvas1 = blurCanvas2
-      blurCanvas2 = tempCanvas
-      
-      const tempCtx = blurCtx1
-      blurCtx1 = blurCtx2
-      blurCtx2 = tempCtx
-    }
-    
-    // Draw final blurred image to target
-    targetContext.drawImage(
-      blurCanvas1,
-      cropArea.x, cropArea.y, cropArea.width, cropArea.height,
-      0, 0, avatarSize, avatarSize
-    )
-  }
 
   // Monitor hand gesture sequence with improved detection
   useEffect(() => {
@@ -445,7 +336,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                 Restart
               </Button>
               {/* Blur Toggle */}
-              <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
+              {/* <div className="flex items-center justify-between gap-2 bg-gray-50 dark:bg-gray-800 rounded-lg">
                 <span className="text-sm text-gray-700 dark:text-gray-300">Bg Blur</span>
                 <label className="relative inline-flex items-center cursor-pointer">
                   <input 
@@ -456,7 +347,7 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
                   />
                   <div className="w-8 h-4 bg-gray-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary-border rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0 after:left-0 after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all dark:border-gray-600 peer-checked:bg-primary"></div>
                 </label>
-              </div>
+              </div> */}
             </div>
           <div className="relative w-full aspect-3/2 bg-black max-h-[400px] overflow-hidden rounded-lg">
             {!capturedImage ? (
@@ -586,9 +477,6 @@ export function GestureProfileCapture({ onSave, onClose }: GestureProfileCapture
               </>
             ) : (
               <div className="w-full h-full flex flex-col">
-                <div className="text-sm text-white bg-black bg-opacity-50 p-2 text-center">
-                  {croppedImage ? "Cropped Avatar" : "Original Photo"}
-                </div>
                 <Image 
                   width={300} 
                   height={300}
