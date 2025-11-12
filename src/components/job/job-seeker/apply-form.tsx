@@ -553,7 +553,6 @@ export default function JobApplicationForm({
     try {
       const formDataToSubmit = prepareFormData(formData);
       await onSubmit(formDataToSubmit);
-      router.push('/jobs/success');
     } catch (error) {
       console.error('Application submission error:', error);
       throw error;

@@ -5,6 +5,7 @@ import { queryKeys } from '@/lib/query-keys';
 import { apiFetch } from "@/lib/api";
 import { Application } from "@prisma/client";
 import { Profile } from '@/types/user';
+import { useRouter } from "next/navigation";
 
 const submitJobApplication = async ({
   jobId,
@@ -147,11 +148,20 @@ export const useUpdateProfile = () => {
 
 export const useSubmitJobApplication = (jobId: string) => {
   const queryClient = useQueryClient();
-
+  const router = useRouter();
   return useMutation({
     mutationFn: (formData: FormData) => submitJobApplication({ jobId, applicationData: formData }),
     onSuccess: (result) => {
       console.log('Application submission result:', result);
+      const applicantId = result.application?.applicantId || result.application?.applicant?.id;
+      
+      if (applicantId) {
+        // Redirect to success page with applicantId
+        router.push(`/${applicantId}/success`);
+      } else {
+        console.error('No applicantId found in response');
+        router.push('/'); // Fallback
+      }
       
       // Safe data access with proper null checks
       const application = result?.application;

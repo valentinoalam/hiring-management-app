@@ -58,7 +58,26 @@ export async function POST(
     // Start transaction
     const result = await processApplication(applicationModel, userProfile)
 
-    return NextResponse.json(result, { status: 201 });
+    return NextResponse.json({
+      success: true,
+      application: {
+        id: result.application.id,
+        jobId: result.application.jobId,
+        applicantId: result.application.applicantId,
+        status: result.application.status,
+        applicant: {
+          id: userProfile.id,
+          userId: session.user.id,  // for invalidation
+          fullname: userProfile.fullname,
+          email: userProfile.email,
+          phone: userProfile.phone,
+        },
+        job: result.application.job,
+      },
+      // Include other data if needed
+      profile: result.profile,
+      updatedFields: result.updatedFields,
+    }, { status: 201 });
   } catch (error) {
     console.error('Error submitting job application:', error);
     
@@ -244,9 +263,9 @@ async function processApplication(transformedData: any, userProfile: any) {
         updatedFields: Object.keys(cleanProfileUpdates),
         coverLetterType: coverLetterFileUrl ? 'file' : 'text', // For debugging
       };
-    } catch (error) {
-      console.error('Error in processApplication transaction:', error);
-      throw error;
+    } catch (err) {
+      console.error('Error in processApplication transaction:', err);
+      throw err;
     }
   });
 }
@@ -278,19 +297,19 @@ function transformFormDataToApplicationModel(formData: FormData, jobId: string, 
     
     try {
       formDataJson = JSON.parse(formDataJsonStr);
-    } catch (error) {
+    } catch {
       throw new Error('Invalid JSON in formData field');
     }
     
     try {
       profileUpdates = JSON.parse(profileUpdatesStr);
-    } catch (error) {
+    } catch {
       throw new Error('Invalid JSON in profileUpdates field');
     }
     
     try {
       userInfoUpdates = JSON.parse(userInfoUpdatesStr);
-    } catch (error) {
+    } catch {
       throw new Error('Invalid JSON in userInfoUpdates field');
     }
 
