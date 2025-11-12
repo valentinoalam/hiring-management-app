@@ -12,7 +12,7 @@ import {
 } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useForm, useWatch } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
@@ -288,7 +288,6 @@ export default function JobApplicationForm({
     register,
     handleSubmit,
     setValue,
-    watch,
     control,
     formState: { errors, isSubmitting, isValid },
   } = useForm<ApplicationFormData>({
@@ -296,7 +295,6 @@ export default function JobApplicationForm({
     mode: 'onChange',
   });
   const formValues = useWatch({ control });
-  const domicileValue = watch("domicile");
   // Pre-fill form with existing profile data
   useEffect(() => {
     if (profile && appFormFields.length > 0) {
@@ -1072,27 +1070,7 @@ export default function JobApplicationForm({
                     Phone Number
                     <span className="text-danger-main">*</span>
                   </FieldLabel>
-                  <PhoneInput />
-                  {/* <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
-                    <div className="flex items-center gap-1 px-4 border-r border-neutral-40">
-                      <div className="w-4 h-4 rounded-full overflow-hidden border border-neutral-50 bg-gray-200 shrink-0">
-                        <svg viewBox="0 0 16 16" className="w-full h-full">
-                          <rect width="16" height="8" fill="#CE1126" />
-                          <rect y="8" width="16" height="8" fill="#FFF" />
-                        </svg>
-                      </div>
-                      <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
-                    </div>
-                    <span className="flex items-center px-3 text-sm leading-6 text-neutral-90 font-sans border-r border-neutral-40">
-                      +62
-                    </span>
-                    <Input
-                      type="tel"
-                      {...register('phone_number')}
-                      placeholder="81XXXXXXXXX"
-                      className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
-                    />
-                  </div> */}
+                  <PhoneInput {...register('phone_number')} />
                   {errors.phone_number && (
                     <FieldDescription className="text-danger-main">
                       {errors.phone_number.message}
@@ -1164,21 +1142,30 @@ export default function JobApplicationForm({
                 </Field>
 
                 {/* Domicile */}
-                <Field>
-                  <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-                    Domicile
-                    <span className="text-danger-main">*</span>
-                  </FieldLabel>
-                  <WilayahAutocomplete
-                    onChange={(value) => setValue("domicile", value)}
-                    placeholder="Pilih domisili..."
-                  />
-                  {errors.domicile && (
-                    <FieldDescription className="text-danger-main">
-                      {errors.domicile.message}
-                    </FieldDescription>
+                <Controller
+                  name="title"
+                  control={control}
+                  render={({ field, fieldState }) => (
+                    <Field>
+                      <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
+                        Domicile
+                        <span className="text-danger-main">*</span>
+                      </FieldLabel>
+                      <WilayahAutocomplete
+                        value={field.value as string}
+                        onChange={field.onChange}
+                        onBlur={field.onBlur}
+                        placeholder="Pilih domisili..."
+                      />
+                      {errors.domicile && (
+                        <FieldDescription className="text-danger-main">
+                          {errors.domicile.message}
+                        </FieldDescription>
+                      )}
+                    </Field>
                   )}
-                </Field>
+                />
+                
 
                 {/* LinkedIn URL */}
                 <Field className="md:col-span-2">

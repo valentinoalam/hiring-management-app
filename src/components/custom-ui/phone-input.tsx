@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, Search } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import {
   Popover,
   PopoverContent,
@@ -14,6 +14,7 @@ import {
   CommandList,
 } from '@/components/ui/command';
 import Image from 'next/image';
+import { Input } from '../ui/input';
 
 // Helper to construct a free CDN URL based on the ISO code (e.g., US -> https://flagcdn.com/16x12/us.png)
 const getFlagUrl = (code: string) => `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
@@ -26,7 +27,7 @@ interface Country {
   flagUrl: string;
 }
 
-export default function PhoneInput() {
+export default function PhoneInput({ ...props }: React.ComponentProps<"input">) {
   const [countries, setCountries] = useState<Country[]>([]);
   const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
   const [phoneNumber, setPhoneNumber] = useState('');
@@ -128,7 +129,7 @@ export default function PhoneInput() {
               <Image width={16} height={12}
                 src={selectedCountry.flagUrl}
                 alt={`${selectedCountry.name} flag`}
-                className="w-4 h-3 rounded-sm object-cover"
+                className="w-4 h-4 rounded-full overflow-hidden border border-neutral-50 bg-gray-200 shrink-0 object-cover"
               />
             )}
             {/* --- END FLAG IMAGE --- */}
@@ -176,7 +177,7 @@ export default function PhoneInput() {
       </span>
 
       {/* 3. Phone Number Input */}
-      <input
+      <Input {...props}
         type="tel"
         value={phoneNumber}
         onChange={handlePhoneChange}

@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/popover";
 // import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
+import { Input } from "../ui/input";
 
 interface WilayahItem {
   kode: string;
@@ -26,7 +27,10 @@ interface WilayahItem {
   tipe: string;
 }
 
-interface WilayahAutocompleteProps {
+interface WilayahAutocompleteProps extends Omit<
+  React.ComponentProps<'input'>, 
+  'value' | 'onChange' | 'onBlur' | 'disabled' | 'placeholder' | 'className'
+> {
   value?: string;
   onChange?: (value: string) => void;
   onBlur?: () => void;
@@ -42,13 +46,14 @@ export function WilayahAutocomplete({
   disabled = false,
   placeholder = "Pilih domisili...",
   className,
+  ...props
 }: WilayahAutocompleteProps) {
   const [open, setOpen] = React.useState(false);
   const [searchQuery, setSearchQuery] = React.useState("");
   const [results, setResults] = React.useState<WilayahItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<WilayahItem | null>(null);
-
+  // const [domicile, setPhoneNumber] = useState('');
   const debouncedSearch = useDebounce(searchQuery, 300);
 
   // Fetch search results
@@ -87,23 +92,29 @@ export function WilayahAutocomplete({
         setSelectedItem(null);
         return;
       }
-
+      if (selectedItem?.kode === value) {
+        return;
+      }
       // If we have a value but no selected item, try to find it
-      if (value && !selectedItem) {
-        try {
-          const response = await fetch(
-            `/api/wilayah/search?q=${encodeURIComponent(value)}&limit=1`
-          );
-          
-          if (response.ok) {
-            const data = await response.json();
-            if (data.data && data.data.length > 0) {
-              setSelectedItem(data.data[0]);
-            }
+      try {
+        const response = await fetch(
+          // Search by the exact kode to retrieve the full item data
+          `/api/wilayah/search?kode=${encodeURIComponent(value)}&limit=1`
+        );
+        
+        if (response.ok) {
+          const data = await response.json();
+          if (data.data && data.data.length > 0) {
+            // Update selectedItem to reflect the name/tipe of the new kode
+            setSelectedItem(data.data[0]);
+          } else {
+            // If the code is not found, clear the selection
+            setSelectedItem(null);
           }
-        } catch (error) {
-          console.error("Failed to find selected item:", error);
         }
+      } catch (error) {
+        console.error("Failed to find selected item:", error);
+        setSelectedItem(null);
       }
     };
 
@@ -159,9 +170,9 @@ export function WilayahAutocomplete({
                     {getTypeIcon(selectedItem.tipe)}
                   </span>
                   <span className="truncate">{selectedItem.nama}</span>
-                  <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
+                  {/* <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
                     ({selectedItem.kode})
-                  </span>
+                  </span> */}
                 </>
               ) : (
                 <span className="text-muted-foreground">{placeholder}</span>
@@ -208,7 +219,7 @@ export function WilayahAutocomplete({
                   {results.map((item) => (
                     <CommandItem
                       key={item.kode}
-                      value={item.kode}
+                      value={item.nama}
                       onSelect={() => handleSelect(item)}
                       className="flex items-center gap-3 py-3 cursor-pointer"
                     >
@@ -227,7 +238,7 @@ export function WilayahAutocomplete({
                             <Check className="h-4 w-4 shrink-0" />
                           )}
                         </div>
-                        <div className="flex items-center gap-2 mt-1">
+                        {/* <div className="flex items-center gap-2 mt-1">
                           <span className={cn(
                             "text-xs px-2 py-1 rounded-full capitalize",
                             getTypeColor(item.tipe)
@@ -237,7 +248,7 @@ export function WilayahAutocomplete({
                           <span className="text-xs text-muted-foreground font-mono">
                             {item.kode}
                           </span>
-                        </div>
+                        </div> */}
                       </div>
                     </CommandItem>
                   ))}
@@ -249,7 +260,7 @@ export function WilayahAutocomplete({
       </Popover>
 
       {/* Hidden input for form submission */}
-      <input type="hidden" name="domicile" value={value || ""} />
+      <Input type="hidden" name="domicile" value={value || ""} readOnly {...props} />
     </div>
   );
 }
