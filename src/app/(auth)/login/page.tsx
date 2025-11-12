@@ -57,7 +57,6 @@ export default function SignInPage() {
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
   const [error, setError] = useState("")
   const [magicLinkSent, setMagicLinkSent] = useState(false)
-  const [email, setEmail] = useState("")
   const [showAnimation, setShowAnimation] = useState(false)
 
   // Separate forms for each auth method
@@ -81,7 +80,6 @@ export default function SignInPage() {
   async function handleMagicLinkSubmit(values: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError("")
-    setEmail(values.email)
     try {
       const result = await signInMagicLink(values.email, callbackUrl || undefined)
       

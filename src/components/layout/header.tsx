@@ -35,7 +35,6 @@ export default function Header() {
   const showBreadcrumb = isRecruiterPage && !hideHeaderOn.includes(pathname)
   // Filter(Boolean) removes empty strings (e.g., from leading or trailing '/')
   const pathSegments = pathname.split("/").filter(Boolean) 
-  console.log(pathSegments)
   // Use a temporary user object based on the Session structure defined in next-auth.d.ts
   const user = session?.user;
   const isAuthenticated = status === 'authenticated';

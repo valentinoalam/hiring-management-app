@@ -4,7 +4,6 @@
 import { useState, useCallback, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, X } from 'lucide-react';
-
 // 💡 Import TanStack Query hooks
 import { useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
 import { Job } from '@/types/job';
@@ -13,11 +12,8 @@ import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpen
 import { toast } from 'sonner';
 import NoJobsHero from '@/components/job/no-job';
 import Loading from '@/components/layout/loading';
-import { useAuthStore } from '@/stores/auth-store';
 
 export default function RecruiterJobsPage() {
-  const router = useRouter();
-  const { user } = useAuthStore();
   const [showCreateModal, setShowCreateModal] = useState(false);
 
   const { 
@@ -81,20 +77,6 @@ export default function RecruiterJobsPage() {
     });
   }, [createJob]);
   
-  // --- Role Check and Redirect ---
-  const userRole = user?.role;
-
-  if (userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
-    router.push('/login?callbackUrl=/recruiter');
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
-        <X className="h-10 w-10 mb-4" />
-        <p className="text-xl font-bold">Access Denied</p>
-        <p className="mt-2">You must be logged in as a Recruiter to view this page.</p>
-      </div>
-    );
-  }
-
   if (isJobsError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">

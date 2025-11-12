@@ -4,7 +4,6 @@ import { Nunito_Sans } from "next/font/google"
 import "@/styles/globals.css"
 import { generateMetaData } from "@/config/metadata"
 import { auth } from '@/auth'
-import Header from "@/components/layout/header"
 import ClientInitializer from "@/components/layout/providers/ClientInitializer"
 import { QueryProvider } from "@/components/layout/providers/query-provider"
 
