@@ -39,21 +39,11 @@ npm install
 
 ### 3️⃣ Setup environment variables
 cp .env.example .env.local
-Fill in values for:
-```
-    DATABASE_URL=
-    NEXT_PUBLIC_APP_URL=
-    NEXTAUTH_SECRET=
-    NEXTAUTH_URL=
-    GOOGLE_CLIENT_ID=
-    GOOGLE_CLIENT_SECRET=
-    BLOB_READ_WRITE_TOKEN=
-    EMAIL_SERVER_HOST=smtp.gmail.com
-    EMAIL_SERVER_PORT=
-    EMAIL_SERVER_USER=
-    EMAIL_SERVER_PASSWORD=
-    EMAIL_FROM=
-    RESEND_API_KEY=
+ Fill in values for:
+ ```
+ DATABASE_URL=
+ NEXTAUTH_SECRET=
+ NEXTAUTH_URL=http://localhost:3000
 ```
 
 ### 4️⃣ Run Prisma migrations and seed initial data
@@ -133,35 +123,55 @@ Gesture detection simplified to a single “3-finger” pose for UX reliability.
 
 📂 Project Folder Structure
 .
+├── prisma/
+│   ├── schema.prisma
+│   └── seed.ts
+├── src/ (main code)
+├── tests/ (jest test)
+├── public/ (public access assets)
+└── README.md
+
+src
 ├── app/
-│   ├── (admin)/
-│   ├── (applicant)/
+│   ├── (auth)/  [/login, /sign-up, /auth/verify-request, /auth/error]
+│   ├── (default)/  [/jobs, /recruiter, /jobs/[id]/apply, /recruiter/jobs/[id]]
+│   ├── [applicationId]/ [/[applicationId]/success]
 │   ├── api/
 │   └── layout.tsx
 ├── components/
 │   ├── ui/
-│   ├── job/
-│   ├── table/
-│   └── forms/
-├── hooks/
+│   ├── custom-ui  (customized ui form component)
+│   ├── job/   (all main features component)
+│   └── layout/ (all component related to layout)
+├── configs/
+├── data/  (data that saved in json, example: data of location names)
+├── hooks/ 
+│   ├── queries/ (hooks for tanstack queries)
 ├── lib/
+│   ├── api.ts (function for fetch api)
 │   ├── prisma.ts
-│   ├── auth.ts
-│   └── utils.ts
+│   ├── email.ts (send magic mail using nodemailer)
+│   ├── tokens.ts (to generate verify token to verify email)
+│   └── upload.ts (upload file to vercel blob)  
+│   └── utils.ts  (from shadcn, to merge className)
 ├── store/
-│   └── jobStore.ts
-├── prisma/
-│   ├── schema.prisma
-│   └── seed.ts
-├── public/
-└── README.md
+│   └── auth-store.ts (to save user data from auth using zustand)
+├── styles/
+│   └── base.ts (base set up variables for tailwind)
+│   └── global.ts (main tailwind config)
+│   └── theme.ts (custom class)
+├── types/
+│   └── job.ts (job related types)
+│   └── user.ts (user related types)
+├── utils/ (any supported function)
+├── auth.config.ts (configuration for authjs)
+├── auth.ts (main authjs file)
+
+
 
 ## **🧑‍💻 Author**
 
-Your Name
-Frontend Engineer — yourwebsite.com
+Valentino Noor Alam
+Fullstack Engineer — https://tino-karya.vercel.app/
 
-📧 your.email@example.com
-
-🔗 LinkedIn
- · GitHub
+📧 ichikyube@gmail.com [🔗 LinkedIn](https://www.linkedin.com/in/valentinoalam/) [🐙 GitHub](https://github.com/valentinoalam)
