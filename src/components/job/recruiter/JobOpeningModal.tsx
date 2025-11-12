@@ -1,4 +1,3 @@
-
 import { X } from "lucide-react";
 import {
   Dialog,
@@ -31,6 +30,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
 
 // Zod validation schema based on your updated Prisma schema
 const jobFormSchema = z.object({
@@ -73,18 +73,6 @@ interface JobOpeningModalProps {
   onSubmit?: (data: JobFormData) => void;
 }
 
-// Default profile fields based on your InfoField model
-const defaultProfileFields: InfoField[] = [
-  { id: "1", key: "full_name", label: "Full name", fieldType: "text" },
-  { id: "2", key: "photo_profile", label: "Photo Profile", fieldType: "text" },
-  { id: "3", key: "gender", label: "Gender", fieldType: "select" },
-  { id: "4", key: "domicile", label: "Domicile", fieldType: "text" },
-  { id: "5", key: "email", label: "Email", fieldType: "text" },
-  { id: "6", key: "phone_number", label: "Phone number", fieldType: "text" },
-  { id: "7", key: "linkedin_url", label: "LinkedIn URL", fieldType: "text" },
-  { id: "8", key: "date_of_birth", label: "Date of birth", fieldType: "text" },
-];
-
 const fieldStateOptions = ["mandatory", "optional", "off"] as const;
 
 export function JobOpeningModal({
@@ -92,6 +80,9 @@ export function JobOpeningModal({
   onOpenChange,
   onSubmit,
 }: JobOpeningModalProps) {
+  const [infoFields, setInfoFields] = useState<InfoField[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const form = useForm<JobFormData>({
     resolver: zodResolver(jobFormSchema),
     defaultValues: {
@@ -102,13 +93,38 @@ export function JobOpeningModal({
       remotePolicy: "onsite",
       salaryCurrency: "IDR",
       numberOfCandidates: 1,
-      applicationFormFields: defaultProfileFields.map(field => ({
-        fieldId: field.id,
-        label: field.label,
-        fieldState: "mandatory" as const,
-      })),
+      applicationFormFields: [], // Initialize empty, will set after fetch
     },
   });
+
+  // Fetch info fields on component mount
+  useEffect(() => {
+    const fetchInfoFields = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('/api/info-fields');
+        if (response.ok) {
+          const fields = await response.json();
+          setInfoFields(fields);
+          
+          // Set default form values with fetched fields
+          form.setValue("applicationFormFields", fields.map((field: InfoField) => ({
+            fieldId: field.id,
+            label: field.label,
+            fieldState: "mandatory" as const,
+          })));
+        }
+      } catch (error) {
+        console.error('Failed to fetch info fields:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (open) {
+      fetchInfoFields();
+    }
+  }, [open, form]);
 
   const handleSubmit = (data: JobFormData) => {
     // Prepare sections data for JSON storage
@@ -116,12 +132,15 @@ export function JobOpeningModal({
       profile: {
         title: "Profile Information",
         description: "Candidate profile details",
-        fields: data.applicationFormFields.map(field => ({
-          key: defaultProfileFields.find(f => f.id === field.fieldId)?.key,
-          type: "text", // You can map this based on your fieldType
-          validation: field.fieldState === "mandatory" ? "required" : "optional",
-          state: field.fieldState
-        }))
+        fields: data.applicationFormFields.map(field => {
+          const fieldInfo = infoFields.find((f: InfoField) => f.id === field.fieldId);
+          return {
+            key: fieldInfo?.key,
+            type: fieldInfo?.fieldType || "text",
+            validation: field.fieldState === "mandatory" ? "required" : "optional",
+            state: field.fieldState
+          };
+        }).filter(field => field.key) // Remove fields without valid keys
       }
     };
 
@@ -148,6 +167,26 @@ export function JobOpeningModal({
     updatedFields[index] = { ...updatedFields[index], fieldState };
     form.setValue("applicationFormFields", updatedFields);
   };
+
+  // Show loading state
+  if (loading) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-0 rounded-2xl no-scrollbar [&>button]:hidden">
+          <DialogHeader className="sticky top-0 flex flex-row items-center justify-between p-6 border-b border-neutral-40 bg-neutral-10">
+            <DialogTitle className="text-xl font-bold text-neutral-100">Job Opening</DialogTitle>
+            <DialogClose className="text-neutral-90 hover:text-neutral-100">
+              <X className="w-6 h-6" />
+            </DialogClose>
+          </DialogHeader>
+          <div className="p-6 flex justify-center items-center h-32">
+            <div className="text-neutral-60">Loading form fields...</div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -198,7 +237,6 @@ export function JobOpeningModal({
                         onValueChange={(value: "FULL_TIME" | "PART_TIME" | "CONTRACT" | "INTERNSHIP") => 
                           form.setValue("employmentType", value)
                         }
-
                       >
                         <SelectTrigger id="employment-type" className="border-2 border-neutral-40 bg-neutral-10">
                           <SelectValue placeholder="Select employment type" />
@@ -210,6 +248,11 @@ export function JobOpeningModal({
                           <SelectItem value="INTERNSHIP">Internship</SelectItem>
                         </SelectContent>
                       </Select>
+                      {form.formState.errors.employmentType && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.employmentType.message}
+                        </FieldDescription>
+                      )}
                     </Field>
 
                     <Field>
@@ -220,7 +263,6 @@ export function JobOpeningModal({
                         onValueChange={(value: "onsite" | "remote" | "hybrid") => 
                           form.setValue("remotePolicy", value)
                         }
-
                       >
                         <SelectTrigger id="remote-policy" className="border-2 border-neutral-40 bg-neutral-10">
                           <SelectValue />
@@ -231,6 +273,11 @@ export function JobOpeningModal({
                           <SelectItem value="hybrid">Hybrid</SelectItem>
                         </SelectContent>
                       </Select>
+                      {form.formState.errors.remotePolicy && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.remotePolicy.message}
+                        </FieldDescription>
+                      )}
                     </Field>
                   </div>
 
@@ -245,6 +292,11 @@ export function JobOpeningModal({
                         {...form.register("location")}
                         className="border-2 border-neutral-40 bg-neutral-10"
                       />
+                      {form.formState.errors.location && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.location.message}
+                        </FieldDescription>
+                      )}
                     </Field>
 
                     <Field>
@@ -257,6 +309,11 @@ export function JobOpeningModal({
                         {...form.register("department")}
                         className="border-2 border-neutral-40 bg-neutral-10"
                       />
+                      {form.formState.errors.department && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.department.message}
+                        </FieldDescription>
+                      )}
                     </Field>
                   </div>
 
@@ -280,6 +337,11 @@ export function JobOpeningModal({
                           <SelectItem value="executive">Executive</SelectItem>
                         </SelectContent>
                       </Select>
+                      {form.formState.errors.experienceLevel && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.experienceLevel.message}
+                        </FieldDescription>
+                      )}
                     </Field>
 
                     <Field>
@@ -301,6 +363,11 @@ export function JobOpeningModal({
                           <SelectItem value="phd">PhD</SelectItem>
                         </SelectContent>
                       </Select>
+                      {form.formState.errors.educationLevel && (
+                        <FieldDescription className="text-danger-main">
+                          {form.formState.errors.educationLevel.message}
+                        </FieldDescription>
+                      )}
                     </Field>
                   </div>
                 </FieldGroup>
@@ -370,7 +437,7 @@ export function JobOpeningModal({
                 <div className="grid grid-cols-2 gap-4">
                   <Field>
                     <FieldLabel htmlFor="min-salary">
-                      Minimum Estimated Salary
+                      Minimum Estimated Salary<span className="text-danger-main">*</span>
                     </FieldLabel>
                     <div className="h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg flex items-center gap-2">
                       <span className="text-sm font-bold text-neutral-90">Rp</span>
@@ -382,11 +449,16 @@ export function JobOpeningModal({
                         className="flex-1 bg-transparent border-none focus:ring-0 p-0"
                       />
                     </div>
+                    {form.formState.errors.salaryMin && (
+                      <FieldDescription className="text-danger-main">
+                        {form.formState.errors.salaryMin.message}
+                      </FieldDescription>
+                    )}
                   </Field>
 
                   <Field>
                     <FieldLabel htmlFor="max-salary">
-                      Maximum Estimated Salary
+                      Maximum Estimated Salary<span className="text-danger-main">*</span>
                     </FieldLabel>
                     <div className="h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg flex items-center gap-2">
                       <span className="text-sm font-bold text-neutral-90">Rp</span>
@@ -398,6 +470,11 @@ export function JobOpeningModal({
                         className="flex-1 bg-transparent border-none focus:ring-0 p-0"
                       />
                     </div>
+                    {form.formState.errors.salaryMax && (
+                      <FieldDescription className="text-danger-main">
+                        {form.formState.errors.salaryMax.message}
+                      </FieldDescription>
+                    )}
                   </Field>
                 </div>
 
@@ -414,6 +491,11 @@ export function JobOpeningModal({
                   <FieldDescription>
                     This text will be displayed to candidates instead of the exact salary range
                   </FieldDescription>
+                  {form.formState.errors.salaryDisplay && (
+                    <FieldDescription className="text-danger-main">
+                      {form.formState.errors.salaryDisplay.message}
+                    </FieldDescription>
+                  )}
                 </Field>
               </FieldSet>
 
@@ -427,7 +509,7 @@ export function JobOpeningModal({
                 </FieldDescription>
                 
                 <FieldGroup className="space-y-4 p-4 border border-neutral-30 rounded-lg bg-neutral-10">
-                  {defaultProfileFields.map((field, index) => (
+                  {infoFields.map((field, index) => (
                     <Field key={field.id} orientation="horizontal" className="items-center justify-between py-2 border-b border-neutral-40 last:border-b-0">
                       <FieldLabel className="text-sm text-neutral-90 mb-0">
                         {field.label}
@@ -459,12 +541,24 @@ export function JobOpeningModal({
                     </Field>
                   ))}
                 </FieldGroup>
+                {form.formState.errors.applicationFormFields && (
+                  <FieldDescription className="text-danger-main">
+                    {form.formState.errors.applicationFormFields.message}
+                  </FieldDescription>
+                )}
               </FieldSet>
             </FieldGroup>
           </div>
 
           {/* Footer */}
           <DialogFooter className="sticky bottom-0 flex justify-end gap-3 p-6 border-t border-neutral-40 bg-neutral-10">
+            <div className="flex-1">
+              {Object.keys(form.formState.errors).length > 0 && (
+                <FieldDescription className="text-danger-main">
+                  Please fix the errors above before submitting
+                </FieldDescription>
+              )}
+            </div>
             <Button
               type="submit"
               disabled={!form.formState.isValid}

@@ -41,11 +41,26 @@ const fetchActiveJobs = async (): Promise<Job[]> => {
   return apiFetch('/api/jobs?isActive=true');
 };
 
-const createJob = async (newJob: JobFormData): Promise<Job> => {
-  return apiFetch('/api/jobs', {
-    method: 'POST',
-    body: JSON.stringify(newJob),
-  });
+const createJob = async (jobData: JobFormData): Promise<Job> => {
+  try {
+    const response = await apiFetch('/api/jobs/recruiter', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(jobData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(errorData.error || 'Failed to create job');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Create job API error:', error);
+    throw error;
+  }
 };
 
 const updateJob = async ({ id, data }: { id: string; data: UpdateJobData }): Promise<Job> => {
@@ -139,15 +154,29 @@ export const useCreateJob = () => {
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.recruiter() });
       queryClient.invalidateQueries({ queryKey: queryKeys.jobs.public() });
       
-      // Add the new job to recruiter jobs cache
+      // Safely update the recruiter jobs cache
       queryClient.setQueryData(
         queryKeys.jobs.recruiter(),
         (old: JobListResponse | undefined) => {
-          if (!old) return { jobs: [newJob], pagination: { page: 1, limit: 10, totalCount: 1, totalPages: 1 } };
+          if (!old) {
+            return { 
+              jobs: [newJob], 
+              pagination: { 
+                page: 1, 
+                limit: 10, 
+                totalCount: 1, 
+                totalPages: 1 
+              } 
+            };
+          }
+          
           return {
             ...old,
             jobs: [newJob, ...old.jobs],
-            pagination: { ...old.pagination, totalCount: old.pagination.totalCount + 1 }
+            pagination: {
+              ...old.pagination,
+              totalCount: old.pagination.totalCount + 1
+            }
           };
         }
       );
@@ -155,8 +184,11 @@ export const useCreateJob = () => {
       toast.success('Job created successfully');
     },
     onError: (error: Error) => {
+      console.error('Job creation error:', error);
       toast.error(`Failed to create job: ${error.message}`);
     },
+    retry: 1,
+    retryDelay: 1000,
   });
 };
 

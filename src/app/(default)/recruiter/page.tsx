@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Loader2, X } from 'lucide-react';
 // 💡 Import TanStack Query hooks
@@ -27,7 +27,8 @@ export default function RecruiterJobsPage() {
     mutate: createJob, 
     isPending: isCreating, 
     isError: createError,
-    error: createJobError
+    error: createJobError,
+    reset: resetCreateJob
   } = useCreateJob();
 
   // --- Data Transformation & Stats ---
@@ -75,8 +76,34 @@ export default function RecruiterJobsPage() {
         });
       },
     });
+    
   }, [createJob]);
+
+ // Reset mutation state when modal closes
+  useEffect(() => {
+    if (!showCreateModal && createError) {
+      resetCreateJob();
+    }
+  }, [showCreateModal, resetCreateJob, createError]);
   
+  if (isCreating) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">Creating job...</p>
+      </div>
+    );
+  }
+
+
+  if (isJobsLoading || !allJobs) {
+    return <Loading message='Loading data' />;
+  }
+
+  if (!isJobsLoading && allJobs && allJobs.length === 0) {
+    return <NoJobsHero onCreateJob={() => setShowCreateModal(true)} />;
+  }
+
   if (isJobsError) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
@@ -88,34 +115,16 @@ export default function RecruiterJobsPage() {
     );
   }
 
-  if (isCreating) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">Creating job...</p>
-      </div>
-    );
-  }
-
-  if(createError) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
-        <X className="h-10 w-10 mb-4" />
-        <p className="text-xl font-bold">Error Creating Job</p>
-        <p className="mt-2">An error occurred while creating the job.</p>
-        <p className="mt-2 text-sm text-muted-foreground">{createJobError?.message}</p>
-      </div>
-    );
-  }
-
-  if (isJobsLoading || !allJobs) {
-    return <Loading message='Loading data' />;
-  }
-
-  if (!isJobsLoading && allJobs && allJobs.length === 0) {
-    return <NoJobsHero onCreateJob={() => setShowCreateModal(true)} />;
-  }
-
+  // if(createError) {
+  //   return (
+  //     <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
+  //       <X className="h-10 w-10 mb-4" />
+  //       <p className="text-xl font-bold">Error Creating Job</p>
+  //       <p className="mt-2">An error occurred while creating the job.</p>
+  //       <p className="mt-2 text-sm text-muted-foreground">{createJobError?.message}</p>
+  //     </div>
+  //   );
+  // }
   return (
     <div className="min-h-[calc(100vh-2rem)] bg-muted/40 p-4 md:p-8">
       <JobList jobs={jobs} onCreateJob={() => setShowCreateModal(true) } />

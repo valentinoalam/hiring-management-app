@@ -160,9 +160,22 @@ export async function POST(request: NextRequest) {
     // Verify the user is a recruiter
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true }
+      select: { 
+        role: true, 
+        profile: {
+          select: {
+            companyId: true
+          }
+        } 
+      }
     });
-
+    const companyId = user?.profile?.companyId
+    if(!companyId) {
+      return NextResponse.json(
+        { error: 'Forbidden - You not affiliated to any company yet' },
+        { status: 403 }
+      );
+    }
     if (user?.role !== 'RECRUITER') {
       return NextResponse.json(
         { error: 'Forbidden - Recruiter access required' },
@@ -190,7 +203,6 @@ export async function POST(request: NextRequest) {
       educationLevel,
       numberOfCandidates,
       applicationFormFields,
-      companyId 
     } = body
 
     
@@ -253,7 +265,7 @@ export async function POST(request: NextRequest) {
         salaryCurrency: salaryCurrency || 'IDR',
         salaryDisplay: salaryDisplay,
         employmentType: employmentType,
-        status: status || "draft",
+        status: status || "DRAFT",
         experienceLevel: experienceLevel,
         educationLevel: educationLevel,
         numberOfCandidates: numberOfCandidates,

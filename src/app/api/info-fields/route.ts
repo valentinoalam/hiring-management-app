@@ -16,11 +16,11 @@ export async function GET() {
 
     // Get global info fields (system fields) and user's custom fields
     const infoFields = await prisma.infoField.findMany({
-      where: {
-        OR: [
-          { authorId: session.user.id }, // User's custom fields
-        ],
-      },
+      // where: {
+      //   OR: [
+      //     { authorId: session.user.id }, // User's custom fields
+      //   ],
+      // },
       orderBy: {
         displayOrder: 'asc',
       },
