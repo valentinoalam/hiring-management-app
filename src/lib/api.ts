@@ -1,16 +1,22 @@
-// Helper function for API calls
 export const apiFetch = async (url: string, options?: RequestInit) => {
+  // Don't automatically set Content-Type for FormData
+  const headers: Record<string, string> = {};
+  
+  // Only set Content-Type to JSON if body is not FormData
+  if (options?.body && !(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+
   const response = await fetch(url, {
     headers: {
-      'Content-Type': 'application/json',
+      ...headers,
       ...options?.headers,
     },
     ...options,
   });
 
-  //if not found, return null
   if (response.status === 404) {
-    return null; // Resolve the query with null data instead of throwing an error
+    return null;
   }
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
@@ -19,5 +25,3 @@ export const apiFetch = async (url: string, options?: RequestInit) => {
 
   return response.json();
 };
-
-

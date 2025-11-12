@@ -13,6 +13,16 @@ const submitJobApplication = async ({
   jobId: string;
   applicationData: FormData; // Change from ApplicationData to FormData
 }): Promise<{ application: ApplicantData }> => {
+  // Debug what's being sent
+  console.log('Sending FormData with keys:', Array.from(applicationData.keys()));
+  
+  for (const [key, value] of applicationData.entries()) {
+    if (value instanceof File) {
+      console.log(`File: ${key} - ${value.name} (${value.size} bytes)`);
+    } else {
+      console.log(`Field: ${key} - ${value}`);
+    }
+  }
   return apiFetch(`/api/jobs/${jobId}/apply`, {
     method: 'POST',
     body: applicationData, // Send FormData directly, no JSON.stringify
@@ -141,30 +151,50 @@ export const useSubmitJobApplication = (jobId: string) => {
   return useMutation({
     mutationFn: (formData: FormData) => submitJobApplication({ jobId, applicationData: formData }),
     onSuccess: (result) => {
-      console.log(result)
-      // Update profile cache with new data
-      queryClient.setQueryData(queryKeys.profile.user(result.application?.applicant.userId), result.application?.applicant);
+      console.log('Application submission result:', result);
       
-      // Invalidate applicants list for this job
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.applicants.byJob(result.application?.jobId) 
-      });
+      // Safe data access with proper null checks
+      const application = result?.application;
+      const applicant = application?.applicant;
+      const applicantUserId = applicant?.userId;
+      const jobId = application?.jobId;
+
+      // Only update profile cache if we have the required data
+      if (applicantUserId && applicant) {
+        queryClient.setQueryData(
+          queryKeys.profile.user(applicantUserId), 
+          applicant
+        );
+      } else {
+        console.warn('Missing applicant data in response:', { applicantUserId, applicant });
+      }
       
-      // Invalidate job applications count
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.jobs.detail(result.application?.jobId) 
-      });
-      queryClient.invalidateQueries({ 
-        queryKey: queryKeys.jobs.analytics(jobId) 
-      });
+      // Invalidate applicants list for this job (with safety check)
+      if (jobId) {
+        queryClient.invalidateQueries({ 
+          queryKey: queryKeys.applicants.byJob(jobId) 
+        });
+      }
+      
+      // Invalidate job applications count (with safety check)
+      if (jobId) {
+        queryClient.invalidateQueries({ 
+          queryKey: queryKeys.jobs.detail(jobId) 
+        });
+        queryClient.invalidateQueries({ 
+          queryKey: queryKeys.jobs.analytics(jobId) 
+        });
+      }
       
       // Invalidate user's applications list
       queryClient.invalidateQueries({ 
         queryKey: queryKeys.currentUser.applications() 
       });
+      
       toast.success('Application submitted successfully!');
     },
     onError: (error: Error) => {
+      console.error('Application submission error:', error);
       toast.error(`Failed to submit application: ${error.message}`);
     },
   });

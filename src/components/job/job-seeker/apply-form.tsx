@@ -435,9 +435,6 @@ export default function JobApplicationForm({
     const submitFormData = new FormData();
 
     // 1. Add files
-    const coverLetterContent = coverLetterMode === "text"
-      ? formData.coverLetter
-      : coverLetterFile?.name || "";
     if (avatarFile) submitFormData.append('avatar', avatarFile);
     if (resumeFile) submitFormData.append('resume', resumeFile);
     if (coverLetterFile && coverLetterMode === 'file') {
@@ -454,9 +451,9 @@ export default function JobApplicationForm({
         }
       });
 
-    // 3. Add structured data as JSON strings
+    // 3. Prepare profileUpdates (for Profile model)
     const profileUpdates: Partial<ProfileData> = {};
-  
+    
     // Check each field and only include if changed
     if (formData.full_name !== profile?.fullname) {
       profileUpdates.fullname = formData.full_name as string;
@@ -470,7 +467,7 @@ export default function JobApplicationForm({
       profileUpdates.location = formData.domicile as string;
     }
     
-    if (formData.email !== profile?.email) { // Assuming email is in profile
+    if (formData.email !== profile?.email) {
       profileUpdates.email = formData.email as string;
     }
     
@@ -478,11 +475,11 @@ export default function JobApplicationForm({
       profileUpdates.linkedinUrl = formData.linkedin_url as string;
     }
     
-    if (formData.date_of_birth !== getProfileDateOfBirth()) { // You'll need a helper function
-      profileUpdates.dateOfBirth = formData.date_of_birth as Date; // Add this field to ProfileData if needed
+    if (formData.date_of_birth !== getProfileDateOfBirth()) {
+      profileUpdates.dateOfBirth = formData.date_of_birth as Date;
     }
     
-    if (formData.gender !== profile?.gender) { // Add gender to ProfileData if needed
+    if (formData.gender !== profile?.gender) {
       profileUpdates.gender = formData.gender as string;
     }
     
@@ -491,8 +488,7 @@ export default function JobApplicationForm({
       profileUpdates.avatarUrl = avatarPreview;
     }
 
-
-    // Transform current otherInfo for updates
+    // 4. Prepare userInfoUpdates (for OtherUserInfo model)
     const otherInfoUpdates = appFormFields
       .filter((appField: AppFormField) => appField.fieldState !== "off")
       .map((appField: AppFormField) => {
@@ -522,11 +518,31 @@ export default function JobApplicationForm({
         return null;
       }).filter(Boolean);
 
+    // 5. Prepare formData (for Application model)
+    const coverLetterContent = coverLetterMode === "text"
+      ? formData.coverLetter
+      : coverLetterFile?.name || "";
+
+    const formDataJson = {
+      formResponse: formData, // Your main form data
+      coverLetter: coverLetterContent,
+      source: formData.source || 'direct'
+    };
+
+    // 6. Append the THREE REQUIRED JSON fields
+    submitFormData.append('formData', JSON.stringify(formDataJson));
     submitFormData.append('profileUpdates', JSON.stringify(profileUpdates));
     submitFormData.append('userInfoUpdates', JSON.stringify(otherInfoUpdates));
-    submitFormData.append('formResponse', JSON.stringify(formData));
-    submitFormData.append('coverLetter', String(coverLetterContent));
-    submitFormData.append('source', String(formData.source) || 'direct');
+
+    // Debug: Log what's being sent
+    console.log('=== FormData being sent to API ===');
+    for (const [key, value] of submitFormData.entries()) {
+      if (value instanceof File) {
+        console.log(`📁 ${key}:`, value.name, `(${value.size} bytes)`);
+      } else {
+        console.log(`📝 ${key}:`, value);
+      }
+    }
 
     return submitFormData;
   };
