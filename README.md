@@ -10,11 +10,11 @@ Applicants can explore open positions, apply dynamically according to recruiter 
 
 The project emphasizes:
 
-Dynamic form validation based on backend configuration.
+- Dynamic form validation based on backend configuration.
 
-Pixel-perfect UI based on provided design.
+- Pixel-perfect UI based on provided design.
 
-Modular, scalable frontend architecture built for enterprise quality.
+- Modular, scalable frontend architecture built for enterprise quality.
 
 ## **🧱 ii. Tech Stack Used**
 | Layer	 | Technology|
@@ -31,19 +31,29 @@ Modular, scalable frontend architecture built for enterprise quality.
 
 ## **🧩 iii. How to Run Locally**
 ### 1️⃣ Clone the repository
-git clone https://github.com/username/hiring-platform.git
-cd hiring-platform
+git clone https://github.com/valentinoalam/hiring-management-app.git
+cd hiring-management-app
 
 ### 2️⃣ Install dependencies
 npm install
 
 ### 3️⃣ Setup environment variables
 cp .env.example .env.local
- Fill in values for:
- ```
- DATABASE_URL=
- NEXTAUTH_SECRET=
- NEXTAUTH_URL=http://localhost:3000
+Fill in values for:
+```
+    DATABASE_URL=
+    NEXT_PUBLIC_APP_URL=
+    NEXTAUTH_SECRET=
+    NEXTAUTH_URL=
+    GOOGLE_CLIENT_ID=
+    GOOGLE_CLIENT_SECRET=
+    BLOB_READ_WRITE_TOKEN=
+    EMAIL_SERVER_HOST=smtp.gmail.com
+    EMAIL_SERVER_PORT=
+    EMAIL_SERVER_USER=
+    EMAIL_SERVER_PASSWORD=
+    EMAIL_FROM=
+    RESEND_API_KEY=
 ```
 
 ### 4️⃣ Run Prisma migrations and seed initial data
@@ -83,13 +93,9 @@ Feedback UI — success/error states using Shadcn Toaster.
 
 ## **🌟 v. Optional Enhancements Added**
 
-🌙 Dark mode (auto-detected from system preferences).
-
 💾 Persisted table layout (columns + order saved to localStorage).
 
 ⚡ Form autosave using Zustand store.
-
-🧱 Shimmer skeleton loading states for smooth UX.
 
 🔔 Sonner / Shadcn toast notifications for consistent feedback.
 
