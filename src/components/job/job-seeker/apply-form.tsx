@@ -19,13 +19,13 @@ import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInf
 import { AppFormField, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
-import { useRouter } from "next/navigation";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 import PhoneInput from "@/components/custom-ui/phone-input";
 import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
 
 // File validation constants
-const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+const MEGABYTE = 1024 * 1024;
+const MAX_FILE_SIZE = 5 * MEGABYTE; // 5MB
 const ACCEPTED_IMAGE_TYPES = [
   "image/jpeg", 
   "image/jpg", 
@@ -38,11 +38,13 @@ const ACCEPTED_RESUME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 ];
 
-// Dynamic schema based on AppFormField configuration
+// ============================================================================
+// SCHEMA Initialization
+// ============================================================================
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
   const schema: Record<string, z.ZodTypeAny> = {};
 
-  // Sort fields by sortOrder first
+  // 1. Filter and sort fields
   const sortedFields = [...appFormFields]
     .filter(field => field.fieldState !== 'off')
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
@@ -51,167 +53,138 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     const { field: fieldConfig, fieldState } = field;
     const isRequired = fieldState === 'mandatory';
 
-    // Create base validator based on field type
     let fieldValidator: z.ZodTypeAny;
+    const fieldLabel = fieldConfig.label || fieldConfig.key;
 
+    // 2. Create base validator based on field type
     switch (fieldConfig.fieldType) {
       case 'email':
-        fieldValidator = z.string().email("Invalid email address");
+        fieldValidator = z.email("Invalid email address");
         break;
+
       case 'url':
-        fieldValidator = z.string().url("Must be a valid URL");
+        fieldValidator = z.url("Must be a valid URL");
         break;
+
       case 'number':
-        fieldValidator = z.number().or(z.string().transform(val => Number(val)));
-        // Add validation from field.validation
+        // Handle input as string or number, ensure final output is a number (pipe)
+        let baseNumberSchema = z.union([
+          z.number({ message: "Must be a valid number" }),
+          z.string()
+            .regex(/^-?\d+(\.\d+)?$/, "Invalid number format")
+            .transform(val => Number(val))
+        ]).pipe(z.number());
+        
+        // Apply min/max constraints using .refine on the resulting number
         if (fieldConfig.validation?.min !== undefined) {
-          fieldValidator = (fieldValidator as z.ZodNumber).min(
-            fieldConfig.validation.min,
+          baseNumberSchema = baseNumberSchema.refine(
+            (val: number) => val >= fieldConfig.validation!.min!,
             `Must be at least ${fieldConfig.validation.min}`
           );
         }
         if (fieldConfig.validation?.max !== undefined) {
-          fieldValidator = (fieldValidator as z.ZodNumber).max(
-            fieldConfig.validation.max,
+          baseNumberSchema = baseNumberSchema.refine(
+            (val: number) => val <= fieldConfig.validation!.max!,
             `Must be at most ${fieldConfig.validation.max}`
           );
         }
+        fieldValidator = baseNumberSchema;
         break;
+
       case 'date':
-        fieldValidator = z.string();
-        // Add date validation
+        // Enforce ISO string format and apply date validation (string comparison works for ISO)
+        fieldValidator = z.iso.datetime({ message: "Invalid date format (expected ISO string)" });
+        
         if (fieldConfig.validation?.minDate) {
           fieldValidator = fieldValidator.refine(
-            (date: unknown) => new Date(String(date)) >= new Date(fieldConfig.validation!.minDate!),
-            `Date must be after ${fieldConfig.validation.minDate}`
+            (date: unknown) => typeof date === 'string' && date >= fieldConfig.validation!.minDate!,
+            `Date must be on or after ${fieldConfig.validation.minDate}`
           );
         }
         if (fieldConfig.validation?.maxDate) {
           fieldValidator = fieldValidator.refine(
-            (date: unknown) => new Date(String(date)) <= new Date(fieldConfig.validation!.maxDate!),
-            `Date must be before ${fieldConfig.validation.maxDate}`
+            (date: unknown) => typeof date === 'string' && date <= fieldConfig.validation!.maxDate!,
+            `Date must be on or before ${fieldConfig.validation.maxDate}`
           );
         }
         break;
+
       case 'file':
-        // File field validation
-        fieldValidator = z.instanceof(File)
-          .refine(file => file.size <= MAX_FILE_SIZE, `File must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
-        
-        // Add file type validation if specified
+        // Use z.instanceof(File) and include file validations
+        fieldValidator = z.instanceof(File, { message: `${fieldLabel} is required` })
+          .refine(file => file.size <= MAX_FILE_SIZE, `File must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`);
+
         if (fieldConfig.validation?.fileTypes && fieldConfig.validation.fileTypes.length > 0) {
           fieldValidator = fieldValidator.refine(
             (file: unknown) => fieldConfig.validation!.fileTypes!.includes((file as File).type),
             `File must be one of: ${fieldConfig.validation.fileTypes.join(', ')}`
           );
         }
-        
-        // Make optional if not required
-        if (!isRequired) {
-          fieldValidator = fieldValidator.optional().or(z.literal(undefined));
-        }
+        // Note: isRequired logic for file is handled below, outside the switch.
         break;
+
       case 'checkbox':
+        // Checkboxes should validate for true or the string 'on'
         fieldValidator = z.boolean().or(z.literal('on'));
         break;
+
       case 'radio':
       case 'select':
-        fieldValidator = z.string();
-        break;
       case 'textarea':
+      case 'string': // Catch-all for basic string types
+      case 'text':
+      default:
+        // All other fields default to a string
         fieldValidator = z.string();
         break;
-      default: // text, phone, etc.
-        fieldValidator = z.string();
     }
 
-    // Handle required validation based on field type
+    // 3. Apply Required/Optional Logic (Consolidated)
     if (isRequired) {
-      switch (fieldConfig.fieldType) {
-        case 'string':
-        case 'text':
-        case 'email':
-        case 'url':
-        case 'textarea':
-        case 'phone_number':
-        case 'domicile':
-        case 'linkedin_url':
-        case 'full_name':
-        case 'gender':
-          // String-based fields
-          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
-          break;
-        case 'number':
-          // Number fields - already handled in number case
-          break;
-        case 'checkbox':
-          // Checkbox fields
-          fieldValidator = fieldValidator.refine(
-            val => val === true || val === 'on',
-            `${fieldConfig.label} is required`
-          );
-          break;
-        case 'radio':
-        case 'select':
-          // Radio and select fields
-          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
-          break;
-        case 'date':
-          // Date fields
-          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
-          break;
-        case 'file':
-          // File fields - already handled in file case
-          break;
-        default:
-          // Default string validation
-          fieldValidator = (fieldValidator as z.ZodString).min(1, `${fieldConfig.label} is required`);
+      if (fieldConfig.fieldType === 'checkbox') {
+        // Mandatory checkbox must be true/on
+        fieldValidator = fieldValidator.refine(
+          val => val === true || val === 'on',
+          `${fieldLabel} must be checked`
+        );
+      } else if (fieldValidator instanceof z.ZodString) {
+        // Mandatory strings must have content
+        fieldValidator = fieldValidator.min(1, `${fieldLabel} is required`);
       }
+      // Note: File fields are inherently required here due to z.instanceof(File, { message: ... })
+      // and only become optional if !isRequired is true.
     } else {
       // Handle optional fields
-      if (fieldConfig.fieldType !== 'file' && fieldConfig.fieldType !== 'checkbox') {
-        if (fieldValidator instanceof z.ZodString) {
-          fieldValidator = fieldValidator.optional().or(z.literal(''));
-        } else {
-          fieldValidator = fieldValidator.optional();
-        }
-      }
-    }
-    
-    const isStringField = !['file', 'checkbox'].includes(fieldConfig.fieldType);
-    
-    if (isStringField) {
-      // Required validation for string fields
-      if (isRequired && fieldValidator instanceof z.ZodString) {
-        fieldValidator = fieldValidator.min(1, `${fieldConfig.label} is required`);
-      }
-      
-      // Phone number specific validation
-      if (fieldConfig.key === 'phone_number' && fieldValidator instanceof z.ZodString) {
-        fieldValidator = fieldValidator.regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
-      }
-    }
-
-    // Handle optional fields (excluding file fields)
-    if (!isRequired && fieldConfig.fieldType !== 'file') {
-      if (fieldValidator instanceof z.ZodString) {
+      if (fieldConfig.fieldType === 'file') {
+        // Optional file fields can be undefined
+        fieldValidator = fieldValidator.optional().or(z.literal(undefined));
+      } else if (fieldValidator instanceof z.ZodString) {
+        // Optional strings accept undefined (optional) or empty string
         fieldValidator = fieldValidator.optional().or(z.literal(''));
-      } else if (!(fieldValidator instanceof z.ZodFile)) {
+      } else {
+        // Other types (number, date, checkbox, etc.) just become optional
         fieldValidator = fieldValidator.optional();
       }
     }
+    
+    // 4. Apply Final Specific Validations (e.g., regex)
+    if (fieldConfig.key === 'phone_number' && fieldValidator instanceof z.ZodString) {
+      // Re-apply a strict regex, but only to the ZodString branch
+      fieldValidator = fieldValidator.regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
+    }
+
     schema[fieldConfig.key] = fieldValidator;
   });
 
-  // Add fixed application fields (resume, cover letter, source)
+  // 5. Add fixed application fields
   schema.resume = z.instanceof(File, { message: "Resume is required" })
-    .refine(file => file.size <= MAX_FILE_SIZE, "Resume must be less than 5MB")
+    .refine(file => file.size <= MAX_FILE_SIZE, `Resume must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Resume must be PDF or Word document");
 
-  schema.coverLetter = z.string().optional().or(z.literal(''));
+  schema.coverLetter = z.string().optional().or(z.literal('')); // Textarea/string input
   
-  schema.coverLetterFile = z.instanceof(File)
-    .refine(file => file.size <= MAX_FILE_SIZE, "Cover letter file must be less than 5MB")
+  schema.coverLetterFile = z.instanceof(File) // File input
+    .refine(file => file.size <= MAX_FILE_SIZE, `Cover letter file must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Cover letter must be PDF or Word document")
     .optional()
     .or(z.literal(undefined));
@@ -223,6 +196,10 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
 
 type ApplicationFormData = z.infer<ReturnType<typeof createApplicationSchema>>;
 
+// ============================================================================
+// TYPES
+// ============================================================================
+
 interface JobApplicationFormProps {
   job: Job;
   appFormFields: AppFormField[];
@@ -230,24 +207,11 @@ interface JobApplicationFormProps {
   onSubmit: (applicationData: FormData) => Promise<unknown>;
   onCancel: () => void;
 }
-// function getInitialValues(appFormFields: AppFormField[], profile: Profile | null | undefined): ApplicationFormData {
-//   const initialValues: ApplicationFormData = {
-//     resume: undefined,
-//     coverLetter: '',
-//     coverLetterFile: undefined,
-//     source: '',
-//   };
 
-//   appFormFields.forEach((appField: AppFormField) => {
-//     if (appField.fieldState !== "off") {
-//       const fieldKey = appField.field.key;
-//       const fieldValue = profile?.otherInfo?.find((info: OtherInfoData) => info.field.key === fieldKey)?.infoFieldAnswer;
-//       initialValues[fieldKey] = fieldValue || '';
-//     }
-//   });
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
-//   return initialValues;
-// }
 export default function JobApplicationForm({
   job,
   appFormFields,
@@ -255,19 +219,22 @@ export default function JobApplicationForm({
   onSubmit,
   onCancel
 }: JobApplicationFormProps) {
+  // ========== State Management ==========
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [coverLetterMode, setCoverLetterMode] = useState<'text' | 'file'>('text');
   const [showGestureCapture, setShowGestureCapture] = useState(false);
-  const router = useRouter();
   
   const profile = userProfile;
   
-  // Helper function to get date of birth from profile
+  // ========== Helper Functions ==========
+  
+  /**
+   * Extract date of birth from profile's otherInfo
+   */
   const getProfileDateOfBirth = useCallback((): string | undefined => {
-    // If date of birth is stored in otherInfo, extract it
     if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
       const dobInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
         (info: OtherInfoData) => info.field.key === 'date_of_birth'
@@ -276,13 +243,33 @@ export default function JobApplicationForm({
     }
     return undefined;
   }, [profile]);
-  // Set initial avatar preview when profile loads
-  React.useEffect(() => {
-    if (userProfile?.avatarUrl && !avatarPreview) {
-      setAvatarPreview(userProfile.avatarUrl);
-    }
-  }, [userProfile?.avatarUrl, avatarPreview]);
 
+  /**
+   * Get value from profile for a specific field key
+   * Maps profile properties to form field keys
+   */
+  const getProfileFieldValue = useCallback((fieldKey: string, transformedOtherInfo?: OtherInfo): string => {
+    // First, check transformed otherInfo
+    if (transformedOtherInfo && transformedOtherInfo[fieldKey]) {
+      return transformedOtherInfo[fieldKey].answer || "";
+    }
+
+    // Then check direct profile properties
+    const fieldMapping: Record<string, string | undefined> = {
+      'phone_number': profile?.phone,
+      'domicile': profile?.location,
+      'linkedin_url': profile?.linkedinUrl,
+      'full_name': profile?.fullname,
+      'email': profile?.email,
+      'gender': profile?.gender,
+      'date_of_birth': getProfileDateOfBirth(),
+    };
+
+    return fieldMapping[fieldKey] || "";
+  }, [profile, getProfileDateOfBirth]);
+  
+  // ========== Form Setup ==========
+  
   const formSchema = createApplicationSchema(appFormFields);
   const {
     register,
@@ -295,77 +282,69 @@ export default function JobApplicationForm({
     mode: 'onChange',
   });
   const formValues = useWatch({ control });
-  // Pre-fill form with existing profile data
+
+  // ========== Effects ==========
+  
+  /**
+   * Set initial avatar preview from profile
+   */
+  React.useEffect(() => {
+    if (userProfile?.avatarUrl) {
+      setAvatarPreview(userProfile.avatarUrl);
+    }
+  }, [userProfile?.avatarUrl]);
+  /**
+   * Pre-fill form with existing profile data
+   * This is the critical mapping logic
+   */
   useEffect(() => {
-    if (profile && appFormFields.length > 0) {
-      const fieldValues: Partial<ApplicationFormData> = {};
+    if (!profile || appFormFields.length === 0) return;
 
-      // Transform profile.otherInfo if it's in array format
-      const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
-        ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
-        : (profile.otherInfo as OtherInfo | undefined);
+    const fieldValues: Partial<ApplicationFormData> = {};
 
-      appFormFields.forEach((appField: AppFormField) => {
-        if (appField.fieldState !== "off") {
-          const fieldKey = appField.field.key;
-          
-          // Try to get value from transformed otherInfo first
-          if (transformedOtherInfo && transformedOtherInfo[fieldKey]) {
-            fieldValues[fieldKey] = transformedOtherInfo[fieldKey].answer;
-          } else {
-            // Fall back to direct profile properties
-            switch (fieldKey) {
-              case 'phone_number':
-                fieldValues[fieldKey] = profile.phone || "";
-                break;
-              case 'domicile':
-                fieldValues[fieldKey] = profile.location || "";
-                break;
-              case 'linkedin_url':
-                fieldValues[fieldKey] = profile.linkedinUrl || "";
-                break;
-              case 'full_name':
-                fieldValues[fieldKey] = profile.fullname || "";
-                break;
-              case 'email':
-                fieldValues[fieldKey] = profile.email || "";
-                break;
-              case 'gender':
-                fieldValues[fieldKey] = profile.gender || "";
-                break;
-              case 'date_of_birth':
-                fieldValues[fieldKey] = getProfileDateOfBirth() || "";
-                break;
-              case 'photo_profile':
-                // Handle photo profile separately
-                if (profile.avatarUrl) {
-                  setAvatarPreview(profile.avatarUrl);
-                }
-                break;
-              default:
-                fieldValues[fieldKey] = "";
-            }
-          }
+    // Transform profile.otherInfo if it's in array format
+    const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
+      ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
+      : (profile.otherInfo as OtherInfo | undefined);
+
+    // Map each field to profile data
+    appFormFields.forEach((appField: AppFormField) => {
+      if (appField.fieldState === "off") return;
+
+      const fieldKey = appField.field.key;
+      
+      // Special handling for photo_profile
+      if (fieldKey === 'photo_profile') {
+        if (profile.avatarUrl) {
+          setAvatarPreview(profile.avatarUrl);
         }
-      });
-
-      // Set resume if available
-      if (profile.resumeUrl) {
-        setValue('resume', profile.resumeUrl, { shouldValidate: false });
+        return;
       }
 
-      // Set all field values
-      Object.entries(fieldValues).forEach(([key, value]) => {
-        if (value !== undefined) {
-          setValue(key as keyof ApplicationFormData, value, { 
-            shouldValidate: false,
-            shouldDirty: false
-          });
-        }
-      });
-    }
-  }, [profile, appFormFields, setValue, getProfileDateOfBirth]);
+      // Get value from profile
+      fieldValues[fieldKey] = getProfileFieldValue(fieldKey, transformedOtherInfo);
+    });
 
+    // Set resume if available
+    if (profile.resumeUrl) {
+      // Note: This is setting a URL string, not a File object
+      // This might cause validation issues since schema expects File
+      setValue('resume', profile.resumeUrl, { shouldValidate: false });
+    }
+
+    // Set all field values
+    Object.entries(fieldValues).forEach(([key, value]) => {
+      if (value !== undefined) {
+        setValue(key as keyof ApplicationFormData, value, { 
+          shouldValidate: false,
+          shouldDirty: false
+        });
+      }
+    });
+  }, [profile, appFormFields, setValue, getProfileFieldValue]);
+
+  // ========== File Handlers ==========
+  
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -431,12 +410,26 @@ export default function JobApplicationForm({
     setValue('coverLetterFile', undefined, { shouldValidate: true });
   };
 
+  // ========== Form Submission ==========
+  
+  /**
+   * Prepare FormData for API submission
+   * Organizes data into: files, profileUpdates, userInfoUpdates, formData
+   */
   const prepareFormData = (formData: ApplicationFormData): FormData => {
     const submitFormData = new FormData();
 
-    // 1. Add files
+    // 1. Add file uploads
     if (avatarFile) submitFormData.append('avatar', avatarFile);
-    if (resumeFile) submitFormData.append('resume', resumeFile);
+    
+    // Only append resume file if it's a new upload (File object)
+    if (resumeFile) {
+      submitFormData.append('resume', resumeFile);
+    } else if (profile?.resumeUrl && typeof formData.resume === 'string') {
+      // If using existing resume, include the URL in formData JSON instead
+      // This will be handled in the formDataJson below
+    }
+    
     if (coverLetterFile && coverLetterMode === 'file') {
       submitFormData.append('coverLetterFile', coverLetterFile);
     }
@@ -451,10 +444,9 @@ export default function JobApplicationForm({
         }
       });
 
-    // 3. Prepare profileUpdates (for Profile model)
+    // 3. Prepare profileUpdates (only include changed fields)
     const profileUpdates: Partial<ProfileData> = {};
     
-    // Check each field and only include if changed
     if (formData.full_name !== profile?.fullname) {
       profileUpdates.fullname = formData.full_name as string;
     }
@@ -483,21 +475,21 @@ export default function JobApplicationForm({
       profileUpdates.gender = formData.gender as string;
     }
     
-    // Handle avatar - only update if new avatar was captured/uploaded
     if (avatarPreview && avatarPreview !== profile?.avatarUrl) {
       profileUpdates.avatarUrl = avatarPreview;
     }
 
-    // 4. Prepare userInfoUpdates (for OtherUserInfo model)
+    // 4. Prepare userInfoUpdates (only include changed fields)
     const otherInfoUpdates = appFormFields
       .filter((appField: AppFormField) => appField.fieldState !== "off")
       .map((appField: AppFormField) => {
         const fieldKey = appField.field.key;
         const currentValue = formData[fieldKey as keyof ApplicationFormData];
         
-        // Find existing record ID if it exists
+        // Find existing record
         let existingId: string | undefined;
         let existingValue: string | undefined;
+        
         if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
           const existingInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
             (info: OtherInfoData) => info.field.key === appField.field.id
@@ -516,31 +508,34 @@ export default function JobApplicationForm({
         }
         
         return null;
-      }).filter(Boolean);
+      })
+      .filter(Boolean);
 
-    // 5. Prepare formData (for Application model)
+    // 5. Prepare application formData
     const coverLetterContent = coverLetterMode === "text"
       ? formData.coverLetter
       : coverLetterFile?.name || "";
 
     const formDataJson = {
-      formResponse: formData, // Your main form data
+      formResponse: formData,
       coverLetter: coverLetterContent,
-      source: formData.source || 'direct'
+      source: formData.source || 'direct',
+      // Include existing resume URL if not uploading new file
+      ...(typeof formData.resume === 'string' && !resumeFile ? { resumeUrl: formData.resume } : {})
     };
 
-    // 6. Append the THREE REQUIRED JSON fields
+    // 6. Append JSON data
     submitFormData.append('formData', JSON.stringify(formDataJson));
     submitFormData.append('profileUpdates', JSON.stringify(profileUpdates));
     submitFormData.append('userInfoUpdates', JSON.stringify(otherInfoUpdates));
 
-    // Debug: Log what's being sent
+    // Debug logging
     console.log('=== FormData being sent to API ===');
     for (const [key, value] of submitFormData.entries()) {
       if (value instanceof File) {
-        console.log(`📁 ${key}:`, value.name, `(${value.size} bytes)`);
+        console.log(`📎 ${key}:`, value.name, `(${value.size} bytes)`);
       } else {
-        console.log(`📝 ${key}:`, value);
+        console.log(`📋 ${key}:`, value);
       }
     }
 
@@ -558,6 +553,9 @@ export default function JobApplicationForm({
       throw error;
     }
   };
+
+  // ========== Render Field Functions ==========
+  
   const renderFormField = (appField: AppFormField) => {
     const { field, fieldState } = appField;
     const isRequired = fieldState === 'mandatory';
