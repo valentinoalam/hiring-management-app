@@ -31,6 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
+import { ApplicationFormConfig } from "@/components/custom-ui/field-configuration";
 
 // Zod validation schema based on your updated Prisma schema
 const jobFormSchema = z.object({
@@ -54,6 +55,7 @@ const jobFormSchema = z.object({
     fieldId: z.string(),
     label: z.string(),
     fieldState: z.enum(["mandatory", "optional", "off"]),
+    sortOrder: z.number(),
   })),
 });
 
@@ -108,10 +110,11 @@ export function JobOpeningModal({
           setInfoFields(fields);
           
           // Set default form values with fetched fields
-          form.setValue("applicationFormFields", fields.map((field: InfoField) => ({
+          form.setValue("applicationFormFields", fields.map((field: InfoField, index: number) => ({
             fieldId: field.id,
             label: field.label,
             fieldState: "mandatory" as const,
+            sortOrder: index,
           })));
         }
       } catch (error) {
@@ -502,6 +505,10 @@ export function JobOpeningModal({
               <FieldSeparator />
 
               {/* Application Form Configuration */}
+              <ApplicationFormConfig
+                value={form.watch("applicationFormFields") || []}
+                onChange={(fields) => form.setValue("applicationFormFields", fields)}
+              />
               <FieldSet>
                 <FieldLegend>Application Form Configuration</FieldLegend>
                 <FieldDescription>

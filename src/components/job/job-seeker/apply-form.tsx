@@ -38,6 +38,17 @@ const ACCEPTED_RESUME_TYPES = [
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
 ];
 
+const COMMON_PROFILE_FIELDS = [
+  'full_name',
+  'email',
+  'phone_number',
+  'date_of_birth',
+  'gender',
+  'domicile',
+  'linkedin_url',
+  'photo_profile'
+];
+
 // ============================================================================
 // SCHEMA Initialization
 // ============================================================================
@@ -243,6 +254,14 @@ export default function JobApplicationForm({
     }
     return undefined;
   }, [profile]);
+
+  /**
+   * Check if a field is a common profile field
+   * These fields are already rendered in the fixed profile section
+   */
+  const isCommonProfileField = useCallback((fieldKey: string): boolean => {
+    return COMMON_PROFILE_FIELDS.includes(fieldKey);
+  }, []);
 
   /**
    * Get value from profile for a specific field key
@@ -952,10 +971,10 @@ export default function JobApplicationForm({
   }
 
   const visibleFields = appFormFields
-    .filter((field: AppFormField) => field.fieldState !== "off")
+    .filter((field: AppFormField) => {
+      return field.fieldState !== "off" && !isCommonProfileField(field.field.key);
+    })
     .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0));
-
-  const photoProfileField = appFormFields.find((f: AppFormField) => f.field.key === 'photo_profile');
 
   if (showGestureCapture) {
     return (
@@ -1200,7 +1219,7 @@ export default function JobApplicationForm({
                 </Field>
               </div>
               {/* Dynamic Form Fields */}
-              {visibleFields
+              {visibleFields.length > 0 && visibleFields
                 .filter((field: AppFormField) => field.field.key !== 'photo_profile')
                 .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0))
                 .map((appField: AppFormField) => renderFormField(appField))}

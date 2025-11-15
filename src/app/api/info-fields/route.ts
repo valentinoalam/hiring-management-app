@@ -16,14 +16,16 @@ export async function GET() {
 
     // Get global info fields (system fields) and user's custom fields
     const infoFields = await prisma.infoField.findMany({
-      // where: {
-      //   OR: [
-      //     { authorId: session.user.id }, // User's custom fields
-      //   ],
-      // },
-      orderBy: {
-        displayOrder: 'asc',
+      where: {
+        OR: [
+          { authorId: undefined }, // System fields
+          { authorId: session.user.id }, // User's custom fields
+        ],
       },
+      orderBy: [
+        { authorId: 'asc' }, // System fields first
+        { displayOrder: 'asc' },
+      ],
     });
 
     return NextResponse.json(infoFields);
@@ -35,6 +37,7 @@ export async function GET() {
     );
   }
 }
+
 
 export async function POST(request: NextRequest) {
   try {
