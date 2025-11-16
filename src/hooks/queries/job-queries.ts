@@ -1,7 +1,7 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
-import { Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job';
+import { AppFormField, Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job';
 import { JobFormData } from '@/components/job/recruiter/JobOpeningModal';
 import { apiFetch } from '@/lib/api';
 
@@ -22,8 +22,11 @@ const fetchAllJobs = async (filters?: JobFilters & { page?: number }): Promise<J
   return apiFetch(`/api/jobs?${params.toString()}`);
 };
 
-const fetchJobDetail = async (jobId: string): Promise<Job> => {
-  console.log('fetchJobDetail', jobId);
+interface JobFormResult {
+  jobData: Job;
+  formFields: AppFormField[];
+}
+const fetchJobDetail = async (jobId: string): Promise<JobFormResult> => {
   return apiFetch(`/api/jobs/${jobId}`);
 };
 
@@ -119,7 +122,7 @@ export const usePublicJobs = (filters?: Omit<JobFilters, 'companyId'>) => {
 };
 
 export const useJobDetail = (jobId: string) => {
-  return useQuery<Job, Error>({
+  return useQuery<JobFormResult, Error>({
     queryKey: queryKeys.jobs.detail(jobId),
     queryFn: () => fetchJobDetail(jobId),
     enabled: !!jobId,

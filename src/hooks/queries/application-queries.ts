@@ -6,6 +6,7 @@ import { apiFetch } from "@/lib/api";
 import { Application } from "@prisma/client";
 import { Profile } from '@/types/user';
 import { useRouter } from "next/navigation";
+import { useJobDetail } from "./job-queries";
 
 const submitJobApplication = async ({
   jobId,
@@ -211,33 +212,24 @@ export const useSubmitJobApplication = (jobId: string) => {
 };
 
 
-const fetchApplicationFormFields = async (jobId: string) => {
-  return apiFetch(`/api/jobs/${jobId}/application-fields`);
-};
 
-export const useApplicationFormFields = (jobId: string) => {
-  return useQuery({
-    queryKey: queryKeys.applicants.formFields(jobId),
-    queryFn: () => fetchApplicationFormFields(jobId),
-    enabled: !!jobId,
-    staleTime: 1000 * 60 * 5, // 5 minutes
-    gcTime: 1000 * 60 * 30, // 30 minutes cache time
-    refetchOnMount: false, // Don't refetch immediately when component mounts if we have cached data
-    refetchOnWindowFocus: false, // Don't refetch on window focus
-  });
-};
 
 // Combined hook for job application flow
 export const useJobApplicationFlow = (jobId: string, userId: string) => {
-  const { data: appFormFields, isLoading: loadingFields, error: fieldsError } = useApplicationFormFields(jobId);
+  // Use job detail hook which now includes form fields
+  const { data: jobData, isLoading: loadingJob, error: jobError } = useJobDetail(jobId);
   const { data: userProfile, isLoading: loadingProfile, error: profileError } = useUserProfile(userId);
   const submitApplication = useSubmitJobApplication(jobId);
+
+  // Extract form fields from job data
+  const appFormFields = jobData?.formFields;
 
   return {
     appFormFields,
     userProfile,
-    isLoading: loadingFields || loadingProfile,
-    error: fieldsError || profileError,
+    job: jobData?.jobData, // Return the job data as well for consistency
+    isLoading: loadingJob || loadingProfile,
+    error: jobError || profileError,
     submitApplication: submitApplication.mutateAsync,
     isSubmitting: submitApplication.isPending,
     submitError: submitApplication.error,

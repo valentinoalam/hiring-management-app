@@ -27,7 +27,7 @@ import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field
 
 // Separate schemas for different auth methods
 const emailSchema = z.object({
-  email: z.string().email({
+  email: z.email({
     message: "Please enter a valid email address.",
   }),
 })

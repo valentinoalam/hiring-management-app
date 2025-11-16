@@ -82,7 +82,7 @@ export async function GET(
         },
       ];
     }
-    console.log('Where:', where)
+
     const [candidates, totalCount]  = await Promise.all([ 
       prisma.application.findMany({
         where,

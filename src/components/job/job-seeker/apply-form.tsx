@@ -61,14 +61,14 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
   sortedFields.forEach((field) => {
-    const { field: fieldConfig, fieldState } = field;
+    const { fieldState } = field;
     const isRequired = fieldState === 'mandatory';
 
     let fieldValidator: z.ZodTypeAny;
-    const fieldLabel = fieldConfig.label || fieldConfig.key;
+    const fieldLabel = field.label || field.key;
 
     // 2. Create base validator based on field type
-    switch (fieldConfig.fieldType) {
+    switch (field.fieldType) {
       case 'email':
         fieldValidator = z.email("Invalid email address");
         break;
@@ -87,16 +87,16 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         ]).pipe(z.number());
         
         // Apply min/max constraints using .refine on the resulting number
-        if (fieldConfig.validation?.min !== undefined) {
+        if (field.validation?.min !== undefined) {
           baseNumberSchema = baseNumberSchema.refine(
-            (val: number) => val >= fieldConfig.validation!.min!,
-            `Must be at least ${fieldConfig.validation.min}`
+            (val: number) => val >= field.validation!.min!,
+            `Must be at least ${field.validation.min}`
           );
         }
-        if (fieldConfig.validation?.max !== undefined) {
+        if (field.validation?.max !== undefined) {
           baseNumberSchema = baseNumberSchema.refine(
-            (val: number) => val <= fieldConfig.validation!.max!,
-            `Must be at most ${fieldConfig.validation.max}`
+            (val: number) => val <= field.validation!.max!,
+            `Must be at most ${field.validation.max}`
           );
         }
         fieldValidator = baseNumberSchema;
@@ -106,16 +106,16 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         // Enforce ISO string format and apply date validation (string comparison works for ISO)
         fieldValidator = z.iso.datetime({ message: "Invalid date format (expected ISO string)" });
         
-        if (fieldConfig.validation?.minDate) {
+        if (field.validation?.minDate) {
           fieldValidator = fieldValidator.refine(
-            (date: unknown) => typeof date === 'string' && date >= fieldConfig.validation!.minDate!,
-            `Date must be on or after ${fieldConfig.validation.minDate}`
+            (date: unknown) => typeof date === 'string' && date >= field.validation!.minDate!,
+            `Date must be on or after ${field.validation.minDate}`
           );
         }
-        if (fieldConfig.validation?.maxDate) {
+        if (field.validation?.maxDate) {
           fieldValidator = fieldValidator.refine(
-            (date: unknown) => typeof date === 'string' && date <= fieldConfig.validation!.maxDate!,
-            `Date must be on or before ${fieldConfig.validation.maxDate}`
+            (date: unknown) => typeof date === 'string' && date <= field.validation!.maxDate!,
+            `Date must be on or before ${field.validation.maxDate}`
           );
         }
         break;
@@ -125,10 +125,10 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         fieldValidator = z.instanceof(File, { message: `${fieldLabel} is required` })
           .refine(file => file.size <= MAX_FILE_SIZE, `File must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`);
 
-        if (fieldConfig.validation?.fileTypes && fieldConfig.validation.fileTypes.length > 0) {
+        if (field.validation?.fileTypes && field.validation.fileTypes.length > 0) {
           fieldValidator = fieldValidator.refine(
-            (file: unknown) => fieldConfig.validation!.fileTypes!.includes((file as File).type),
-            `File must be one of: ${fieldConfig.validation.fileTypes.join(', ')}`
+            (file: unknown) => field.validation!.fileTypes!.includes((file as File).type),
+            `File must be one of: ${field.validation.fileTypes.join(', ')}`
           );
         }
         // Note: isRequired logic for file is handled below, outside the switch.
@@ -152,7 +152,7 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
 
     // 3. Apply Required/Optional Logic (Consolidated)
     if (isRequired) {
-      if (fieldConfig.fieldType === 'checkbox') {
+      if (field.fieldType === 'checkbox') {
         // Mandatory checkbox must be true/on
         fieldValidator = fieldValidator.refine(
           val => val === true || val === 'on',
@@ -166,7 +166,7 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
       // and only become optional if !isRequired is true.
     } else {
       // Handle optional fields
-      if (fieldConfig.fieldType === 'file') {
+      if (field.fieldType === 'file') {
         // Optional file fields can be undefined
         fieldValidator = fieldValidator.optional().or(z.literal(undefined));
       } else if (fieldValidator instanceof z.ZodString) {
@@ -179,12 +179,12 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     }
     
     // 4. Apply Final Specific Validations (e.g., regex)
-    if (fieldConfig.key === 'phone_number' && fieldValidator instanceof z.ZodString) {
+    if (field.key === 'phone_number' && fieldValidator instanceof z.ZodString) {
       // Re-apply a strict regex, but only to the ZodString branch
       fieldValidator = fieldValidator.regex(/^\+?[\d\s-()]+$/, "Invalid phone number format");
     }
 
-    schema[fieldConfig.key] = fieldValidator;
+    schema[field.key] = fieldValidator;
   });
 
   // 5. Add fixed application fields
@@ -330,7 +330,7 @@ export default function JobApplicationForm({
     appFormFields.forEach((appField: AppFormField) => {
       if (appField.fieldState === "off") return;
 
-      const fieldKey = appField.field.key;
+      const fieldKey = appField.key;
       
       // Special handling for photo_profile
       if (fieldKey === 'photo_profile') {
@@ -455,11 +455,11 @@ export default function JobApplicationForm({
 
     // 2. Add dynamic file fields from appFormFields
     appFormFields
-      .filter(field => field.field.fieldType === 'file' && field.fieldState !== 'off')
+      .filter(field => field.fieldType === 'file' && field.fieldState !== 'off')
       .forEach(field => {
-        const file = formData[field.field.key as keyof ApplicationFormData];
+        const file = formData[field.key as keyof ApplicationFormData];
         if (file instanceof File) {
-          submitFormData.append(`field_${field.field.id}`, file);
+          submitFormData.append(`field_${field.id}`, file);
         }
       });
 
@@ -502,7 +502,7 @@ export default function JobApplicationForm({
     const otherInfoUpdates = appFormFields
       .filter((appField: AppFormField) => appField.fieldState !== "off")
       .map((appField: AppFormField) => {
-        const fieldKey = appField.field.key;
+        const fieldKey = appField.key;
         const currentValue = formData[fieldKey as keyof ApplicationFormData];
         
         // Find existing record
@@ -511,7 +511,7 @@ export default function JobApplicationForm({
         
         if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
           const existingInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
-            (info: OtherInfoData) => info.field.key === appField.field.id
+            (info: OtherInfoData) => info.field.key === appField.id
           );
           existingId = existingInfo?.id;
           existingValue = existingInfo?.infoFieldAnswer;
@@ -521,7 +521,7 @@ export default function JobApplicationForm({
         if (String(currentValue) !== existingValue) {
           return {
             id: existingId,
-            fieldId: appField.field.id,
+            fieldId: appField.id,
             infoFieldAnswer: typeof currentValue === 'string' ? currentValue : String(currentValue),
           };
         }
@@ -576,33 +576,33 @@ export default function JobApplicationForm({
   // ========== Render Field Functions ==========
   
   const renderFormField = (appField: AppFormField) => {
-    const { field, fieldState } = appField;
+    const { fieldState } = appField;
     const isRequired = fieldState === 'mandatory';
-    const error = errors[field.key as keyof ApplicationFormData];
+    const error = errors[appField.key as keyof ApplicationFormData];
 
     const commonProps = {
-      ...register(field.key as keyof ApplicationFormData),
+      ...register(appField.key as keyof ApplicationFormData),
       className: "h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent",
-      placeholder: field.placeholder || `Enter your ${field.label.toLowerCase()}`,
+      placeholder: appField.placeholder || `Enter your ${appField.label.toLowerCase()}`,
     };
 
-    switch (field.fieldType) {
+    switch (appField.fieldType) {
       case 'text':
       case 'email':
       case 'url':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Input
-              type={field.fieldType}
+              type={appField.fieldType}
               {...commonProps}
             />
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -615,9 +615,9 @@ export default function JobApplicationForm({
 
       case 'textarea':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Textarea
@@ -625,9 +625,9 @@ export default function JobApplicationForm({
               className="min-h-20 border-2 border-neutral-40 bg-neutral-10 resize-y"
               rows={4}
             />
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -640,20 +640,20 @@ export default function JobApplicationForm({
 
       case 'number':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <Input
               type="number"
               {...commonProps}
-              min={field.validation?.min}
-              max={field.validation?.max}
+              min={appField.validation?.min}
+              max={appField.validation?.max}
             />
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -666,9 +666,9 @@ export default function JobApplicationForm({
 
       case 'select':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="relative">
@@ -677,7 +677,7 @@ export default function JobApplicationForm({
                 className="w-full h-10 px-4 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-60 font-sans appearance-none focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent cursor-pointer"
               >
                 <option value="">Select an option</option>
-                {field.options?.split(',').map((option: string) => (
+                {appField.options?.split(',').map((option: string) => (
                   <option key={option.trim()} value={option.trim()}>
                     {option.trim()}
                   </option>
@@ -687,9 +687,9 @@ export default function JobApplicationForm({
                 <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
               </div>
             </div>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -702,9 +702,9 @@ export default function JobApplicationForm({
 
       case 'date':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="relative">
@@ -715,16 +715,16 @@ export default function JobApplicationForm({
                 type="date"
                 {...commonProps}
                 className="w-full h-10 pl-12 pr-12 py-2 border-2 border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
-                min={field.validation?.minDate}
-                max={field.validation?.maxDate}
+                min={appField.validation?.minDate}
+                max={appField.validation?.maxDate}
               />
               <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
                 <ChevronDown className="w-4 h-4 text-neutral-100" />
               </div>
             </div>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -737,18 +737,18 @@ export default function JobApplicationForm({
 
       case 'radio':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <FieldGroup className="flex flex-col gap-3">
-              {field.options?.split(',').map((option: string) => (
+              {appField.options?.split(',').map((option: string) => (
                 <label key={option.trim()} className="flex items-center gap-2 cursor-pointer">
                   <input
                     type="radio"
                     value={option.trim()}
-                    {...register(field.key as keyof ApplicationFormData)}
+                    {...register(appField.key as keyof ApplicationFormData)}
                     className="w-6 h-6 border-2 border-neutral-90 rounded-full appearance-none checked:border-8 checked:border-neutral-90 cursor-pointer"
                   />
                   <span className="text-sm leading-6 text-neutral-90 font-sans">
@@ -757,9 +757,9 @@ export default function JobApplicationForm({
                 </label>
               ))}
             </FieldGroup>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -772,21 +772,21 @@ export default function JobApplicationForm({
 
       case 'checkbox':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                {...register(field.key as keyof ApplicationFormData)}
+                {...register(appField.key as keyof ApplicationFormData)}
                 className="w-6 h-6 border-2 border-neutral-90 rounded checked:bg-neutral-90 cursor-pointer"
               />
               <span className="text-sm leading-6 text-neutral-90 font-sans">
-                {field.label}
+                {appField.label}
                 {isRequired && <span className="text-danger">*</span>}
               </span>
             </label>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1 ml-8">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -800,9 +800,9 @@ export default function JobApplicationForm({
       // Special field types with custom UI
       case 'phone_number':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
@@ -821,14 +821,14 @@ export default function JobApplicationForm({
               </span>
               <Input
                 type="tel"
-                {...register(field.key as keyof ApplicationFormData)}
-                placeholder={field.placeholder || "81XXXXXXXXX"}
+                {...register(appField.key as keyof ApplicationFormData)}
+                placeholder={appField.placeholder || "81XXXXXXXXX"}
                 className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
               />
             </div>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -841,16 +841,16 @@ export default function JobApplicationForm({
 
       case 'file':
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
             <div className="flex flex-col gap-2">
               <input
                 type="file"
-                id={field.key}
-                accept={field.validation?.fileTypes?.join(',')}
+                id={appField.key}
+                accept={appField.validation?.fileTypes?.join(',')}
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
@@ -862,39 +862,39 @@ export default function JobApplicationForm({
                     }
                     
                     // Validate file type if specified
-                    if (field.validation?.fileTypes && field.validation.fileTypes.length > 0) {
-                      if (!field.validation.fileTypes.includes(file.type)) {
-                        alert(`File must be one of: ${field.validation.fileTypes.join(', ')}`);
+                    if (appField.validation?.fileTypes && appField.validation.fileTypes.length > 0) {
+                      if (!appField.validation.fileTypes.includes(file.type)) {
+                        alert(`File must be one of: ${appField.validation.fileTypes.join(', ')}`);
                         e.target.value = '';
                         return;
                       }
                     }
                     
-                    setValue(field.key as keyof ApplicationFormData, file, { shouldValidate: true });
+                    setValue(appField.key as keyof ApplicationFormData, file, { shouldValidate: true });
                   }
                 }}
                 className="hidden"
               />
               <label
-                htmlFor={field.key}
+                htmlFor={appField.key}
                 className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
               >
                 <Upload className="w-4 h-4" />
-                Upload {field.label}
+                Upload {appField.label}
               </label>
               
               {/* File info display */}
-              {formValues[field.key as keyof ApplicationFormData] instanceof File && (
+              {formValues[appField.key as keyof ApplicationFormData] instanceof File && (
                 <div className="flex items-center gap-2 p-3 border border-neutral-40 bg-neutral-10 rounded-lg">
                   <FileText className="w-5 h-5 text-neutral-100" />
                   <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
-                    {(formValues[field.key as keyof ApplicationFormData] as File).name}
+                    {(formValues[appField.key as keyof ApplicationFormData] as File).name}
                   </span>
                   <button
                     type="button"
                     onClick={() => {
-                      setValue(field.key as keyof ApplicationFormData, '' as never, { shouldValidate: true });
-                      const fileInput = document.getElementById(field.key) as HTMLInputElement;
+                      setValue(appField.key as keyof ApplicationFormData, '' as never, { shouldValidate: true });
+                      const fileInput = document.getElementById(appField.key) as HTMLInputElement;
                       if (fileInput) fileInput.value = '';
                     }}
                     className="p-1 hover:bg-gray-100 rounded"
@@ -907,14 +907,14 @@ export default function JobApplicationForm({
               {/* Help text */}
               <div className="text-xs text-neutral-60">
                 <p>Maximum file size: {MAX_FILE_SIZE / 1024 / 1024}MB</p>
-                {field.validation?.fileTypes && (
-                  <p>Accepted types: {field.validation.fileTypes.join(', ')}</p>
+                {appField.validation?.fileTypes && (
+                  <p>Accepted types: {appField.validation.fileTypes.join(', ')}</p>
                 )}
               </div>
             </div>
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -926,27 +926,27 @@ export default function JobApplicationForm({
         );
       default:
         return (
-          <Field key={field.id}>
+          <Field key={appField.id}>
             <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
-              {field.label}
+              {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
-            {field.fieldType === 'textarea' ? (
+            {appField.fieldType === 'textarea' ? (
               <Textarea
-                {...register(field.key as keyof ApplicationFormData)}
-                placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
+                {...register(appField.key as keyof ApplicationFormData)}
+                placeholder={appField.placeholder || `Enter your ${appField.label.toLowerCase()}`}
                 className="min-h-20 border-2 border-neutral-40 bg-neutral-10"
               />
             ) : (
               <Input
-                {...register(field.key as keyof ApplicationFormData)}
-                placeholder={field.placeholder || `Enter your ${field.label.toLowerCase()}`}
+                {...register(appField.key as keyof ApplicationFormData)}
+                placeholder={appField.placeholder || `Enter your ${appField.label.toLowerCase()}`}
                 className="h-10 border-2 border-neutral-40 bg-neutral-10"
               />
             )}
-            {field.description && (
+            {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
-                {field.description}
+                {appField.description}
               </FieldDescription>
             )}
             {error && (
@@ -972,7 +972,7 @@ export default function JobApplicationForm({
 
   const visibleFields = appFormFields
     .filter((field: AppFormField) => {
-      return field.fieldState !== "off" && !isCommonProfileField(field.field.key);
+      return field.fieldState !== "off" && !isCommonProfileField(field.key);
     })
     .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0));
 
@@ -1030,20 +1030,6 @@ export default function JobApplicationForm({
                     <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? avatarPreview : "/avatar.svg"} alt={"avatar"} />
                   </div>
                   <div className="flex gap-2">
-                    {/* <input
-                      type="file"
-                      id="avatar"
-                      accept="image/*"
-                      onChange={handleAvatarChange}
-                      className="hidden"
-                    />
-                    <label
-                      htmlFor="avatar"
-                      className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
-                    >
-                      <Upload className="w-4 h-4" />
-                      Upload Photo
-                    </label> */}
                     <Button
                       type="button"
                       onClick={() => setShowGestureCapture(true)}
@@ -1175,7 +1161,7 @@ export default function JobApplicationForm({
 
                 {/* Domicile */}
                 <Controller
-                  name="title"
+                  name="domicile"
                   control={control}
                   render={({ field, fieldState }) => (
                     <Field>
@@ -1220,7 +1206,7 @@ export default function JobApplicationForm({
               </div>
               {/* Dynamic Form Fields */}
               {visibleFields.length > 0 && visibleFields
-                .filter((field: AppFormField) => field.field.key !== 'photo_profile')
+                .filter((field: AppFormField) => field.key !== 'photo_profile')
                 .sort((a: AppFormField, b: AppFormField) => (a.sortOrder || 0) - (b.sortOrder || 0))
                 .map((appField: AppFormField) => renderFormField(appField))}
 

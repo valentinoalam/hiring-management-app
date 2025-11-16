@@ -3,10 +3,11 @@ import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 
-export async function GET(request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
+export async function GET(
+  request: NextRequest, 
+  { params }: { params: Promise<{ jobId: string }> }) {
   try {
     const { jobId: id } = await params
-    console.log(id)
     const job = await prisma.job.findUnique({
       where: { id },
       include: {
@@ -22,7 +23,20 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           },
         },
         applicationFormFields: {
+          where: {
+            fieldState: { in: ["mandatory", "optional"] } // Only include enabled fields
+          },
+          include: {
+            field: true,
+          },
           orderBy: { sortOrder: "asc" },
+        },
+        company: {
+          select: {
+            id: true,
+            name: true,
+            logo: true,
+          },
         },
         _count: {
           select: { candidates: true },
@@ -33,8 +47,22 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
     if (!job) {
       return NextResponse.json({ error: "Job not found" }, { status: 404 })
     }
-
-    return NextResponse.json(job)
+    // Transform the response to make it easier for the frontend
+    const {applicationFormFields,...jobData} = job
+    const formFields = applicationFormFields.map(appField => ({
+      id: appField.field.id,
+      key: appField.field.key,
+      label: appField.field.label,
+      fieldType: appField.field.fieldType,
+      fieldState: appField.fieldState, // "mandatory" or "optional"
+      options: appField.field.options, // For select fields
+      sortOrder: appField.sortOrder,
+    }));
+    const response = {
+      jobData,
+      formFields,
+    };
+    return NextResponse.json(response)
   } catch (error) {
     console.error("[v0] Error fetching job:", error)
     return NextResponse.json({ error: "Failed to fetch job" }, { status: 500 })

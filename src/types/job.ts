@@ -128,22 +128,19 @@ export const transformJobData = (prismaJob: JobWithAuthorAndCount): Job => {
 export interface AppFormField {
   id: string;
   fieldState: "mandatory" | "optional" | "off";
-  field: {
-    id: string;
-    key: string;
-    label: string;
-    fieldType: string;
-    options?: string;
-    description?: string;
-    placeholder?: string;
-    validation?: {
-      min?: number;
-      max?: number;
-      minDate?: string;
-      maxDate?: string;
-      fileTypes?: string[];
-    };
+  description?: string;
+  placeholder?: string;
+  validation?: {
+    min?: number;
+    max?: number;
+    minDate?: string;
+    maxDate?: string;
+    fileTypes?: string[];
   };
+  key: string;
+  label: string;
+  fieldType: string;
+  options?: string;
   sortOrder?: number;
 }
 

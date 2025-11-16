@@ -6,13 +6,12 @@ import { Button } from "@/components/ui/button";
 import { useJobDetail } from "@/hooks/queries/job-queries";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
-import { useParams } from "next/navigation";
 import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
-import { useApplicationFormFields } from '@/hooks/queries/application-queries';
 import { ApplicationStatus, Applicant } from '@/types/job';
 import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants';
 import NoApplicantsHero from '@/components/job/recruiter/no-applicant';
 import Loading from '@/components/layout/loading';
+import { useParams } from 'next/navigation';
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>()
@@ -20,22 +19,27 @@ export default function JobApplicantsPage() {
   const [statusFilter, setStatusFilter] = useState<ApplicationStatus | 'ALL'>('ALL');
   const [useMock, setUseMock] = useState<boolean>(false)
 
-  const { data: job, isLoading: isLoadingJob, isError: isJobError, error: jobError } = useJobDetail(params.jobId);
+  const { 
+    data: jobData, 
+    isLoading: isLoadingJob, 
+    isError: isJobError, 
+    error: jobError 
+  } = useJobDetail(params.jobId);
+  
   const { 
     data: applicantsResponse, 
     isLoading: isLoadingApplicants, 
     isError: isApplicantsError,
     error: applicantsError 
   } = useJobApplicants(params.jobId);
-  const { 
-    data: applicationFormFields = [], 
-    isLoading: isLoadingFormFields,
-    isError: isFormFieldsError 
-  } = useApplicationFormFields(params.jobId);
 
   // Mutations
   const updateStatusMutation = useUpdateApplicantStatus(params.jobId);
   const bulkActionMutation = useBulkActionApplicants();
+
+  // Extract job and form fields from jobData
+  const job = jobData?.jobData;
+  const applicationFormFields = useMemo(() => jobData?.formFields || [], [jobData?.formFields]);
 
   // Memoized data transformations
   const applicants = useMemo(() => applicantsResponse?.applicants || [], [applicantsResponse]);
@@ -97,72 +101,101 @@ export default function JobApplicantsPage() {
     }));
   }, [applicants]);
 
-  const applicantData = applicantsWithMatchRates && applicantsWithMatchRates.length > 1 ?
-    applicantsWithMatchRates: mockApplicants;
+  const applicantData = useMemo(() => {
+    if (useMock) {
+      return mockApplicants;
+    }
+    return applicantsWithMatchRates && applicantsWithMatchRates.length > 0 ? applicantsWithMatchRates : [];
+  }, [useMock, applicantsWithMatchRates]);
+
+  const fieldsData = useMemo(() => {
+    return useMock ? mockVisibleFields : visibleFields;
+  }, [useMock, visibleFields]);
+
+  const totalApplicantsCount = useMemo(() => {
+    if (useMock) {
+      return mockTotalApplicants;
+    }
+    return applicantsResponse?.pagination?.totalCount || applicants.length || 0;
+  }, [useMock, applicantsResponse, applicants.length]);
+
   // Loading state
-  if (isLoadingJob || isLoadingApplicants || isLoadingFormFields || !job) {
+  if (isLoadingJob || isLoadingApplicants) {
     return <Loading message='Loading applicants data' />;
   }
 
   // Error states
-  if (isJobError) {
+  if (isJobError || isApplicantsError) {
     return (
       <div className="container mx-auto p-6">
         <div className="text-center py-12 text-red-600">
           <h2 className="text-xl font-semibold mb-2">
-            {jobError?.message || "Job not found"}
+            {isJobError ? "Job not found" : "Failed to load applicants"}
           </h2>
           <p className="text-gray-600 mb-4">
-            The job you&apos;re looking for doesn&apos;t exist or you don&apos;t have access.
+            {isJobError 
+              ? jobError?.message || "The job you're looking for doesn't exist or you don't have access."
+              : applicantsError?.message || 'Unable to load applicant data. Please try again later.'
+            }
           </p>
-          <Link href="/jobs">
-            <Button variant="outline">
-              <ArrowLeft className="h-4 w-4 mr-2" />
-              Back to Jobs
+          {isJobError ? (
+            <Link href="/jobs">
+              <Button variant="outline">
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back to Jobs
+              </Button>
+            </Link>
+          ) : (
+            <Button 
+              onClick={() => window.location.reload()} 
+              variant="outline"
+            >
+              Retry
             </Button>
-          </Link>
+          )}
         </div>
       </div>
     );
   }
 
-  if (isApplicantsError || isFormFieldsError) {
+  // No applicants state
+  if (!useMock && applicantData.length === 0) {
     return (
       <div className="container mx-auto p-6">
-        <div className="text-center py-12 text-red-600">
-          <h2 className="text-xl font-semibold mb-2">Failed to load applicants</h2>
-          <p className="text-gray-600 mb-4">
-            {applicantsError?.message || 'Unable to load applicant data. Please try again later.'}
-          </p>
-          <Button 
-            onClick={() => window.location.reload()} 
-            variant="outline"
-          >
-            Retry
-          </Button>
-        </div>
+        <Button 
+          variant={'outline'} 
+          onClick={() => setUseMock(!useMock)}
+          className="absolute top-5 right-5 flex items-center justify-center text-s font-medium leading-7 transition-colors active:bg-secondary-pressed text-neutral-80 rounded-lg"
+        >
+          Use Mock Data
+        </Button>
+        <NoApplicantsHero onUseMock={() => setUseMock(!useMock)} />
       </div>
     );
   }
 
-  if(!useMock && applicants && applicants.length <= 1 ) {
-    return <NoApplicantsHero onUseMock={()=>setUseMock(!useMock)}/>;
-
-  }
   return (
     <div className="container mx-auto p-6">
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-gray-900 mb-2">{job.title}</h1>
+        <h1 className="text-2xl font-bold text-gray-900 mb-2">
+          {job?.title || 'Job Applicants'}
+        </h1>
         <p className="text-gray-600">Manage applications for this position</p>
       </div>
-      <Button variant={'outline'} onClick={()=>setUseMock(!useMock)}
-        className="absolute top-5 right-5 flex items-center justify-center text-s font-medium leading-7 transition-colors active:bg-secondary-pressed text-neutral-80 rounded-lg"
-      >
-        Back to Real Data
-      </Button>
+      
+      {useMock && (
+        <Button 
+          variant={'outline'} 
+          onClick={() => setUseMock(!useMock)}
+          className="absolute top-5 right-5 flex items-center justify-center text-s font-medium leading-7 transition-colors active:bg-secondary-pressed text-neutral-80 rounded-lg"
+        >
+          Back to Real Data
+        </Button>
+      )}
+
       <ApplicantsTable 
         applicants={applicantData}
-        visibleFields={visibleFields || mockVisibleFields}
+        visibleFields={fieldsData}
         selectedApplicants={selectedApplicants}
         statusFilter={statusFilter}
         onSelectAll={toggleSelectAll}
@@ -172,8 +205,8 @@ export default function JobApplicantsPage() {
         onStatusFilterChange={handleStatusFilterChange}
         isUpdatingStatus={updateStatusMutation.isPending}
         isPerformingBulkAction={bulkActionMutation.isPending}
-        jobTitle={job.title}
-        totalApplicants={applicantsResponse?.pagination?.totalCount || applicants.length || mockTotalApplicants}
+        jobTitle={job?.title || ''}
+        totalApplicants={totalApplicantsCount}
       />
     </div>
   );

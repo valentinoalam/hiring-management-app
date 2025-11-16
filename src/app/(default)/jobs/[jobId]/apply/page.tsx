@@ -8,6 +8,7 @@ import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
 import { useEffect } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
+import Loading from '@/components/layout/loading';
 
 export default function JobApplicationPage() {
   const params = useParams();
@@ -16,42 +17,28 @@ export default function JobApplicationPage() {
   const { user } = useAuthStore()
   const userId = user?.id;
 
-  // Fetch job details
-  const { data: job, isLoading: jobLoading, error: jobError } = useJobDetail(jobId);
-  useEffect(() => {
-    if (jobError) {
-      console.error('Error fetching job details:', jobError);
-    }
-    console.log(job)
-  }, [jobError, job])
-  // Use the job application flow hook
+  // Use the updated job application flow hook
   const { 
     appFormFields, 
     userProfile, 
+    job, // Get job from the hook instead of separate query
     isLoading: dataLoading, 
     submitApplication, 
     isSubmitting, 
-    error: flowError
+    error: flowError 
   } = useJobApplicationFlow(jobId, userId || '');
 
   const handleCancel = () => {
     router.back();
   };
 
-  if (jobLoading || dataLoading) {
-    return (
-      <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-2 text-sm text-neutral-90">Loading application form...</p>
-        </div>
-      </div>
-    );
+  if (dataLoading) {
+    return <Loading message='Loading application form' />;
   }
   
   if (!job || !appFormFields) {
     const title = !job ? "Job Not Found" : "Error Loading Application Data";
-    const message = !job? "The job maybe already been removed." : "There was an issue loading the form data. Please try again later.";
+    const message = !job ? "The job may have been removed or is no longer available." : "There was an issue loading the form data. Please try again later.";
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
@@ -66,19 +53,16 @@ export default function JobApplicationPage() {
     );
   }
 
-  // Handle errors from both hooks
-  if (jobError || flowError) {
-    // You can customize the message based on the error type
-    const errorTitle = jobError ? "Job Not Found" : "Error Loading Application Data";
-    const errorMessage = jobError ? 
-      "The job you're looking for doesn't exist or is no longer available." :
-      "There was an issue loading the form data. Please try again later.";
-    const error = jobError || flowError
+  // Handle errors from the hook
+  if (flowError) {
+    const errorTitle = "Error Loading Application Data";
+    const errorMessage = "There was an issue loading the form data. Please try again later.";
+    
     return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-bold text-danger-main">{errorTitle}</h2>
-          <p className="text-neutral-90 mt-2">{error?.message || errorMessage}</p>
+          <p className="text-neutral-90 mt-2">{flowError?.message || errorMessage}</p>
           <div className='gap-5'>
             <Button onClick={() => router.back()} className="mt-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
@@ -98,9 +82,9 @@ export default function JobApplicationPage() {
 
   return (
     <JobApplicationForm
-      job={job}
-      appFormFields={appFormFields} // <<-- DATA PASSED AS PROP
-      userProfile={userProfile} // <<-- DATA PASSED AS PROP
+      job={job} // Use job from the hook
+      appFormFields={appFormFields}
+      userProfile={userProfile}
       onSubmit={submitApplication}
       onCancel={handleCancel} />
   );

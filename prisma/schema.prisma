@@ -282,6 +282,9 @@ model AppFormField {
   jobId      String      @db.Uuid
   fieldId    String      @db.Uuid
   fieldState String      @default("optional") // "mandatory", "optional", "off"
+  description String?
+  placeholder String?
+  validation  Json?
   sortOrder  Int?        @default(0)          // Added for field ordering
   updatedAt  DateTime    @updatedAt @map("updated_at")
 
