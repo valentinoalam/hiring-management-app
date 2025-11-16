@@ -298,24 +298,24 @@ export default function ApplicantsTable({
       },
     ];
 
-    const dynamicColumns: ColumnDef<Applicant & { matchRate?: number }>[] = visibleFields.map((field: { field: { key: string; label: string } }) => ({
-      id: `field_${field.field.key}`,
-      header: field.field.label.toUpperCase(),
+    const dynamicColumns: ColumnDef<Applicant & { matchRate?: number }>[] = visibleFields.map((field: AppFormField) => ({
+      id: `field_${field.key}`,
+      header: field.label.toUpperCase(),
       cell: ({ row }) => {
         const applicant = row.original;
         
         let answer = '-';
         
-        if (applicant.userInfo && applicant.userInfo[field.field.key]) {
-          answer = applicant.userInfo[field.field.key].answer || '-';
-        } else if (applicant[field.field.key as keyof Applicant]) {
-          answer = String(applicant[field.field.key as keyof Applicant]) || '-';
-        } else if (field.field.key === 'education' && field.field.key in applicant) {
-          answer = String(applicant[field.field.key as keyof typeof applicant]);
-        } else if (field.field.key === 'experience' && field.field.key in applicant) {
-          answer = String(applicant[field.field.key as keyof typeof applicant]);
-        } else if (field.field.key === 'skills' && field.field.key in applicant) {
-          answer = String(applicant[field.field.key as keyof typeof applicant]);
+        if (applicant.userInfo && applicant.userInfo[field.key]) {
+          answer = applicant.userInfo[field.key].answer || '-';
+        } else if (applicant[field.key as keyof Applicant]) {
+          answer = String(applicant[field.key as keyof Applicant]) || '-';
+        } else if (field.key === 'education' && field.key in applicant) {
+          answer = String(applicant[field.key as keyof typeof applicant]);
+        } else if (field.key === 'experience' && field.key in applicant) {
+          answer = String(applicant[field.key as keyof typeof applicant]);
+        } else if (field.key === 'skills' && field.key in applicant) {
+          answer = String(applicant[field.key as keyof typeof applicant]);
         }
         
         return (
