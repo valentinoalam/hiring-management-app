@@ -145,52 +145,37 @@ export const mockVisibleFields: AppFormField[] = [
   {
     id: 'education',
     fieldState: 'mandatory',
-    field: {
-      id: 'education',
-      key: 'education',
-      label: 'Pendidikan Terakhir',
-      fieldType: 'text'
-    }
+    key: 'education',
+    label: 'Pendidikan Terakhir',
+    fieldType: 'text'
   },
   {
     id: 'experience',
     fieldState: 'mandatory',
-    field: {
-      id: 'experience',
-      key: 'experience',
-      label: 'Pengalaman Kerja',
-      fieldType: 'text'
-    }
+    key: 'experience',
+    label: 'Pengalaman Kerja',
+    fieldType: 'text'
   },
   {
     id: 'skills',
     fieldState: 'mandatory',
-    field: {
-      id: 'skills',
-      key: 'skills',
-      label: 'Keahlian',
-      fieldType: 'text'
-    }
+    key: 'skills',
+    label: 'Keahlian',
+    fieldType: 'text'
   },
   {
     id: 'salary',
     fieldState: 'mandatory',
-    field: {
-      id: 'salary',
-      key: 'salary',
-      label: 'Ekspektasi Gaji',
-      fieldType: 'text'
-    }
+    key: 'salary',
+    label: 'Ekspektasi Gaji',
+    fieldType: 'text'
   },
   {
     id: 'notice_period',
     fieldState: 'mandatory',
-    field: {
-      id: 'notice_period',
-      key: 'notice_period',
-      label: 'Notice Period',
-      fieldType: 'text'
-    }
+    key: 'notice_period',
+    label: 'Notice Period',
+    fieldType: 'text'
   }
 ];
 
