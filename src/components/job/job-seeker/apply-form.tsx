@@ -146,8 +146,10 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
       case 'text':
       default:
         // All other fields default to a string
-        fieldValidator = z.string();
+        fieldValidator = z.string()
+        .max(10000, `${fieldLabel} must be less than 10000 characters`); // Add reasonable limit;
         break;
+
     }
 
     // 3. Apply Required/Optional Logic (Consolidated)
@@ -192,8 +194,10 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     .refine(file => file.size <= MAX_FILE_SIZE, `Resume must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Resume must be PDF or Word document");
 
-  schema.coverLetter = z.string().optional().or(z.literal('')); // Textarea/string input
-  
+  schema.coverLetter = z.string()
+  .max(15000, "Cover letter must be less than 15000 characters")
+  .optional()
+  .or(z.literal(''));
   schema.coverLetterFile = z.instanceof(File) // File input
     .refine(file => file.size <= MAX_FILE_SIZE, `Cover letter file must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Cover letter must be PDF or Word document")
@@ -534,6 +538,33 @@ export default function JobApplicationForm({
     const coverLetterContent = coverLetterMode === "text"
       ? formData.coverLetter
       : coverLetterFile?.name || "";
+
+    // Serialize all form responses to handle long text and complex data
+    const serializedFormResponse: Record<string, unknown> = {};
+
+    // Serialize each form field value
+    Object.entries(formData).forEach(([key, value]) => {
+      // Skip files and already handled fields
+      if (
+        key === 'resume' || 
+        key === 'coverLetterFile' || 
+        key === 'coverLetter' || 
+        key === 'source' ||
+        value instanceof File
+      ) {
+        return;
+      }
+      
+      // Handle different data types
+      if (typeof value === 'string' && value.length > 1000) {
+        // Mark long text for special handling if needed
+        serializedFormResponse[key] = value;
+      } else if (value instanceof Date) {
+        serializedFormResponse[key] = value.toISOString();
+      } else {
+        serializedFormResponse[key] = value;
+      }
+    });
 
     const formDataJson = {
       formResponse: formData,
