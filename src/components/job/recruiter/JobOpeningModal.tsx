@@ -220,6 +220,7 @@ export function JobOpeningModal({
                     </FieldLabel>
                     <Input
                       id="job-title"
+                      data-testid="job-title-input"
                       placeholder="Ex. Front End Engineer"
                       {...form.register("title")}
                       className="w-full h-10 border-2 border-neutral-40 bg-neutral-10"
@@ -391,6 +392,7 @@ export function JobOpeningModal({
                   </FieldLabel>
                   <Textarea
                     id="job-description"
+                    data-testid="job-description-textarea"
                     placeholder="Ex. Describe the job responsibilities and requirements"
                     {...form.register("description")}
                     className="min-h-24 border-2 border-neutral-40 bg-neutral-10 resize-none"
@@ -415,6 +417,7 @@ export function JobOpeningModal({
                   </FieldLabel>
                   <Input
                     id="number-of-candidates"
+                    data-testid="candidates-number-input"
                     type="number"
                     placeholder="Ex. 2"
                     {...form.register("numberOfCandidates", { valueAsNumber: true })}
@@ -506,6 +509,7 @@ export function JobOpeningModal({
 
               {/* Application Form Configuration */}
               <ApplicationFormConfig
+                infoFields={infoFields}
                 value={form.watch("applicationFormFields") || []}
                 onChange={(fields) => form.setValue("applicationFormFields", fields)}
               />
@@ -568,6 +572,7 @@ export function JobOpeningModal({
             </div>
             <Button
               type="submit"
+              data-testid="submit-job-button"
               disabled={!form.formState.isValid}
               className={cn(
                 "px-4 py-2 h-10 rounded-lg font-bold text-sm",

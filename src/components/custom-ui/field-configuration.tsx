@@ -1,7 +1,6 @@
-// components/ApplicationFormConfig.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
   DndContext,
   closestCenter,
@@ -36,7 +35,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Textarea } from '@/components/ui/textarea';
 import { X, GripVertical, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -58,6 +56,7 @@ interface FormField {
 
 interface ApplicationFormConfigProps {
   value: FormField[];
+  infoFields: InfoField[];
   onChange: (fields: FormField[]) => void;
   onFieldsChange?: (fields: InfoField[]) => void;
 }
@@ -278,13 +277,12 @@ function AddFieldForm({
 
 export function ApplicationFormConfig({ 
   value, 
+  infoFields,
   onChange,
   onFieldsChange 
 }: ApplicationFormConfigProps) {
-  const [infoFields, setInfoFields] = useState<InfoField[]>([]);
   const [customFields, setCustomFields] = useState<InfoField[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
-  const [loading, setLoading] = useState(true);
 
   const sensors = useSensors(
     useSensor(PointerSensor),
@@ -292,37 +290,6 @@ export function ApplicationFormConfig({
       coordinateGetter: sortableKeyboardCoordinates,
     })
   );
-
-  // Fetch info fields on mount
-  useEffect(() => {
-    const fetchInfoFields = async () => {
-      try {
-        setLoading(true);
-        const response = await fetch('/api/info-fields');
-        if (response.ok) {
-          const fields = await response.json();
-          setInfoFields(fields);
-          
-          // Initialize form fields if empty
-          if (value.length === 0) {
-            const initialFields = fields.map((field: InfoField, index: number) => ({
-              fieldId: field.id,
-              label: field.label,
-              fieldState: 'mandatory' as const,
-              sortOrder: index,
-            }));
-            onChange(initialFields);
-          }
-        }
-      } catch (error) {
-        console.error('Failed to fetch info fields:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchInfoFields();
-  }, []);
 
   const handleDragEnd = (event: DragEndEvent) => {
     const { active, over } = event;
@@ -399,17 +366,6 @@ export function ApplicationFormConfig({
     return [...infoFields, ...customFields].find(f => f.id === fieldId);
   };
 
-  if (loading) {
-    return (
-      <FieldSet>
-        <FieldLegend>Application Form Configuration</FieldLegend>
-        <div className="p-4 text-center text-neutral-60">
-          Loading form fields...
-        </div>
-      </FieldSet>
-    );
-  }
-
   const activeFields = value.filter(field => field.fieldState !== 'off');
 
   return (
@@ -434,7 +390,7 @@ export function ApplicationFormConfig({
           onDragEnd={handleDragEnd}
         >
           <SortableContext items={value.map(f => f.fieldId)} strategy={verticalListSortingStrategy}>
-            <div className="space-y-2">
+            <div className="space-y-2" data-testid="form-field-config">
               {value.map((field) => {
                 const fieldInfo = getFieldInfo(field.fieldId);
                 const isCustom = customFields.some(f => f.id === field.fieldId);
@@ -442,6 +398,7 @@ export function ApplicationFormConfig({
                 return (
                   <SortableFieldItem
                     key={field.fieldId}
+                    data-testid="sortable-field"
                     field={field}
                     infoField={fieldInfo!}
                     onFieldStateChange={handleFieldStateChange}
