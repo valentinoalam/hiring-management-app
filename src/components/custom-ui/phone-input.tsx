@@ -17,7 +17,7 @@ import Image from 'next/image';
 import { Input } from '../ui/input';
 
 // Helper to construct a free CDN URL based on the ISO code (e.g., US -> https://flagcdn.com/16x12/us.png)
-const getFlagUrl = (code: string) => `https://flagcdn.com/16x12/${code.toLowerCase()}.png`;
+const getFlagUrl = (code: string) => `https://flagcdn.com/${code.toLowerCase()}.svg`;
 
 // Country interface to match REST Countries API response
 interface Country {
@@ -26,10 +26,18 @@ interface Country {
   dial: string;
   flagUrl: string;
 }
-
+const initialCountries = [
+  { code: 'ID', name: 'Indonesia', dial: '+62', flagUrl: getFlagUrl('ID') },
+  { code: 'US', name: 'United States', dial: '+1', flagUrl: getFlagUrl('US') },
+  { code: 'GB', name: 'United Kingdom', dial: '+44', flagUrl: getFlagUrl('GB') },
+  { code: 'CA', name: 'Canada', dial: '+1', flagUrl: getFlagUrl('CA') },
+  { code: 'AU', name: 'Australia', dial: '+61', flagUrl: getFlagUrl('AU') },
+  { code: 'DE', name: 'Germany', dial: '+49', flagUrl: getFlagUrl('DE') },
+  { code: 'FR', name: 'France', dial: '+33', flagUrl: getFlagUrl('FR') },
+];
 export default function PhoneInput({ ...props }: React.ComponentProps<"input">) {
   const [countries, setCountries] = useState<Country[]>([]);
-  const [selectedCountry, setSelectedCountry] = useState<Country | null>(null);
+  const [selectedCountry, setSelectedCountry] = useState<Country | null>(initialCountries[0]);
   const [phoneNumber, setPhoneNumber] = useState('');
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -63,21 +71,10 @@ export default function PhoneInput({ ...props }: React.ComponentProps<"input">) 
         setCountries(transformedCountries);
         
         // Set default selected country to United States if available, otherwise first country
-        const usCountry = transformedCountries.find(country => country.code === 'US');
-        setSelectedCountry(usCountry || transformedCountries[0] || null);
+        const idCountry: Country | undefined = transformedCountries.find(country => country.code === 'ID');
+        setSelectedCountry(idCountry || transformedCountries[0] || null);
       } catch (error) {
         console.error('Error fetching countries:', error);
-        // Fallback to a few common countries if API fails
-        const fallbackCountries = [
-          { code: 'US', name: 'United States', dial: '+1', flagUrl: getFlagUrl('US') },
-          { code: 'GB', name: 'United Kingdom', dial: '+44', flagUrl: getFlagUrl('GB') },
-          { code: 'CA', name: 'Canada', dial: '+1', flagUrl: getFlagUrl('CA') },
-          { code: 'AU', name: 'Australia', dial: '+61', flagUrl: getFlagUrl('AU') },
-          { code: 'DE', name: 'Germany', dial: '+49', flagUrl: getFlagUrl('DE') },
-          { code: 'FR', name: 'France', dial: '+33', flagUrl: getFlagUrl('FR') },
-        ];
-        setCountries(fallbackCountries);
-        setSelectedCountry(fallbackCountries[0]);
       } finally {
         setLoading(false);
       }
@@ -96,20 +93,6 @@ export default function PhoneInput({ ...props }: React.ComponentProps<"input">) 
     setOpen(false);
   };
 
-  // Show loading state while fetching countries
-  if (loading) {
-    return (
-      <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden">
-        <div className="flex items-center justify-center px-4 border-r border-neutral-40">
-          <div className="w-4 h-3 bg-neutral-20 rounded-sm animate-pulse"></div>
-        </div>
-        <div className="flex-1 px-4 flex items-center">
-          <div className="w-full h-4 bg-neutral-20 rounded animate-pulse"></div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
 
@@ -118,6 +101,7 @@ export default function PhoneInput({ ...props }: React.ComponentProps<"input">) 
         <PopoverTrigger asChild>
           <button
             type="button"
+            data-testid="popover-trigger"
             role="combobox"
             aria-controls=''
             aria-expanded={open}
@@ -168,6 +152,16 @@ export default function PhoneInput({ ...props }: React.ComponentProps<"input">) 
               </CommandGroup>
             </CommandList>
           </Command>
+          {loading && (
+            <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden">
+              <div className="flex items-center justify-center px-4 border-r border-neutral-40">
+                <div className="w-4 h-3 bg-neutral-20 rounded-sm animate-pulse"></div>
+              </div>
+              <div className="flex-1 px-4 flex items-center">
+                <div className="w-full h-4 bg-neutral-20 rounded animate-pulse"></div>
+              </div>
+            </div>
+          )}
         </PopoverContent>
       </Popover>
 
