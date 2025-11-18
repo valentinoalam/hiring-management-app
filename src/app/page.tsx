@@ -7,17 +7,17 @@ export default async function Home() {
     const user = session?.user
     
     if (!user) {
-      redirect("/jobs")
+      return redirect("/jobs")
     }
     
     if (user.role === "RECRUITER") {
-      redirect("/recruiter")
+      return redirect("/recruiter")
     }
     
-    redirect("/jobs")
+    return redirect("/jobs")
     
   } catch (error) {
     console.error("Error during authentication/redirection:", error)
-    redirect("/jobs")
+    return redirect("/jobs")
   }
 }
