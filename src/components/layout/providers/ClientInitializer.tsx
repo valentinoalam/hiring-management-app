@@ -3,7 +3,6 @@
 import { useEffect, ReactNode } from 'react';
 import { useAuthStore } from '@/stores/auth-store';
 import { Session } from 'next-auth';
-import { ThemeProvider } from 'next-themes';
 import { NextAuthProvider } from './next-auth-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from 'sonner';
@@ -56,11 +55,11 @@ export default function ClientInitializer({ session, children }: ClientInitializ
   return (
 
       <NextAuthProvider session={session}>  
-        <ThemeProvider>
+        {/* <ThemeProvider> */}
           {children}
           <Analytics />
           <Toaster />
-        </ThemeProvider>
+        {/* </ThemeProvider> */}
       </NextAuthProvider>
   );
 }

@@ -29,7 +29,7 @@ export default async function RootLayout({
 }>) {
   const session = await auth()
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang="en">
       <body className={nunitoSans.className}>
         <QueryProvider> 
           <ClientInitializer session={session}>
