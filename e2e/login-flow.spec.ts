@@ -1,7 +1,7 @@
 // tests/login-flow.spec.ts
 import { test, expect } from '@playwright/test';
 import { clearAuthentication, loginWithCredentials } from './utils/auth-helpers';
-import { signIn } from '@/auth';
+// import { signIn } from '@/auth';
 
 test.describe('Login Flow', () => {
   test.beforeEach(async ({ page }) => {
@@ -43,10 +43,10 @@ test.describe('Login Flow', () => {
     const redirectUrl = `/jobs/${jobId}/apply`;
     
     // Mock successful login
-    await signIn("credentials", {
-      email: "recruiter1@careerconnect.com",
-      password: "password123",
-    })
+    // await signIn("credentials", {
+    //   email: "recruiter1@careerconnect.com",
+    //   password: "password123",
+    // })
 
     // Mock job data
     await page.route(`**/api/jobs/${jobId}`, async (route) => {
