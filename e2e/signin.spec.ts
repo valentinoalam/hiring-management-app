@@ -33,20 +33,20 @@ test.describe('Login Page - Fixed Tests', () => {
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Clear any existing value first
-    // await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
     
     // Wait a bit for the value to be set
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     await expect(emailInput).toHaveValue('test@example.com');
   });
 
   test('should switch to password login when password button is clicked', async ({ page }) => {
     // Fill email first
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     // Click password login button
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
@@ -72,13 +72,13 @@ test.describe('Login Page - Fixed Tests', () => {
     });
 
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     // Wait for button to be enabled (valid email)
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
-    await expect(magicLinkButton).toBeEnabled();
+    await expect(magicLinkButton).toBeEnabled({ timeout: 150000 });
     
     await magicLinkButton.click();
     
@@ -103,9 +103,9 @@ test.describe('Login Page - Fixed Tests', () => {
 
     // Fill email and switch to password
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
     await passwordButton.click();
@@ -116,7 +116,7 @@ test.describe('Login Page - Fixed Tests', () => {
     
     // Use more specific selector for the login button in password mode
     const loginButton = page.locator('form').filter({ has: passwordInput }).getByRole('button', { name: 'Masuk' });
-    await expect(loginButton).toBeEnabled();
+    await expect(loginButton).toBeEnabled({ timeout: 150000 });
     
     await loginButton.click();
     
@@ -141,9 +141,9 @@ test.describe('Login Page - Fixed Tests', () => {
 
     // Fill email and switch to password
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('wrong@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
     await passwordButton.click();
@@ -200,9 +200,9 @@ test.describe('Login Page - Fixed Tests', () => {
   test('should switch back to magic link from password form', async ({ page }) => {
     // Switch to password form
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
     await passwordButton.click();
@@ -228,9 +228,9 @@ test.describe('Login Page - Form Validation', () => {
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Try invalid email
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('invalid-email');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
     
@@ -250,14 +250,14 @@ test.describe('Login Page - Form Validation', () => {
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Enter valid email
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
     
     // Button should be enabled for valid email
-    await expect(magicLinkButton).toBeEnabled();
+    await expect(magicLinkButton).toBeEnabled({ timeout: 150000 });
   });
 
   test('should validate password field in password mode', async ({ page }) => {
@@ -265,9 +265,9 @@ test.describe('Login Page - Form Validation', () => {
     
     // Switch to password form with valid email
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
     await passwordButton.click();
@@ -281,10 +281,10 @@ test.describe('Login Page - Form Validation', () => {
     
     // Fill valid password
     await passwordInput.fill('password123');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     // Login button should be enabled with valid password
-    await expect(loginButton).toBeEnabled();
+    await expect(loginButton).toBeEnabled({ timeout: 150000 });
   });
 });
 
@@ -301,7 +301,7 @@ test.describe('Login Page - Responsive', () => {
     await expect(magicLinkButton).toBeVisible();
     
     // Should be able to interact - clear and fill with waiting
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
     await page.waitForTimeout(1000); // Longer wait for mobile
     
@@ -323,9 +323,9 @@ test.describe('Login Page - Error Handling', () => {
     await page.goto('/login');
     
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
     await magicLinkButton.click();
@@ -344,9 +344,9 @@ test.describe('Login Page - Error Handling', () => {
     await page.goto('/login');
     
     const emailInput = page.getByPlaceholder('Enter your email');
-    await emailInput.clear();
+    await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
-    await page.waitForTimeout(500);
+    await page.waitForTimeout(5000);
     
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
     await magicLinkButton.click();

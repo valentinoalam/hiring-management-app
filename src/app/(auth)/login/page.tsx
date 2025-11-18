@@ -63,8 +63,10 @@ export default function SignInPage() {
   const magicLinkForm = useForm<z.infer<typeof emailSchema>>({
     resolver: zodResolver(emailSchema),
     defaultValues: { email: "" },
+    mode: "onChange", // Add this for real-time validation
+    reValidateMode: "onChange" // And this
   })
-
+  const isMagicLinkFormValid = magicLinkForm.formState.isValid && !magicLinkForm.formState.errors.email
   const passwordForm = useForm<z.infer<typeof passwordSchema>>({
     resolver: zodResolver(passwordSchema),
     defaultValues: { email: "", password: "" },
@@ -277,7 +279,7 @@ export default function SignInPage() {
                   <Button
                     type="submit"
                     variant="secondary"
-                    disabled={isLoading || !magicLinkEmail || magicLinkForm.formState.isSubmitting || magicLinkForm.formState.isValid === false}
+                    disabled={isLoading || !magicLinkEmail || !isMagicLinkFormValid}
                     className="w-full rounded-lg font-bold"
                   >
                     {isLoading ? (
