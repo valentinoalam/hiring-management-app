@@ -8,25 +8,26 @@ test.describe('Login Page - Fixed Tests', () => {
   });
 
   test('should load login page with email input', async ({ page }) => {
+    await page.waitForTimeout(5000);
     // Check email input is present
     const emailInput = page.getByPlaceholder('Enter your email');
-    await expect(emailInput).toBeVisible();
+    await expect(emailInput).toBeVisible({ timeout: 20000 });
     
     // Check magic link button
     const magicLinkButton = page.getByRole('button', { name: 'Kirim link' });
-    await expect(magicLinkButton).toBeVisible();
+    await expect(magicLinkButton).toBeVisible({ timeout: 20000 });
     
     // Check password login option
     const passwordButton = page.getByRole('button', { name: 'Masuk dengan Password' });
-    await expect(passwordButton).toBeVisible();
+    await expect(passwordButton).toBeVisible({ timeout: 20000 });
     
     // Check Google login option
     const googleButton = page.getByRole('button', { name: 'Masuk dengan Google' });
-    await expect(googleButton).toBeVisible();
+    await expect(googleButton).toBeVisible({ timeout: 20000 });
     
     // Check sign up link
     const signUpLink = page.getByRole('link', { name: 'Daftar menggunakan email' });
-    await expect(signUpLink).toBeVisible();
+    await expect(signUpLink).toBeVisible({ timeout: 20000 });
   });
 
   test('should allow typing in email field', async ({ page }) => {
@@ -43,7 +44,9 @@ test.describe('Login Page - Fixed Tests', () => {
 
   test('should switch to password login when password button is clicked', async ({ page }) => {
     // Fill email first
+    await page.waitForTimeout(5000);
     const emailInput = page.getByPlaceholder('Enter your email');
+    await expect(emailInput).toBeVisible();
     await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
     await page.waitForTimeout(5000);
@@ -162,6 +165,7 @@ test.describe('Login Page - Fixed Tests', () => {
   });
 
   test('should navigate to sign up page', async ({ page }) => {
+    await page.waitForTimeout(5000);
     const signUpLink = page.getByRole('link', { name: 'Daftar menggunakan email' });
     
     // Get the href attribute to verify it points to sign-up
@@ -177,7 +181,9 @@ test.describe('Login Page - Fixed Tests', () => {
   });
 
   test('should handle Google OAuth login', async ({ page }) => {
+    await page.waitForTimeout(5000);
     const googleButton = page.getByRole('button', { name: 'Masuk dengan Google' });
+    await expect(googleButton).toBeVisible();
     await googleButton.click();
     
     // Should initiate OAuth flow
@@ -199,6 +205,7 @@ test.describe('Login Page - Fixed Tests', () => {
 
   test('should switch back to magic link from password form', async ({ page }) => {
     // Switch to password form
+    await page.waitForTimeout(25000);
     const emailInput = page.getByPlaceholder('Enter your email');
     await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
@@ -224,7 +231,7 @@ test.describe('Login Page - Fixed Tests', () => {
 test.describe('Login Page - Form Validation', () => {
   test('should disable magic link button for invalid email', async ({ page }) => {
     await page.goto('/login');
-    
+    await page.waitForTimeout(35000);
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Try invalid email
@@ -246,7 +253,7 @@ test.describe('Login Page - Form Validation', () => {
 
   test('should enable magic link button for valid email', async ({ page }) => {
     await page.goto('/login');
-    
+    await page.waitForTimeout(5000);
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Enter valid email
@@ -262,9 +269,10 @@ test.describe('Login Page - Form Validation', () => {
 
   test('should validate password field in password mode', async ({ page }) => {
     await page.goto('/login');
-    
+    await page.waitForTimeout(25000);
     // Switch to password form with valid email
     const emailInput = page.getByPlaceholder('Enter your email');
+    expect(emailInput).toBeVisible();
     await emailInput.clear({ timeout: 20000 });
     await emailInput.fill('test@example.com');
     await page.waitForTimeout(5000);

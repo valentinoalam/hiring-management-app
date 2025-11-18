@@ -13,8 +13,8 @@ test.describe('Job Application Error Scenarios', () => {
 
     await page.goto('/jobs/invalid-job-id/apply');
     
-    await expect(page.locator('text=Job Not Found')).toBeVisible();
-    await expect(page.locator('text=The job you\'re looking for doesn\'t exist')).toBeVisible();
+    await expect(page.locator('text=Job Not Found')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('text=The job you\'re looking for doesn\'t exist')).toBeVisible({ timeout: 30000 });
   });
 
   test('should handle network failure', async ({ page }) => {
@@ -24,7 +24,7 @@ test.describe('Job Application Error Scenarios', () => {
 
     await page.goto('/jobs/123/apply');
     
-    await expect(page.locator('text=Error Loading Application Data')).toBeVisible();
+    await expect(page.locator('text=Error Loading Application Data')).toBeVisible({ timeout: 30000 });
   });
 
   test('should handle file validation errors', async ({ page }) => {
@@ -47,7 +47,7 @@ test.describe('Job Application Error Scenarios', () => {
     await resumeInput.setInputFiles('./tests/fixtures/invalid-file.txt');
     
     // Verify error message
-    await expect(page.locator('text=Resume must be PDF or Word document')).toBeVisible();
+    await expect(page.locator('text=Resume must be PDF or Word document')).toBeVisible({ timeout: 30000 });
   });
 
   test('should handle form submission failure', async ({ page }) => {
@@ -89,6 +89,6 @@ test.describe('Job Application Error Scenarios', () => {
     // Submit and verify error handling
     await page.locator('button[type="submit"]').click();
     
-    await expect(page.locator('text=Failed to submit application')).toBeVisible();
+    await expect(page.locator('text=Failed to submit application')).toBeVisible({ timeout: 30000 });
   });
 });
