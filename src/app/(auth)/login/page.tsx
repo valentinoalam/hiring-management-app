@@ -277,7 +277,7 @@ export default function SignInPage() {
                   <Button
                     type="submit"
                     variant="secondary"
-                    disabled={isLoading || !magicLinkEmail}
+                    disabled={isLoading || !magicLinkEmail || !magicLinkForm.formState.isValid}
                     className="w-full rounded-lg font-bold"
                   >
                     {isLoading ? (
