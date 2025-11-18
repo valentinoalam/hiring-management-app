@@ -1,13 +1,15 @@
 // tests/mocks/job-application-mocks.ts
 export const mockUser = {
   id: 'user-123',
+  email: 'recruiter1@careerconnect.com',
+  name: 'Recruiter One',
   profile: {
     id: 'profile-123',
-    fullname: 'John Doe',
-    email: 'john.doe@example.com',
+    fullname: 'Recruiter One',
+    email: 'recruiter1@careerconnect.com',
     phone: '+628123456789',
     location: 'Jakarta, Indonesia',
-    linkedinUrl: 'https://linkedin.com/in/johndoe',
+    linkedinUrl: 'https://linkedin.com/in/recruiterone',
     avatarUrl: '/avatar.png',
     resumeUrl: '/resumes/sample.pdf',
     gender: 'male',

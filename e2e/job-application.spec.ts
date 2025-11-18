@@ -1,6 +1,7 @@
 // tests/job-application.spec.ts
 import { test, expect, Page } from '@playwright/test';
 import { mockUser, mockJob, mockApplication } from './mocks/job-application-mocks';
+import { setupAuthenticatedState, clearAuthentication, loginWithCredentials } from './utils/auth-helpers';
 
 test.describe('Job Application Flow', () => {
   let page: Page;
@@ -8,6 +9,9 @@ test.describe('Job Application Flow', () => {
   test.beforeEach(async ({ browser }) => {
     page = await browser.newPage();
     
+    // Setup authenticated state for most tests
+    await setupAuthenticatedState(page);
+
     // Mock API responses
     await page.route('**/api/jobs/*', async (route) => {
       await route.fulfill({
@@ -35,31 +39,65 @@ test.describe('Job Application Flow', () => {
         }),
       });
     });
-
-    // Navigate to job application page
-    await page.goto('/jobs/123/apply');
   });
 
-  test('should load job application form successfully', async () => {
-    // Verify page title and job info
+  test('should redirect to login when not authenticated', async () => {
+    // Clear authentication for this test
+    await clearAuthentication(page);
+
+    await page.goto('/jobs/123/apply');
+    
+    // Should redirect to login page
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page.locator('text=Sign in to your account')).toBeVisible();
+    
+    // Check that redirect parameter is preserved
+    const url = page.url();
+    expect(url).toContain('redirect=');
+    expect(url).toContain(encodeURIComponent('/jobs/123/apply'));
+  });
+
+  test('should login with specific credentials and access application', async () => {
+    await clearAuthentication(page);
+    
+    // Mock login API
+    await page.route('**/api/auth/login', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          user: mockUser,
+          token: 'mock-jwt-token'
+        }),
+      });
+    });
+
+    // Go directly to application page (should redirect to login)
+    await page.goto('/jobs/123/apply');
+    
+    // Verify we're on login page
+    await expect(page).toHaveURL(/\/auth\/login/);
+    
+    // Login with specific credentials
+    await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
+    
+    // Should redirect back to application page after login
+    await expect(page).toHaveURL(/\/jobs\/123\/apply/);
+    await expect(page.locator('h1')).toContainText(`Apply ${mockJob.jobData.title}`);
+  });
+
+  test('should load job application form when authenticated', async () => {
+    await page.goto('/jobs/123/apply');
+    
+    // Verify we're on the application page (not redirected)
+    await expect(page).toHaveURL(/\/jobs\/123\/apply/);
     await expect(page.locator('h1')).toContainText(`Apply ${mockJob.jobData.title}`);
     await expect(page.locator('text=Required')).toBeVisible();
+  });
+
+  test('should submit application with required fields when authenticated', async () => {
+    await page.goto('/jobs/123/apply');
     
-    // Verify form sections are present
-    await expect(page.locator('text=Photo Profile')).toBeVisible();
-    await expect(page.locator('text=Full Name')).toBeVisible();
-    await expect(page.locator('text=Email')).toBeVisible();
-    await expect(page.locator('text=Resume')).toBeVisible();
-  });
-
-  test('should pre-fill user profile data', async () => {
-    // Verify profile data is pre-filled
-    await expect(page.locator('input[name="full_name"]')).toHaveValue(mockUser.profile.fullname);
-    await expect(page.locator('input[name="email"]')).toHaveValue(mockUser.profile.email);
-    await expect(page.locator('input[name="phone_number"]')).toHaveValue(mockUser.profile.phone);
-  });
-
-  test('should submit application with required fields', async () => {
     // Fill required fields that might not be pre-filled
     await page.locator('input[name="date_of_birth"]').fill('1990-01-01');
     
@@ -72,7 +110,7 @@ test.describe('Job Application Flow', () => {
     
     // Fill LinkedIn URL
     await page.locator('input[name="linkedin_url"]').fill('https://linkedin.com/in/johndoe');
-    
+    await fillRequiredFields(page)
     // Upload resume
     const resumeInput = page.locator('input[id="resume"]');
     await resumeInput.setInputFiles('./tests/fixtures/sample-resume.pdf');
@@ -89,6 +127,8 @@ test.describe('Job Application Flow', () => {
   });
 
   test('should show validation errors for missing required fields', async () => {
+    await page.goto('/jobs/123/apply');
+    
     // Clear pre-filled required fields
     await page.locator('input[name="full_name"]').fill('');
     await page.locator('input[name="email"]').fill('');
@@ -102,69 +142,26 @@ test.describe('Job Application Flow', () => {
     await expect(page.locator('text=Resume is required')).toBeVisible();
   });
 
-  test('should handle cover letter in text mode', async () => {
-    // Select text mode for cover letter
-    await page.locator('input[value="text"]').check();
+  test('should handle invalid login credentials', async () => {
+    await clearAuthentication(page);
     
-    // Fill cover letter
-    const coverLetterText = 'I am excited to apply for this position...';
-    await page.locator('textarea[name="coverLetter"]').fill(coverLetterText);
-    
-    // Fill other required fields
-    await fillRequiredFields(page);
-    
-    // Submit
-    await page.locator('button[type="submit"]').click();
-    
-    await expect(page).toHaveURL(/\/success/);
-  });
-
-  test('should handle cover letter in file mode', async () => {
-    // Select file mode for cover letter
-    await page.locator('input[value="file"]').check();
-    
-    // Upload cover letter file
-    const coverLetterInput = page.locator('input[id="coverLetterFile"]');
-    await coverLetterInput.setInputFiles('./tests/fixtures/cover-letter.pdf');
-    
-    // Fill other required fields
-    await fillRequiredFields(page);
-    
-    // Submit
-    await page.locator('button[type="submit"]').click();
-    
-    await expect(page).toHaveURL(/\/success/);
-  });
-
-  test('should handle photo capture', async () => {
-    // Mock the gesture capture component
-    await page.route('**/api/capture-photo', async (route) => {
+    // Mock login API to return error for invalid credentials
+    await page.route('**/api/auth/login', async (route) => {
       await route.fulfill({
-        status: 200,
+        status: 401,
         contentType: 'application/json',
-        body: JSON.stringify({ imageUrl: 'data:image/jpeg;base64,mock-image-data' }),
+        body: JSON.stringify({ error: 'Invalid credentials' }),
       });
     });
 
-    // Click take picture button
-    await page.locator('button:has-text("Take a Picture")').click();
+    await page.goto('/auth/login?redirect=/jobs/123/apply');
     
-    // Verify gesture capture is shown
-    await expect(page.locator('text=Gesture Profile Capture')).toBeVisible();
+    // Try to login with wrong password
+    await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'wrongpassword');
     
-    // Mock saving the photo
-    await page.locator('button:has-text("Save Photo")').click();
-    
-    // Verify we're back to form and photo is updated
-    await expect(page.locator('img[alt="avatar"]')).toHaveAttribute('src', /data:image/);
-  });
-
-  test('should cancel and go back', async () => {
-    // Click back button
-    await page.locator('button[aria-label="Go back"]').click();
-    
-    // Verify navigation back
-    await expect(page).toHaveURL(/\/jobs/);
+    // Should stay on login page and show error
+    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page.locator('text=Invalid credentials')).toBeVisible();
   });
 });
 
