@@ -2,11 +2,10 @@
 "use client"
 import { useParams, useRouter } from 'next/navigation';
 import JobApplicationForm from '@/components/job/job-seeker/apply-form';
-import { useJobDetail } from '@/hooks/queries/job-queries';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
-import { useEffect } from 'react';
+
 import { useAuthStore } from '@/stores/auth-store';
 import Loading from '@/components/layout/loading';
 
@@ -37,20 +36,23 @@ export default function JobApplicationPage() {
   }
   
   if (!job || !appFormFields) {
-    const title = !job ? "Job Not Found" : "Error Loading Application Data";
-    const message = !job ? "The job may have been removed or is no longer available." : "There was an issue loading the form data. Please try again later.";
-    return (
-      <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-lg font-bold text-danger-main">{title}</h2>
-          <p className="text-neutral-90">{message}</p>
-          <Button onClick={handleCancel} className="mt-4">
-            <ArrowLeft className="w-4 h-4 mr-2" />
-            Go Back
-          </Button>
-        </div>
-      </div>
-    );
+    // const title = !job ? "Job Not Found" : "Error Loading Application Data";
+    // const message = !job ? "The job may have been removed or is no longer available." : "There was an issue loading the form data. Please try again later.";
+    return {
+      notFound: true,
+    };
+    // (
+    //   <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
+    //     <div className="text-center">
+    //       <h2 className="text-lg font-bold text-danger-main">{title}</h2>
+    //       <p className="text-neutral-90">{message}</p>
+    //       <Button onClick={handleCancel} className="mt-4">
+    //         <ArrowLeft className="w-4 h-4 mr-2" />
+    //         Go Back
+    //       </Button>
+    //     </div>
+    //   </div>
+    // );
   }
 
   // Handle errors from the hook
@@ -64,7 +66,7 @@ export default function JobApplicationPage() {
           <h2 className="text-lg font-bold text-danger-main">{errorTitle}</h2>
           <p className="text-neutral-90 mt-2">{flowError?.message || errorMessage}</p>
           <div className='gap-5'>
-            <Button onClick={() => router.back()} className="mt-4">
+            <Button onClick={handleCancel} className="mt-4">
               <ArrowLeft className="w-4 h-4 mr-2" />
               Go Back
             </Button>
