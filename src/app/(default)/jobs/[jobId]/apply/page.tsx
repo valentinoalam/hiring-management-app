@@ -8,6 +8,7 @@ import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
 
 import { useAuthStore } from '@/stores/auth-store';
 import Loading from '@/components/layout/loading';
+import JobsNotFound from '../not-found';
 
 export default function JobApplicationPage() {
   const params = useParams();
@@ -24,9 +25,10 @@ export default function JobApplicationPage() {
     isLoading: dataLoading, 
     submitApplication, 
     isSubmitting, 
-    error: flowError 
+    error 
   } = useJobApplicationFlow(jobId, userId || '');
 
+  
   const handleCancel = () => {
     router.back();
   };
@@ -38,9 +40,7 @@ export default function JobApplicationPage() {
   if (!job || !appFormFields) {
     // const title = !job ? "Job Not Found" : "Error Loading Application Data";
     // const message = !job ? "The job may have been removed or is no longer available." : "There was an issue loading the form data. Please try again later.";
-    return {
-      notFound: true,
-    };
+    return JobsNotFound;
     // (
     //   <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
     //     <div className="text-center">
@@ -56,15 +56,16 @@ export default function JobApplicationPage() {
   }
 
   // Handle errors from the hook
-  if (flowError) {
+  if (error) {
     const errorTitle = "Error Loading Application Data";
     const errorMessage = "There was an issue loading the form data. Please try again later.";
-    
-    return (
+    if(error.message?.includes('not found') ||
+      error.message?.includes('404')) return JobsNotFound
+    else return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
           <h2 className="text-lg font-bold text-danger-main">{errorTitle}</h2>
-          <p className="text-neutral-90 mt-2">{flowError?.message || errorMessage}</p>
+          <p className="text-neutral-90 mt-2">{error?.message || errorMessage}</p>
           <div className='gap-5'>
             <Button onClick={handleCancel} className="mt-4">
               <ArrowLeft className="w-4 h-4 mr-2" />

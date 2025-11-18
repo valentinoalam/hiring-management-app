@@ -5,9 +5,11 @@ import { test, expect, Page } from '@playwright/test';
 async function login(page: Page, email = 'recruiter@example.com', password = 'password') {
   await page.goto('/login');
   await page.fill('input[type="email"]', email);
+  const passwordInput = page.getByPlaceholder('Enter your password');
+  await expect(passwordInput).toBeVisible();
   await page.fill('input[type="password"]', password);
   await page.click('button[type="submit"]');
-  await page.waitForURL('/dashboard'); // Adjust based on your app
+  await page.waitForURL('/recruiter'); // Adjust based on your app
 }
 
 // Helper to create a company first if needed
