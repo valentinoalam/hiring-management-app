@@ -33,7 +33,7 @@ test.describe('Login Page - Fixed Tests', () => {
     const emailInput = page.getByPlaceholder('Enter your email');
     
     // Clear any existing value first
-    await emailInput.clear();
+    // await emailInput.clear();
     await emailInput.fill('test@example.com');
     
     // Wait a bit for the value to be set
