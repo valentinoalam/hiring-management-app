@@ -40,7 +40,7 @@ export default function JobApplicationPage() {
   if (!job || !appFormFields) {
     // const title = !job ? "Job Not Found" : "Error Loading Application Data";
     // const message = !job ? "The job may have been removed or is no longer available." : "There was an issue loading the form data. Please try again later.";
-    return JobsNotFound;
+    return <JobsNotFound />;
     // (
     //   <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
     //     <div className="text-center">
@@ -60,7 +60,7 @@ export default function JobApplicationPage() {
     const errorTitle = "Error Loading Application Data";
     const errorMessage = "There was an issue loading the form data. Please try again later.";
     if(error.message?.includes('not found') ||
-      error.message?.includes('404')) return JobsNotFound
+      error.message?.includes('404')) return <JobsNotFound />
     else return (
       <div className="min-h-screen bg-neutral-10 flex items-center justify-center">
         <div className="text-center">
