@@ -44,8 +44,12 @@ export async function GET(
       },
     })
 
+
     if (!job) {
-      return NextResponse.json({ error: "Job not found" }, { status: 404 })
+      return NextResponse.json(
+        { error: "Job not found or no longer available" }, 
+        { status: 404 }
+      );
     }
     // Transform the response to make it easier for the frontend
     const {applicationFormFields,...jobData} = job
@@ -86,9 +90,17 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
       select: { authorId: true },
     })
 
-    if (!job || job.authorId !== user.id) {
+    if (!job) {
+      return NextResponse.json(
+        { error: "Job not found or no longer available" }, 
+        { status: 404 }
+      );
+    }
+
+    if (job.authorId !== user.id) {
       return NextResponse.json({ error: "Unauthorized to update this job" }, { status: 403 })
     }
+
 
     const body = await request.json()
     const { title, description, department, location, salaryMin, salaryMax, salaryCurrency, employmentType, status } = body
