@@ -132,7 +132,7 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success) {
-        router.push(callbackUrl)
+        router.push(result.redirectTo)
       } else {
         setError("An unexpected error occurred. Please try again.")
         router.refresh()
