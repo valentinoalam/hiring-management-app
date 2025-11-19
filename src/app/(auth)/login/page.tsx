@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
@@ -79,16 +79,21 @@ export default function SignInPage() {
   const passwordEmail = passwordForm.watch("email")
   const currentEmail = activeMethod === "magic-link" ? magicLinkEmail : passwordEmail
 
+  useEffect(() => {
+    if (session) {
+      const callbackUrl = searchParams.get('callbackUrl') || '/';
+      router.push(callbackUrl);
+    }
+  }, [session, router, searchParams]);
+  if (session) {
+    return null; // Return null while redirecting
+  }
   // Reset errors when user interacts with forms
   const clearError = () => setError("")
   if (status === 'loading') {
     return <Loading />
   }
-  if (session) {
-    // Redirect if logged in
-    router.push(searchParams.get('callbackUrl') || '/'); 
-    return null; // Return null while redirecting
-  }
+
   async function handleMagicLinkSubmit(values: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError("")
