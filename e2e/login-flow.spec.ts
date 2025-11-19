@@ -26,8 +26,7 @@ test.describe('Login Flow', () => {
     await page.waitForLoadState('networkidle');
     // Should stay on login page and show error
     await expect(page).toHaveURL(/\/login/);
-    
-    await expect(page.locator('text=Invalid email or password')).toBeVisible();
+    await expect(page.getByText('Invalid email or password')).toBeVisible();
   });
 
   test('should show error for non-existent email', async ({ page }) => {
@@ -37,7 +36,7 @@ test.describe('Login Flow', () => {
     await page.waitForLoadState('networkidle');
     // Should stay on login page and show error
     await expect(page).toHaveURL(/\/login/);
-    await expect(page.locator('text=Invalid email or password')).toBeVisible();
+    await expect(page.getByText('Invalid email or password')).toBeVisible();
   });
 
   test('should preserve redirect URL after login', async ({ page }) => {

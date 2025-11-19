@@ -139,7 +139,6 @@ export default function SignInPage() {
           // Fallback to callbackUrl or home
           router.push(callbackUrl || "/");
         }
-        router.refresh();
       }
     } catch (err) {
       console.error("Sign in error:", err)

@@ -27,15 +27,8 @@ export async function setupAuthenticatedState(page: Page) {
 }
 export async function clearAuthentication(page: Page) {
   await page.addInitScript(() => {
-    // Clear Auth.js storage
-    localStorage.removeItem('next-auth.session-token');
-    localStorage.removeItem('next-auth.callback-url');
-    sessionStorage.clear();
-    
-    // Clear your app's storage
-    localStorage.removeItem('user');
-    localStorage.removeItem('auth-token');
-    localStorage.clear();
+    window.sessionStorage.clear();
+    window.localStorage.clear();
   });
 }
 export async function loginWithCredentials(page: Page, email: string, password: string) {
