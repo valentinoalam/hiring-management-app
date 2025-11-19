@@ -16,60 +16,53 @@ interface User {
   id: string;
   email?: string;
   name?: string | null;
-  role: "RECRUITER" | "APPLICANT" | 'ADMIN'; // Ensure all UserRole types are covered
+  role: "RECRUITER" | "APPLICANT" | 'ADMIN';
   emailVerified?: Date | null;
   image?: string | null;
 }
+
 interface AuthState {
-  isLoggedIn: boolean;
   user: User | null;
-  userId: string | null;
-  // preferences: UserPreferences;
-  profile: UserProfile | null
-  isLoading: boolean
-  isAuthenticated: boolean
-  setSessionData: (
-    data: { 
-      userId: string; 
-      // preferences: UserPreferences 
-    },
-  ) => void;
-  setUser: (user: User | null) => void
-  setProfile: (profile: UserProfile | null) => void
-  setIsLoading: (isLoading: boolean) => void
-  reset: () => void
+  profile: UserProfile | null;
+  isLoading: boolean;
+  isAuthenticated: boolean;
+  setAuthData: (user: User | null, profile: UserProfile | null) => void;
+  setUser: (user: User | null) => void;
+  setProfile: (profile: UserProfile | null) => void;
+  setIsLoading: (isLoading: boolean) => void;
+  reset: () => void;
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      userId: null,
       user: null,
       profile: null,
       isLoading: true,
       isAuthenticated: false,
-      isLoggedIn: false,
-      authUserData: null,
-      // preferences: { theme: 'light', language: 'en' },
-      setSessionData: (data) => set({ 
-          isLoggedIn: !!data.userId, 
-          userId: data.userId, 
-          // preferences: data.preferences 
+      
+      setAuthData: (user, profile) => set({ 
+        user, 
+        profile,
+        isAuthenticated: !!user,
+        isLoading: false 
       }),
-      // updatePreferences: (newPrefs) => set((state) => ({
-      //   preferences: { ...state.preferences, ...newPrefs }
-      //   // NOTE: A Server Action/API call is required here to sync to Prisma/DB
-      // })),
-      setUser: (user) => set({ user, isAuthenticated: !!user }),
+      
+      setUser: (user) => set({ 
+        user,
+        isAuthenticated: !!user 
+      }),
+      
       setProfile: (profile) => set({ profile }),
+      
       setIsLoading: (isLoading) => set({ isLoading }),
-      reset: () =>
-        set({
-          user: null,
-          profile: null,
-          isLoading: false,
-          isAuthenticated: false,
-        }),
+      
+      reset: () => set({
+        user: null,
+        profile: null,
+        isLoading: false,
+        isAuthenticated: false,
+      }),
     }),
     {
       name: "auth-store",
@@ -80,7 +73,7 @@ export const useAuthStore = create<AuthState>()(
     },
   ),
 );
-// Custom hook to handle hydration in Next.js
+
 export const useHydratedAuthStore = <T>(selector: (state: AuthState) => T) => {
   const store = useAuthStore(selector);
   const [data, setData] = useState(store);

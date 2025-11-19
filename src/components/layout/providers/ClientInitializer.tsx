@@ -15,51 +15,62 @@ interface ClientInitializerProps {
 }
 
 export default function ClientInitializer({ session, children }: ClientInitializerProps) {
-  const setSessionData = useAuthStore((state) => state.setSessionData);
-  const setUser =  useAuthStore((state) => state.setUser);
+  const setAuthData = useAuthStore((state) => state.setAuthData);
+  const setProfile = useAuthStore((state) => state.setProfile);
+  const setIsLoading = useAuthStore((state) => state.setIsLoading);
   const resetAuthStore = useAuthStore((state) => state.reset);
+  
   const userId = session?.user?.id;
-  const { data: profile } = useUserProfile(userId || ''); 
-  // Get the Zustand setter function
+  const { data: profile, isLoading: profileLoading } = useUserProfile(userId || ''); 
+  
   const setBasicProfile = useFastProfileStore((state) => state.setBasicProfile);
 
+  // Handle authentication state
   useEffect(() => {
-    if (session) {
-      const sessionData = {
-          userId: session.user.id,
-          // preferences: session.user.preferences, 
-      };
-      setSessionData(sessionData);
-      setUser({
+    if (session?.user) {
+      const userData = {
         ...session.user,
         email: session.user.email || undefined,
         role: session.user.role || 'APPLICANT'
-      });
-    }else {
-      // 💡 HANDLE LOGOUT: Session is null, reset the store
-      resetAuthStore(); 
+      };
+      
+      // Set auth data immediately with user, profile will be updated later
+      setAuthData(userData, null);
+    } else {
+      // No session means user is not authenticated
+      resetAuthStore();
     }
-  }, [resetAuthStore, session, setSessionData, setUser]);
+  }, [session, setAuthData, resetAuthStore]);
+
+  // Handle profile data when it's loaded
   useEffect(() => {
     if (profile) {
-      // 3. Destructure the key pieces you want to store in Zustand
-      const { fullname, avatarUrl } = profile; 
+      // Update auth store with profile
+      setProfile(profile);
       
+      // Update fast profile store
+      const { fullname, avatarUrl } = profile; 
       setBasicProfile({ 
-        fullname: fullname || 'User', // Provide a fallback
+        fullname: fullname || 'User',
         avatarUrl: avatarUrl || null 
       });
     }
-  }, [profile, setBasicProfile]); // This effect re-runs only when 'profile' data changes
+  }, [profile, setProfile, setBasicProfile]);
+
+  // Handle loading state
+  useEffect(() => {
+    // If we have a session decision AND profile is done loading (or not needed)
+    const authLoading = !session; // Still determining auth state
+    const shouldBeLoading = authLoading || (session?.user && profileLoading);
+    
+    setIsLoading(shouldBeLoading);
+  }, [session, profileLoading, setIsLoading]);
 
   return (
-
-      <NextAuthProvider session={session}>  
-        {/* <ThemeProvider> */}
-          {children}
-          <Analytics />
-          <Toaster />
-        {/* </ThemeProvider> */}
-      </NextAuthProvider>
+    <NextAuthProvider session={session}>  
+      {children}
+      <Analytics />
+      <Toaster />
+    </NextAuthProvider>
   );
 }
