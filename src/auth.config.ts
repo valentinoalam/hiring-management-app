@@ -112,6 +112,7 @@ export const authConfig: NextAuthConfig = {
       from: process.env.EMAIL_FROM,
     }),
   ],
+
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       // Initial sign in
@@ -168,6 +169,17 @@ export const authConfig: NextAuthConfig = {
       }
       return true
     },
+    async redirect({ url, baseUrl }) {
+      // Redirect to custom page after sign out
+      if (url.includes('signout')) {
+        return `${baseUrl}/auth/signout`;
+      }
+      // Allows relative callback URLs
+      if (url.startsWith("/")) return `${baseUrl}${url}`;
+      // Allows callback URLs on the same origin
+      else if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    }
   },
   events: {
     async signIn({ user, account }) {
@@ -202,7 +214,8 @@ export const authConfig: NextAuthConfig = {
   },
   pages: {
     signIn: "/login",
-    newUser: "/sign-up",
+    signOut: "/auth/signout",
+    // newUser: "/welcome",
     verifyRequest: "/auth/verify-request",
     error: "/auth/error", 
   },

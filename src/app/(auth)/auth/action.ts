@@ -4,6 +4,7 @@
 import { prisma } from '@/lib/prisma';
 import { generateVerificationToken } from '@/lib/tokens';
 import { sendVerificationEmail } from '@/lib/email';
+import { signOut } from '@/auth';
 
 export async function resendVerificationEmail(email: string) {
   try {
@@ -52,5 +53,17 @@ export async function resendMagicLink(email: string) {
   } catch (error) {
     console.error("Resend magic link error:", error);
     return { success: false, error: "Failed to resend magic link" };
+  }
+}
+
+export async function signOutAction(redirectPath: string = '/goodbye') {
+  try {
+    await signOut({ 
+      redirectTo: redirectPath,
+      redirect: true 
+    });
+  } catch (error) {
+    console.error('Sign out error:', error);
+    throw error;
   }
 }

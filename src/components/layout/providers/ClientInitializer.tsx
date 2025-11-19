@@ -25,8 +25,10 @@ export default function ClientInitializer({ session, children }: ClientInitializ
   
   const setBasicProfile = useFastProfileStore((state) => state.setBasicProfile);
 
-  // Handle authentication state
+  // Main auth state management
   useEffect(() => {
+    console.log('Session changed:', session ? 'Authenticated' : 'Not authenticated');
+    
     if (session?.user) {
       const userData = {
         ...session.user,
@@ -34,36 +36,46 @@ export default function ClientInitializer({ session, children }: ClientInitializ
         role: session.user.role || 'APPLICANT'
       };
       
-      // Set auth data immediately with user, profile will be updated later
+      // Set auth data immediately with user
       setAuthData(userData, null);
+      console.log('Auth store updated with user data');
     } else {
-      // No session means user is not authenticated
+      // No session - user is signed out
       resetAuthStore();
+      console.log('Auth store reset - user signed out');
     }
   }, [session, setAuthData, resetAuthStore]);
 
-  // Handle profile data when it's loaded
+  // Handle profile data
   useEffect(() => {
-    if (profile) {
-      // Update auth store with profile
+    if (profile && session?.user) {
+      // Only update profile if user is authenticated
       setProfile(profile);
       
-      // Update fast profile store
       const { fullname, avatarUrl } = profile; 
       setBasicProfile({ 
         fullname: fullname || 'User',
         avatarUrl: avatarUrl || null 
       });
+      console.log('Profile data updated');
     }
-  }, [profile, setProfile, setBasicProfile]);
+  }, [profile, session, setProfile, setBasicProfile]);
 
-  // Handle loading state
+  // Handle loading state - SIMPLIFIED
   useEffect(() => {
-    // If we have a session decision AND profile is done loading (or not needed)
-    const authLoading = !session; // Still determining auth state
-    const shouldBeLoading = authLoading || (session?.user && profileLoading);
-    
-    setIsLoading(shouldBeLoading);
+    // If session is null (definitely not authenticated), we're not loading
+    if (session === null) {
+      setIsLoading(false);
+      return;
+    }
+
+    // If we have a session and user ID, check if profile is still loading
+    if (session?.user?.id) {
+      setIsLoading(profileLoading);
+    } else {
+      // Session exists but no user ID (shouldn't happen normally)
+      setIsLoading(false);
+    }
   }, [session, profileLoading, setIsLoading]);
 
   return (

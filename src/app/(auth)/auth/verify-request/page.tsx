@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import Image from 'next/image';
-import { resendVerificationEmail } from './action';
+import { resendVerificationEmail } from '../action';
 
 // No need to define props interface - Next.js handles this automatically
 // The params and searchParams are now Promises
