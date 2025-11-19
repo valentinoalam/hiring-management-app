@@ -183,7 +183,6 @@ export const authConfig: NextAuthConfig = {
         console.error('Error in signIn event:', error);
       }
     },
-    
     async createUser({ user }) {
       try {
         if (user?.id) {
