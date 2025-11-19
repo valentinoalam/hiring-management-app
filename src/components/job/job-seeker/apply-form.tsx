@@ -1058,7 +1058,7 @@ export default function JobApplicationForm({
                 </FieldLabel>
                 <div className="flex flex-col gap-2">
                   <div className="w-32 h-32 rounded-full bg-cover bg-center">
-                    <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? avatarPreview : "/avatar.svg"} alt={"avatar"} />
+                    <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? avatarPreview : "/Avatar.svg"} alt={"avatar"} />
                   </div>
                   <div className="flex gap-2">
                     <Button
