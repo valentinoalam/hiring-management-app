@@ -101,12 +101,20 @@ export default function JobApplicantsPage() {
     }));
   }, [applicants]);
 
-  const applicantData = useMemo(() => {
+  const applicantsData = useMemo(() => {
     if (useMock) {
       return mockApplicants;
     }
-    return applicantsWithMatchRates && applicantsWithMatchRates.length > 0 ? applicantsWithMatchRates : [];
-  }, [useMock, applicantsWithMatchRates]);
+    const filteredApplicants = applicantsWithMatchRates.filter(applicant => {
+      // Check if applicant has non-empty values for all visible form fields
+      return visibleFields.every((field: { id: string }) => {
+        const fieldValue = applicant.userInfo?.[field.id];
+        return fieldValue !== undefined && fieldValue !== null && fieldValue.answer !== '';
+      });
+    });
+  
+    return filteredApplicants && filteredApplicants.length > 0 ? filteredApplicants : [];
+  }, [useMock, applicantsWithMatchRates, visibleFields]);
 
   const fieldsData = useMemo(() => {
     return useMock ? mockVisibleFields : visibleFields;
@@ -157,9 +165,9 @@ export default function JobApplicantsPage() {
       </div>
     );
   }
-
+  console.log(applicantsResponse?.applicants)
   // No applicants state
-  if (!useMock && applicants.length === 0) {
+  if (!useMock && applicantsData.length === 0) {
     return (
       <div className="container mx-auto p-6">
         <Button 
@@ -194,7 +202,7 @@ export default function JobApplicantsPage() {
       )}
 
       <ApplicantsTable 
-        applicants={applicantData}
+        applicants={applicantsData}
         visibleFields={fieldsData}
         selectedApplicants={selectedApplicants}
         statusFilter={statusFilter}
