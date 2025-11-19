@@ -159,7 +159,7 @@ export default function JobApplicantsPage() {
   }
 
   // No applicants state
-  if (!useMock && applicantData.length === 0) {
+  if (!useMock && applicants.length === 0) {
     return (
       <div className="container mx-auto p-6">
         <Button 
