@@ -132,10 +132,14 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success) {
-        router.push(result.redirectTo)
-      } else {
-        setError("An unexpected error occurred. Please try again.")
-        router.refresh()
+        if (result.redirectTo) {
+          // Use the redirect URL from the action
+          router.push(result.redirectTo);
+        } else {
+          // Fallback to callbackUrl or home
+          router.push(callbackUrl || "/");
+        }
+        router.refresh();
       }
     } catch (err) {
       console.error("Sign in error:", err)

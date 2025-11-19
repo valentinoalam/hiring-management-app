@@ -13,7 +13,7 @@ test.describe('Login Flow', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
-    
+    await page.waitForLoadState('networkidle');
     // Should redirect to jobs page or intended destination
     await expect(page).not.toHaveURL(/\/login/);
     // await expect(page.locator('text=Welcome')).toBeVisible();
@@ -23,9 +23,10 @@ test.describe('Login Flow', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'wrongpassword');
-    
+    await page.waitForLoadState('networkidle');
     // Should stay on login page and show error
     await expect(page).toHaveURL(/\/login/);
+    
     await expect(page.locator('text=Invalid email or password')).toBeVisible();
   });
 
@@ -33,7 +34,7 @@ test.describe('Login Flow', () => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'nonexistent@careerconnect.com', 'password123');
-    
+    await page.waitForLoadState('networkidle');
     // Should stay on login page and show error
     await expect(page).toHaveURL(/\/login/);
     await expect(page.locator('text=Invalid email or password')).toBeVisible();
@@ -61,7 +62,7 @@ test.describe('Login Flow', () => {
     await page.goto(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
-    
+    await page.waitForLoadState('networkidle');
     // Should redirect to the intended application page
     await expect(page).toHaveURL(new RegExp(redirectUrl));
   });
