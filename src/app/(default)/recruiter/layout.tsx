@@ -18,7 +18,7 @@ export default function DefaultLayout({
   const userRole = user?.role;
   
   if (userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type
-    router.push('/login?callbackUrl=/recruiter');
+    router.push('/jobs');
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-64px)] p-8 text-center text-red-500">
         <X className="h-10 w-10 mb-4" />
