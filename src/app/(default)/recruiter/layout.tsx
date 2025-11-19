@@ -11,10 +11,6 @@ export default function DefaultLayout({
 }) {
   const router = useRouter();
   const user = useAuthStore((state) => state.user);
-  // --- Role Check and Redirect ---
-  if (user === undefined || user === null) {
-      return null;
-  }
   const userRole = user?.role;
   
   if (userRole !== 'RECRUITER') { // Assuming 'RECRUITER' is the role type

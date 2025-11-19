@@ -6,22 +6,17 @@ import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { Loader2 } from "lucide-react"
+import { useAuthStore } from "@/stores/auth-store"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { status } = useSession()
+  const { isAuthenticated, isLoading } = useAuthStore();
   const router = useRouter()
 
-  useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/login")
-    }
-  }, [status, router])
-
-  if (status === "loading") {
+  if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -29,10 +24,9 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  if (status === "unauthenticated") {
-    return null
+  if (!isAuthenticated) {
+    router.push("/login")
   }
-
   return <>{children}</>
 }
 
