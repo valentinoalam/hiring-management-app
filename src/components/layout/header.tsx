@@ -2,7 +2,7 @@
 
 import { usePathname } from "next/navigation";
 import Link from 'next/link';
-import { useSession, signOut } from "next-auth/react"; // 💡 Import useSession and signOut
+import { signOut } from "next-auth/react"; // 💡 Import useSession and signOut
 import { LogOut, Loader2 } from "lucide-react"; // Added Lucide icons for better UX
 import {
   DropdownMenu,
@@ -23,9 +23,10 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import React from 'react';
+import { useAuthStore } from "@/stores/auth-store";
 
 export default function Header() {
-  const { data: session, status } = useSession(); // 💡 Fetch session data and status
+  const { user, isAuthenticated, isLoading } = useAuthStore()
   const pathname = usePathname()
   // ✅ Detect if this layout is on recruiter section
   const isRecruiterPage = pathname.startsWith('/recruiter')
@@ -35,9 +36,6 @@ export default function Header() {
   const showBreadcrumb = isRecruiterPage && !hideHeaderOn.includes(pathname)
   // Filter(Boolean) removes empty strings (e.g., from leading or trailing '/')
   const pathSegments = pathname.split("/").filter(Boolean) 
-  // Use a temporary user object based on the Session structure defined in next-auth.d.ts
-  const user = session?.user;
-  const isAuthenticated = status === 'authenticated';
 
   // --- Breadcrumb Rendering Logic ---
   const renderBreadcrumbs = () => {
@@ -80,7 +78,7 @@ export default function Header() {
   
   // --- Profile Dropdown Rendering Logic ---
   const renderProfileDropdown = () => {
-    if (status === 'loading') {
+    if (isLoading) {
       return (
         <Button variant="ghost" className="relative h-8 w-8 rounded-full" disabled>
           <Loader2 className="h-4 w-4 animate-spin" />

@@ -27,8 +27,8 @@ export async function setupAuthenticatedState(page: Page) {
 }
 export async function clearAuthentication(page: Page) {
   await page.addInitScript(() => {
-    window.sessionStorage.clear();
-    window.localStorage.clear();
+    sessionStorage.clear();
+    localStorage.clear();
   });
 }
 export async function loginWithCredentials(page: Page, email: string, password: string) {

@@ -24,6 +24,8 @@ import { Separator } from "@/components/ui/separator"
 import { KeyRound, Mail, Lock, Edit } from "lucide-react"
 import LinkSentSuccess from "@/components/layout/link-sent"
 import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field"
+import { useSession } from "next-auth/react"
+import Loading from "@/components/layout/loading"
 
 // Separate schemas for different auth methods
 const emailSchema = z.object({
@@ -52,7 +54,8 @@ export default function SignInPage() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const router = useRouter()
-  
+  const { data: session, status } = useSession();
+
   const [isLoading, setIsLoading] = useState(false)
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
   const [error, setError] = useState("")
@@ -78,7 +81,14 @@ export default function SignInPage() {
 
   // Reset errors when user interacts with forms
   const clearError = () => setError("")
-
+  if (status === 'loading') {
+    return <Loading />
+  }
+  if (session) {
+    // Redirect if logged in
+    router.push(searchParams.get('callbackUrl') || '/'); 
+    return null; // Return null while redirecting
+  }
   async function handleMagicLinkSubmit(values: z.infer<typeof emailSchema>) {
     setIsLoading(true)
     setError("")

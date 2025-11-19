@@ -6,7 +6,6 @@ import { clearAuthentication, loginWithCredentials } from './utils/auth-helpers'
 test.describe('Login Flow', () => {
   test.beforeEach(async ({ page }) => {
     await clearAuthentication(page);
-    
   });
 
   test('should login successfully with correct credentials', async ({ page }) => {
