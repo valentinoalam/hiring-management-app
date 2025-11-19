@@ -1,29 +1,18 @@
 // tests/auth.setup.ts
 import { test as setup, expect } from '@playwright/test';
-import { mockUser } from './mocks/job-application-mocks';
+import { loginWithCredentials, mockAuthJsEndpoints } from './utils/auth-helpers';
 
 const authFile = 'tests/auth-state.json';
 
 setup('authenticate', async ({ page }) => {
-  // Go to login page
-  await page.goto('/auth/login');
-  
-  // Mock login API
-  await page.route('**/api/auth/login', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        user: mockUser,
-        token: 'mock-jwt-token'
-      }),
-    });
-  });
+  // Mock the login API for this setup
+  await mockAuthJsEndpoints(page);
 
-  // Fill and submit login form with specific credentials
-  await page.locator('input[name="email"]').fill('recruiter1@careerconnect.com');
-  await page.locator('input[name="password"]').fill('password123');
-  await page.locator('button[type="submit"]').click();
+  // Go to login page
+  await page.goto('/login');
+
+  // Use the helper to login with specific credentials
+  await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
 
   // Wait for navigation and verify login was successful
   await expect(page).toHaveURL('/jobs');

@@ -133,9 +133,9 @@ export default function SignInPage() {
         }
       } else if (result?.success) {
         router.push(callbackUrl)
-        router.refresh()
       } else {
         setError("An unexpected error occurred. Please try again.")
+        router.refresh()
       }
     } catch (err) {
       console.error("Sign in error:", err)
