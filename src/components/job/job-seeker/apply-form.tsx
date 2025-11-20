@@ -253,6 +253,7 @@ export default function JobApplicationForm({
   const [coverLetterMode, setCoverLetterMode] = useState<'text' | 'file'>('text');
   const [showGestureCapture, setShowGestureCapture] = useState(false);
   const [errorOnSubmit, setErrorOnSubmit] = useState<Error | null>(null)
+  const [isError, setIsError] = useState(false);
   const profile = userProfile;
   const [resumeUrl, setResumeUrl] = useState<string | undefined>(profile?.resumeUrl);
   // ========== Helper Functions ==========
@@ -611,7 +612,8 @@ export default function JobApplicationForm({
       await onSubmit(formDataToSubmit);
     } catch (error) {
       console.error('Application submission error:', error);
-      setErrorOnSubmit(error as Error)
+      setErrorOnSubmit(error as Error);
+      setIsError(true);
       throw error;
     }
   };
@@ -1456,7 +1458,7 @@ export default function JobApplicationForm({
 
               <div className="flex flex-col gap-4 mt-6">
                 {/* Submission Error Display */}
-                {errorOnSubmit && (
+                {isError && (
                   <div data-testid="submission-error" className="p-4 border border-red-300 bg-red-50 rounded-lg">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0">
@@ -1469,9 +1471,9 @@ export default function JobApplicationForm({
                           Failed to Submit Application
                         </h3>
                         <p className="text-sm text-red-700 mt-1">
-                          {errorOnSubmit.message || 'There was an error submitting your application. Please try again.'}
+                          {errorOnSubmit?.message || 'There was an error submitting your application. Please try again.'}
                         </p>
-                        {errorOnSubmit.message?.includes('network') && (
+                        {errorOnSubmit?.message?.includes('network') && (
                           <p className="text-xs text-red-600 mt-2">
                             Please check your internet connection and try again.
                           </p>
@@ -1481,6 +1483,7 @@ export default function JobApplicationForm({
                         type="button"
                         onClick={() => {
                           setErrorOnSubmit(null)
+                          setIsError(false)
                         }}
                         className="shrink-0 text-red-400 hover:text-red-600"
                         aria-label="Dismiss error"
