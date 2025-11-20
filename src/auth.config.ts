@@ -56,7 +56,6 @@ export const authConfig: NextAuthConfig = {
           if (!credentials?.email || !credentials?.password) {
             throw new Error('Email and password are required.')
           }
-          console.log("doila")
           const user = await prisma.user.findUnique({
             where: { email: credentials.email as string },
           })
@@ -79,7 +78,6 @@ export const authConfig: NextAuthConfig = {
           if (!isPasswordValid) {
             throw new Error('Invalid password.')
           }
-          console.log("voila")
           // 💡 Return user object matching your schema and custom types
           return {
             id: user.id,

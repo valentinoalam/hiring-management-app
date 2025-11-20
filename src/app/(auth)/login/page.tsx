@@ -128,7 +128,7 @@ export default function SignInPage() {
       formData.append('email', values.email)
       formData.append('password', values.password)
       
-      const result = await signInCredentials(formData, callbackUrl || undefined)
+      const result = await signInCredentials(formData, callbackUrl)
       
       if (result?.error) {
         switch (result.error) {
@@ -147,13 +147,8 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success) {
-        if (result.redirectTo) {
-          // Use the redirect URL from the action
-          router.push(result.redirectTo);
-        } else {
-          // Fallback to callbackUrl or home
-          router.push(callbackUrl || "/");
-        }
+        console.log(result.redirectTo)
+        router.push(result.redirectTo);
       }
     } catch (err) {
       console.error("Sign in error:", err)

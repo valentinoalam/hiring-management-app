@@ -10,8 +10,9 @@ test.describe('Login Flow', () => {
   });
 
   test('should login successfully with correct credentials', async ({ page }) => {
+    await page.waitForTimeout(5000);
     await page.goto('/login');
-    await page.waitForLoadState('networkidle');
+    // await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
     await page.waitForTimeout(25000);
     await page.waitForLoadState('networkidle');
@@ -21,6 +22,7 @@ test.describe('Login Flow', () => {
   });
 
   test('should show error for incorrect password', async ({ page }) => {
+    await page.waitForTimeout(5000);
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'wrongpassword');
@@ -61,7 +63,7 @@ test.describe('Login Flow', () => {
       });
     });
 
-    await page.goto(`/login?redirect=${encodeURIComponent(redirectUrl)}`);
+    await page.goto(`/login?callbackUrl=${encodeURIComponent(redirectUrl)}`);
     await page.waitForLoadState('networkidle');
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
     await page.waitForTimeout(25000);
