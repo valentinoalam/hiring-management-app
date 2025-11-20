@@ -33,12 +33,12 @@ export async function signInCredentials(formData: FormData, callbackUrl?: string
       redirect: false,
       redirectTo: callbackUrl || "/",
     })
-    
+    console.log(result)
     if (result?.error) {
       return { success: false, error: result.error }
     }
 
-    return { success: true, redirectTo: result.redirectTo }
+    return { success: true, redirectTo: callbackUrl || "/" }
   } catch (error) {
     console.error("Sign in error:", error)
     
