@@ -147,7 +147,6 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success) {
-        console.log(result.redirectTo)
         router.push(result.redirectTo);
       }
     } catch (err) {
