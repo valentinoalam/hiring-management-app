@@ -57,12 +57,15 @@ test.describe('Job Application Error Scenarios', () => {
       });
     });
 
-    // Mock submission failure
+    // Mock submission failure with a specific error message
     await page.route('**/api/jobs/*/apply', async (route) => {
       await route.fulfill({
         status: 500,
         contentType: 'application/json',
-        body: JSON.stringify({ error: 'Internal server error' }),
+        body: JSON.stringify({ 
+          error: 'Internal server error',
+          message: 'Failed to submit application' 
+        }),
       });
     });
 
@@ -83,6 +86,54 @@ test.describe('Job Application Error Scenarios', () => {
     // Submit and verify error handling
     await page.locator('button[type="submit"]').click();
     
-    await expect(page.locator('text=Error')).toBeVisible({ timeout: 30000 });
+    // Wait a bit for the error to appear
+    await page.waitForTimeout(2000);
+    
+    // Debug: Log all visible text on the page
+    const pageText = await page.textContent('body');
+    console.log('Page text after submission:', pageText);
+    
+    // Debug: Check if any error elements are visible
+    const errorElements = await page.locator('[class*="error"], [class*="danger"], [class*="red"]').all();
+    console.log('Error elements found:', errorElements.length);
+    
+    for (const element of errorElements) {
+      const text = await element.textContent();
+      console.log('Error element text:', text);
+    }
+
+    // Wait for and verify the error message appears
+  // Try these different selectors:
+  await expect(page.locator('[data-testid="submission-error"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[data-testid="submission-error"]')).toContainText(/failed|error/i);
+  await expect(page.locator('text=Failed to submit application')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=Internal server error')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('text=/failed|error|submission/i')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[class*="error"], [class*="danger"]')).toBeVisible({ timeout: 10000 });
+  
+  // Option 4: Verify we're NOT redirected (still on application page)
+  const errorVisible = await Promise.race([
+    page.waitForSelector('text=/failed|error|submission/i', { timeout: 10000 })
+      .then(() => true)
+      .catch(() => false),
+    page.waitForTimeout(10000).then(() => false)
+  ]);
+  
+  if (errorVisible) {
+    console.log('✅ Error message detected');
+    // Take a screenshot for debugging
+    await page.screenshot({ path: 'submission-error.png' });
+  } else {
+    console.log('❌ No error message detected');
+    // Check current URL
+    console.log('Current URL:', page.url());
+    // Check page content
+    const content = await page.textContent('body');
+    console.log('Page content:', content?.substring(0, 500));
+  }
+  
+  // The test should fail if we were redirected to success page
+  await expect(page).not.toHaveURL(/\/success/);
+  await expect(page).toHaveURL(/\/jobs\/123\/apply/);
   });
 });

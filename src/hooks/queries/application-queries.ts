@@ -206,7 +206,10 @@ export const useSubmitJobApplication = (jobId: string) => {
     },
     onError: (error: Error) => {
       console.error('Application submission error:', error);
-      toast.error(`Failed to submit application: ${error.message}`);
+      if (error.message.includes('network') || error.message.includes('fetch')) {
+        toast.error('Network error. Please check your connection.');
+      }
+      // toast.error(`Failed to submit application: ${error.message}`);
     },
   });
 };

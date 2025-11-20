@@ -22,7 +22,6 @@ import React from "react";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 import PhoneInput from "@/components/custom-ui/phone-input";
 import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
-import { useToast } from "@/hooks/use-toast";
 
 // File validation constants
 const MEGABYTE = 1024 * 1024;
@@ -245,7 +244,6 @@ export default function JobApplicationForm({
   onSubmit,
   onCancel
 }: JobApplicationFormProps) {
-  const toast = useToast()
   // ========== State Management ==========
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -381,7 +379,7 @@ export default function JobApplicationForm({
   }, [profile, appFormFields, setValue, getProfileFieldValue]);
 
   // ========== File Handlers ==========
-  if(submitError) toast.failed("Failed to submit application")
+
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -1457,7 +1455,7 @@ export default function JobApplicationForm({
               <div className="flex flex-col gap-4 mt-6">
                 {/* Submission Error Display */}
                 {submitError && (
-                  <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
+                  <div data-testid="submission-error" className="p-4 border border-red-300 bg-red-50 rounded-lg">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0">
                         <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1465,7 +1463,7 @@ export default function JobApplicationForm({
                         </svg>
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-sm font-medium text-red-800">
+                        <h3 className="text-sm font-medium text-danger">
                           Failed to Submit Application
                         </h3>
                         <p className="text-sm text-red-700 mt-1">
@@ -1483,7 +1481,7 @@ export default function JobApplicationForm({
                           // To clear the error, you might need to reset the mutation
                           // Or your hook might clear it automatically on retry
                         }}
-                        className="flex-shrink-0 text-red-400 hover:text-red-600"
+                        className="shrink-0 text-red-400 hover:text-red-600"
                         aria-label="Dismiss error"
                       >
                         <X className="w-4 h-4" />
