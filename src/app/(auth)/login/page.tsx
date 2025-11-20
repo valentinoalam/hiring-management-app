@@ -130,7 +130,7 @@ export default function SignInPage() {
       
       const result = await signInCredentials(formData, callbackUrl)
       
-      if (result?.error) {
+      if (!result?.success || result?.error) {
         switch (result.error) {
           case 'EMAIL_NOT_VERIFIED':
             setError("Your email is not verified. Please check your inbox for the verification link.")
@@ -146,7 +146,7 @@ export default function SignInPage() {
             setError("An unexpected error occurred. Please try again.")
             break
         }
-      } else if (result?.success) {
+      } else if (result?.success && result.redirectTo) {
         router.push(result.redirectTo);
       }
     } catch (err) {
