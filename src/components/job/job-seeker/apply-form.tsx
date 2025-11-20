@@ -55,7 +55,12 @@ const COMMON_PROFILE_FIELDS = [
 // ============================================================================
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
   const schema: Record<string, z.ZodTypeAny> = {};
-
+  schema.avatar = z.instanceof(File)
+    .refine(file => file.size <= MAX_FILE_SIZE, `Avatar must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
+    .refine(file => ACCEPTED_IMAGE_TYPES.includes(file.type), "Avatar must be JPG, PNG, or WebP")
+    .optional()
+    .or(z.literal(undefined));
+    
   // 1. Filter and sort fields
   const sortedFields = [...appFormFields]
     .filter(field => field.fieldState !== 'off')
@@ -190,7 +195,7 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     schema[field.key] = fieldValidator;
   });
 
-  // 5. Add fixed application fields
+ 
   schema.resume = z.instanceof(File, { message: "Resume is required" })
     .refine(file => file.size <= MAX_FILE_SIZE, `Resume must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Resume must be PDF or Word document");
@@ -299,6 +304,8 @@ export default function JobApplicationForm({
     register,
     handleSubmit,
     setValue,
+    setError,
+    clearErrors,
     control,
     formState: { errors, isSubmitting, isValid },
   } = useForm<ApplicationFormData>({
@@ -373,16 +380,29 @@ export default function JobApplicationForm({
     const file = event.target.files?.[0];
     if (file) {
       if (!ACCEPTED_IMAGE_TYPES.includes(file.type)) {
-        alert("Please upload a valid image file (JPG, PNG, or WebP)");
+        setError('avatar', {
+          type: 'manual',
+          message: 'Please upload a valid image file (JPG, PNG, or WebP)'
+        });
+        event.target.value = '';
         return;
       }
       if (file.size > MAX_FILE_SIZE) {
-        alert("Image size must be less than 5MB");
+        setError('avatar', {
+          type: 'manual', 
+          message: 'Image size must be less than 5MB'
+        });
+        event.target.value = '';
         return;
       }
+      
+      // Clear any previous errors
+      clearErrors('avatar');
+      
       const previewUrl = URL.createObjectURL(file);
       setAvatarFile(file);
       setAvatarPreview(previewUrl);
+      setValue('avatar', file, { shouldValidate: true });
     }
   };
 
@@ -394,14 +414,6 @@ export default function JobApplicationForm({
   const handleResumeChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!ACCEPTED_RESUME_TYPES.includes(file.type)) {
-        alert("Please upload a PDF or Word document");
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        alert("Resume file size must be less than 5MB");
-        return;
-      }
       setResumeFile(file);
       setValue('resume', file, { shouldValidate: true });
     }
@@ -410,14 +422,6 @@ export default function JobApplicationForm({
   const handleCoverLetterFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
-      if (!ACCEPTED_RESUME_TYPES.includes(file.type)) {
-        alert("Please upload a PDF or Word document");
-        return;
-      }
-      if (file.size > MAX_FILE_SIZE) {
-        alert("Cover letter file size must be less than 5MB");
-        return;
-      }
       setCoverLetterFile(file);
       setValue('coverLetterFile', file, { shouldValidate: true });
       setValue('coverLetter', '', { shouldValidate: false });
@@ -887,22 +891,6 @@ export default function JobApplicationForm({
                 onChange={(e) => {
                   const file = e.target.files?.[0];
                   if (file) {
-                    // Validate file size
-                    if (file.size > MAX_FILE_SIZE) {
-                      alert(`File size must be less than ${MAX_FILE_SIZE / 1024 / 1024}MB`);
-                      e.target.value = '';
-                      return;
-                    }
-                    
-                    // Validate file type if specified
-                    if (appField.validation?.fileTypes && appField.validation.fileTypes.length > 0) {
-                      if (!appField.validation.fileTypes.includes(file.type)) {
-                        alert(`File must be one of: ${appField.validation.fileTypes.join(', ')}`);
-                        e.target.value = '';
-                        return;
-                      }
-                    }
-                    
                     setValue(appField.key as keyof ApplicationFormData, file, { shouldValidate: true });
                   }
                 }}
