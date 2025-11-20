@@ -22,6 +22,7 @@ import React from "react";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 import PhoneInput from "@/components/custom-ui/phone-input";
 import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
+import { useToast } from "@/hooks/use-toast";
 
 // File validation constants
 const MEGABYTE = 1024 * 1024;
@@ -225,6 +226,8 @@ interface JobApplicationFormProps {
   job: Job;
   appFormFields: AppFormField[];
   userProfile: Profile | null | undefined;
+  isSending: boolean;
+  submitError: Error | null;
   onSubmit: (applicationData: FormData) => Promise<unknown>;
   onCancel: () => void;
 }
@@ -237,9 +240,12 @@ export default function JobApplicationForm({
   job,
   appFormFields,
   userProfile,
+  isSending,
+  submitError,    
   onSubmit,
   onCancel
 }: JobApplicationFormProps) {
+  const toast = useToast()
   // ========== State Management ==========
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
@@ -375,7 +381,7 @@ export default function JobApplicationForm({
   }, [profile, appFormFields, setValue, getProfileFieldValue]);
 
   // ========== File Handlers ==========
-  
+  if(submitError) toast.failed("Failed to submit application")
   const handleAvatarChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -1448,15 +1454,28 @@ export default function JobApplicationForm({
                 )}
               </Field>
 
-              {/* Submit Button */}
-              <div className="flex justify-end mt-6">
-                <Button
-                  type="submit"
-                  disabled={isSubmitting || !isValid}
-                  className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                >
-                  {isSubmitting ? "Submitting..." : "Submit Application"}
-                </Button>
+              <div className="flex flex-col gap-4 mt-6">
+                {/* Compact submission error */}
+                {submitError && !isSubmitting && !isSending && (
+                  <div className="flex items-center gap-3 p-3 border border-red-300 bg-red-50 rounded-lg">
+                    <svg className="w-4 h-4 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                    </svg>
+                    <span className="text-sm text-red-700 flex-1">
+                      {submitError.message}
+                    </span>
+                  </div>
+                )}
+                {/* Submit Button */}
+                <div className="flex justify-end mt-6">
+                  <Button
+                    type="submit"
+                    disabled={isSubmitting || !isValid}
+                    className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  >
+                    {isSubmitting || isSending ? "Submitting..." : "Submit Application"}
+                  </Button>
+                </div>
               </div>
             </FieldGroup>
           </form>

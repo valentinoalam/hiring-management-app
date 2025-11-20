@@ -76,7 +76,7 @@ test.describe('Job Application Error Scenarios', () => {
     await page.locator('input[value="male"]').check();
     
     const resumeInput = page.locator('input[id="resume"]');
-    await resumeInput.setInputFiles('./e2e/fixtures/sample-resume.pdf');
+    await resumeInput.setInputFiles('./e2e/fixtures/valentino_cv_1014.pdf');
     
     await page.locator('select[name="source"]').selectOption('linkedin');
     

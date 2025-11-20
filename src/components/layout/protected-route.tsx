@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useSession } from "next-auth/react"
 
@@ -11,7 +11,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
   const { status } = useSession();
-
+  const pathname = usePathname()
   const router = useRouter()
 
   if (status ===  "loading") {
@@ -23,7 +23,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
   }
 
   if (status === "unauthenticated") {
-    router.push("/login")
+    router.push(`/login?callbackUrl=${pathname}`)
     return null
   }
   return <>{children}</>

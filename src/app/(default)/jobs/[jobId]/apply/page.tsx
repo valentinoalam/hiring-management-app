@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 import { useParams, useRouter } from 'next/navigation';
 import JobApplicationForm from '@/components/job/job-seeker/apply-form';
@@ -25,6 +24,7 @@ export default function JobApplicationPage() {
     isLoading: dataLoading, 
     submitApplication, 
     isSubmitting, 
+    submitError,
     error 
   } = useJobApplicationFlow(jobId, userId || '');
 
@@ -88,6 +88,8 @@ export default function JobApplicationPage() {
       job={job} // Use job from the hook
       appFormFields={appFormFields}
       userProfile={userProfile}
+      isSending={isSubmitting}
+      submitError={submitError}
       onSubmit={submitApplication}
       onCancel={handleCancel} />
   );
