@@ -4,16 +4,18 @@ import type React from "react"
 import { useRouter } from "next/navigation"
 import { Loader2 } from "lucide-react"
 import { useAuthStore } from "@/stores/auth-store"
+import { useSession } from "next-auth/react"
 
 interface ProtectedRouteProps {
   children: React.ReactNode
 }
 
 export function ProtectedRoute({ children }: ProtectedRouteProps) {
-  const { isAuthenticated, isLoading } = useAuthStore();
+  const { status } = useSession();
+
   const router = useRouter()
 
-  if (isLoading) {
+  if (status ===  "loading") {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -21,7 +23,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     )
   }
 
-  if (!isAuthenticated) {
+  if (status === "unauthenticated") {
     router.push("/login")
   }
   return <>{children}</>
