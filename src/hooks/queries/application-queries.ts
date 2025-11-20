@@ -26,7 +26,7 @@ const submitJobApplication = async ({
       console.log(`Field: ${key} - ${value}`);
     }
   }
-  return apiFetch(`/api/jobs/${jobId}/apply`, {
+  return apiFetch(`/api/jobs/${jobId}/applye`, {
     method: 'POST',
     body: applicationData, // Send FormData directly, no JSON.stringify
     // Note: Don't set Content-Type header - let browser set multipart/form-data automatically
