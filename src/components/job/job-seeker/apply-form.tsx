@@ -46,7 +46,8 @@ const COMMON_PROFILE_FIELDS = [
   'gender',
   'domicile',
   'linkedin_url',
-  'photo_profile'
+  'photo_profile',
+  'coverLetter'
 ];
 
 // ============================================================================
@@ -1248,7 +1249,47 @@ export default function JobApplicationForm({
                   <span className="text-danger">*</span>
                 </FieldLabel>
                 <div className="flex flex-col gap-2">
-                  {!resumeFile && !profile?.resumeUrl ? (
+                  {/* Show current resume from profile with option to replace */}
+                  {profile?.resumeUrl && !resumeFile ? (
+                    <div className="flex flex-col gap-3 p-4 border border-neutral-40 bg-neutral-10 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-5 h-5 text-neutral-100" />
+                        <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
+                          Current resume from your profile
+                        </span>
+                        <button
+                          type="button"
+                          onClick={removeResumeFile}
+                          className="p-1 hover:bg-gray-100 rounded"
+                          aria-label="Remove current resume"
+                        >
+                          <X className="w-4 h-4 text-neutral-100" />
+                        </button>
+                      </div>
+                      
+                      {/* Option to upload new resume */}
+                      <div className="flex flex-col gap-2">
+                        <input
+                          type="file"
+                          id="resume"
+                          accept=".pdf,.doc,.docx"
+                          onChange={handleResumeChange}
+                          className="hidden"
+                        />
+                        <label
+                          htmlFor="resume"
+                          className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-white rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
+                        >
+                          <Upload className="w-4 h-4" />
+                          Upload New Resume (Replace Current)
+                        </label>
+                        <p className="text-xs text-neutral-60">
+                          Upload a new file to replace your current resume
+                        </p>
+                      </div>
+                    </div>
+                  ) : (
+                    /* No resume or new resume uploaded */
                     <div className="flex flex-col gap-2">
                       <input
                         type="file"
@@ -1262,22 +1303,26 @@ export default function JobApplicationForm({
                         className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
                       >
                         <FileText className="w-4 h-4" />
-                        Upload Resume
+                        {profile?.resumeUrl ? 'Upload New Resume' : 'Upload Resume'}
                       </label>
                       <p className="text-xs text-neutral-60">
                         Accepted file types: PDF, DOC, DOCX (Max 5MB)
                       </p>
                     </div>
-                  ) : (
+                  )}
+                  
+                  {/* Show newly uploaded resume file */}
+                  {resumeFile && (
                     <div className="flex items-center gap-2 p-3 border border-neutral-40 bg-neutral-10 rounded-lg">
                       <FileText className="w-5 h-5 text-neutral-100" />
                       <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
-                        {resumeFile ? resumeFile.name : 'Resume from profile'}
+                        {resumeFile.name}
                       </span>
                       <button
                         type="button"
                         onClick={removeResumeFile}
                         className="p-1 hover:bg-gray-100 rounded"
+                        aria-label="Remove uploaded resume"
                       >
                         <X className="w-4 h-4 text-neutral-100" />
                       </button>

@@ -51,7 +51,7 @@ export async function loginAndGoToApplication(page: Page, jobId: string = '123')
 
   // Go to login page first
   await page.goto(`/login?callbackUrl=${encodeURIComponent(`/jobs/${jobId}/apply`)}`);
-  
+  console.log(page.url())
   // Use specific credentials
   await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
   await page.waitForLoadState('networkidle');
