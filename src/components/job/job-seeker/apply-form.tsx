@@ -244,7 +244,7 @@ export default function JobApplicationForm({
   const [showGestureCapture, setShowGestureCapture] = useState(false);
   
   const profile = userProfile;
-  
+  const [resumeUrl, setResumeUrl] = useState<string | undefined>(profile?.resumeUrl);
   // ========== Helper Functions ==========
   
   /**
@@ -426,6 +426,7 @@ export default function JobApplicationForm({
 
   const removeResumeFile = () => {
     setResumeFile(null);
+    setResumeUrl(undefined);
     setValue('resume', '', { shouldValidate: true });
   };
 
@@ -449,7 +450,7 @@ export default function JobApplicationForm({
     // Only append resume file if it's a new upload (File object)
     if (resumeFile) {
       submitFormData.append('resume', resumeFile);
-    } else if (profile?.resumeUrl && typeof formData.resume === 'string') {
+    } else if (resumeUrl && typeof formData.resume === 'string') {
       // If using existing resume, include the URL in formData JSON instead
       // This will be handled in the formDataJson below
     }
@@ -1250,12 +1251,12 @@ export default function JobApplicationForm({
                 </FieldLabel>
                 <div className="flex flex-col gap-2">
                   {/* Show current resume from profile with option to replace */}
-                  {profile?.resumeUrl && !resumeFile ? (
+                  {resumeUrl && !resumeFile ? (
                     <div className="flex flex-col gap-3 p-4 border border-neutral-40 bg-neutral-10 rounded-lg">
                       <div className="flex items-center gap-2">
                         <FileText className="w-5 h-5 text-neutral-100" />
                         <span className="flex-1 text-sm leading-6 text-neutral-90 font-sans">
-                          Current resume from your profile
+                          {resumeUrl}
                         </span>
                         <button
                           type="button"

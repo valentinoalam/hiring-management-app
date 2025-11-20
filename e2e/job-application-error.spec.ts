@@ -71,7 +71,7 @@ test.describe('Job Application Error Scenarios', () => {
     // Fill required fields
     await page.locator('input[name="full_name"]').fill('Test User');
     await page.locator('input[name="email"]').fill('test@example.com');
-    await page.locator('input[name="phone_number"]').fill('8123456789');
+    await page.locator('input[type="tel"]').fill('8123456789');
     await page.locator('input[name="date_of_birth"]').fill('1990-01-01');
     await page.locator('input[value="male"]').check();
     
