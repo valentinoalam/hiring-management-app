@@ -990,16 +990,16 @@ export default function JobApplicationForm({
     }
   };
 
-  if (appFormFields.length === 0) {
-    return (
-      <div className="text-center p-8">
-        <h3 className="text-lg font-semibold mb-2">No application form available</h3>
-        <p className="text-sm text-muted-foreground">
-          This job is not currently accepting applications.
-        </p>
-      </div>
-    );
-  }
+  // if (appFormFields.length === 0) {
+  //   return (
+  //     <div className="text-center p-8">
+  //       <h3 className="text-lg font-semibold mb-2">No application form available</h3>
+  //       <p className="text-sm text-muted-foreground">
+  //         This job is not currently accepting applications.
+  //       </p>
+  //     </div>
+  //   );
+  // }
 
   const visibleFields = appFormFields
     .filter((field: AppFormField) => {
