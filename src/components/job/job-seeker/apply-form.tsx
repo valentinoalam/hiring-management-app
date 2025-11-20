@@ -1455,15 +1455,40 @@ export default function JobApplicationForm({
               </Field>
 
               <div className="flex flex-col gap-4 mt-6">
-                {/* Compact submission error */}
-                {submitError && !isSubmitting && !isSending && (
-                  <div className="flex items-center gap-3 p-3 border border-red-300 bg-red-50 rounded-lg">
-                    <svg className="w-4 h-4 text-red-500 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                    </svg>
-                    <span className="text-sm text-red-700 flex-1">
-                      Error: {submitError.message}
-                    </span>
+                {/* Submission Error Display */}
+                {submitError && (
+                  <div className="p-4 border border-red-300 bg-red-50 rounded-lg">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0">
+                        <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                          <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+                        </svg>
+                      </div>
+                      <div className="flex-1">
+                        <h3 className="text-sm font-medium text-red-800">
+                          Failed to Submit Application
+                        </h3>
+                        <p className="text-sm text-red-700 mt-1">
+                          {submitError.message || 'There was an error submitting your application. Please try again.'}
+                        </p>
+                        {submitError.message?.includes('network') && (
+                          <p className="text-xs text-red-600 mt-2">
+                            Please check your internet connection and try again.
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          // To clear the error, you might need to reset the mutation
+                          // Or your hook might clear it automatically on retry
+                        }}
+                        className="flex-shrink-0 text-red-400 hover:text-red-600"
+                        aria-label="Dismiss error"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                 )}
                 {/* Submit Button */}

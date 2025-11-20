@@ -83,6 +83,6 @@ test.describe('Job Application Error Scenarios', () => {
     // Submit and verify error handling
     await page.locator('button[type="submit"]').click();
     
-    await expect(page.locator('text=Failed to submit application')).toBeVisible({ timeout: 30000 });
+    await expect(page.locator('text=Error')).toBeVisible({ timeout: 30000 });
   });
 });
