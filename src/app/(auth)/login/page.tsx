@@ -54,8 +54,7 @@ export default function SignInPage() {
   const searchParams = useSearchParams()
   const callbackUrl = searchParams.get('callbackUrl') || '/'
   const router = useRouter()
-  const { data: session, status } = useSession();
-
+  const { data: session, status, update } = useSession();
   const [isLoading, setIsLoading] = useState(false)
   const [activeMethod, setActiveMethod] = useState<AuthMethod>("magic-link")
   const [error, setError] = useState("")
@@ -85,6 +84,7 @@ export default function SignInPage() {
       router.push(callbackUrl);
     }
   }, [session, router, searchParams]);
+
   if (session) {
     return null; // Return null while redirecting
   }
@@ -147,6 +147,7 @@ export default function SignInPage() {
             break
         }
       } else if (result?.success && result.redirectTo) {
+        await update();
         router.push(result.redirectTo);
       }
     } catch (err) {
