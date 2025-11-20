@@ -1,12 +1,13 @@
+import { toast } from 'sonner';
 import { ApplicantData, FormField } from "@/types/job"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { toast } from 'sonner';
 import { queryKeys } from '@/lib/query-keys';
 import { apiFetch } from "@/lib/api";
 import { Application } from "@prisma/client";
 import { Profile } from '@/types/user';
 import { useRouter } from "next/navigation";
 import { useJobDetail } from "./job-queries";
+import { useToast } from "../use-toast";
 
 const submitJobApplication = async ({
   jobId,
@@ -129,7 +130,7 @@ export const useUserProfile = (userId: string) => {
 
 export const useUpdateProfile = () => {
   const queryClient = useQueryClient();
-
+  const toast = useToast();
   return useMutation({
     mutationFn: updateUserProfile,
     onSuccess: (updatedProfile, variables) => {
@@ -150,6 +151,7 @@ export const useUpdateProfile = () => {
 export const useSubmitJobApplication = (jobId: string) => {
   const queryClient = useQueryClient();
   const router = useRouter();
+  const toast = useToast();
   return useMutation({
     mutationFn: (formData: FormData) => submitJobApplication({ jobId, applicationData: formData }),
     onSuccess: (result) => {
@@ -209,7 +211,7 @@ export const useSubmitJobApplication = (jobId: string) => {
       if (error.message.includes('network') || error.message.includes('fetch')) {
         toast.error('Network error. Please check your connection.');
       }
-      // toast.error(`Failed to submit application: ${error.message}`);
+      toast.error(`Failed to submit application: ${error.message}`);
     },
   });
 };
@@ -235,7 +237,6 @@ export const useJobApplicationFlow = (jobId: string, userId: string) => {
     error: jobError || profileError,
     submitApplication: submitApplication.mutateAsync,
     isSubmitting: submitApplication.isPending,
-    submitError: submitApplication.error,
   };
 };
 

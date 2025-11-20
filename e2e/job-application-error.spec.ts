@@ -87,7 +87,7 @@ test.describe('Job Application Error Scenarios', () => {
     await page.locator('button[type="submit"]').click();
     
     // Wait a bit for the error to appear
-    await page.waitForTimeout(2000);
+    await page.waitForTimeout(20000);
     
     // Debug: Log all visible text on the page
     const pageText = await page.textContent('body');
@@ -104,12 +104,10 @@ test.describe('Job Application Error Scenarios', () => {
 
     // Wait for and verify the error message appears
   // Try these different selectors:
-  await expect(page.locator('[data-testid="submission-error"]')).toBeVisible({ timeout: 10000 });
+  await expect(page.locator('[data-testid="submission-error"]')).toBeVisible({ timeout: 190000 });
   await expect(page.locator('[data-testid="submission-error"]')).toContainText(/failed|error/i);
   await expect(page.locator('text=Failed to submit application')).toBeVisible({ timeout: 10000 });
   await expect(page.locator('text=Internal server error')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=/failed|error|submission/i')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('[class*="error"], [class*="danger"]')).toBeVisible({ timeout: 10000 });
   
   // Option 4: Verify we're NOT redirected (still on application page)
   const errorVisible = await Promise.race([

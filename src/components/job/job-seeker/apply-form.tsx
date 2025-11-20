@@ -16,12 +16,13 @@ import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
-import { AppFormField, Job } from "@/types/job";
+import { AppFormField, ApplicantData, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
 import PhoneInput from "@/components/custom-ui/phone-input";
 import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
+import { MutateFunction } from "@tanstack/react-query";
 
 // File validation constants
 const MEGABYTE = 1024 * 1024;
@@ -226,8 +227,9 @@ interface JobApplicationFormProps {
   appFormFields: AppFormField[];
   userProfile: Profile | null | undefined;
   isSending: boolean;
-  submitError: Error | null;
-  onSubmit: (applicationData: FormData) => Promise<unknown>;
+  onSubmit: MutateFunction<{
+    application: ApplicantData;
+  }, Error, FormData, unknown>;//(applicationData: FormData) => Promise<unknown>;
   onCancel: () => void;
 }
 
@@ -240,7 +242,6 @@ export default function JobApplicationForm({
   appFormFields,
   userProfile,
   isSending,
-  submitError,    
   onSubmit,
   onCancel
 }: JobApplicationFormProps) {
@@ -251,7 +252,7 @@ export default function JobApplicationForm({
   const [coverLetterFile, setCoverLetterFile] = useState<File | null>(null);
   const [coverLetterMode, setCoverLetterMode] = useState<'text' | 'file'>('text');
   const [showGestureCapture, setShowGestureCapture] = useState(false);
-  
+  const [errorOnSubmit, setErrorOnSubmit] = useState<Error | null>(null)
   const profile = userProfile;
   const [resumeUrl, setResumeUrl] = useState<string | undefined>(profile?.resumeUrl);
   // ========== Helper Functions ==========
@@ -610,6 +611,7 @@ export default function JobApplicationForm({
       await onSubmit(formDataToSubmit);
     } catch (error) {
       console.error('Application submission error:', error);
+      setErrorOnSubmit(error as Error)
       throw error;
     }
   };
@@ -1454,7 +1456,7 @@ export default function JobApplicationForm({
 
               <div className="flex flex-col gap-4 mt-6">
                 {/* Submission Error Display */}
-                {submitError && (
+                {errorOnSubmit && (
                   <div data-testid="submission-error" className="p-4 border border-red-300 bg-red-50 rounded-lg">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0">
@@ -1467,9 +1469,9 @@ export default function JobApplicationForm({
                           Failed to Submit Application
                         </h3>
                         <p className="text-sm text-red-700 mt-1">
-                          {submitError.message || 'There was an error submitting your application. Please try again.'}
+                          {errorOnSubmit.message || 'There was an error submitting your application. Please try again.'}
                         </p>
-                        {submitError.message?.includes('network') && (
+                        {errorOnSubmit.message?.includes('network') && (
                           <p className="text-xs text-red-600 mt-2">
                             Please check your internet connection and try again.
                           </p>
@@ -1478,8 +1480,7 @@ export default function JobApplicationForm({
                       <button
                         type="button"
                         onClick={() => {
-                          // To clear the error, you might need to reset the mutation
-                          // Or your hook might clear it automatically on retry
+                          setErrorOnSubmit(null)
                         }}
                         className="shrink-0 text-red-400 hover:text-red-600"
                         aria-label="Dismiss error"

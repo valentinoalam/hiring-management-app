@@ -24,7 +24,6 @@ export default function JobApplicationPage() {
     isLoading: dataLoading, 
     submitApplication, 
     isSubmitting, 
-    submitError,
     error 
   } = useJobApplicationFlow(jobId, userId || '');
 
@@ -89,7 +88,6 @@ export default function JobApplicationPage() {
       appFormFields={appFormFields}
       userProfile={userProfile}
       isSending={isSubmitting}
-      submitError={submitError}
       onSubmit={submitApplication}
       onCancel={handleCancel} />
   );
