@@ -77,11 +77,11 @@ test.describe('Job Application Authentication Scenarios', () => {
     await page.goto(`/jobs/${jobId}/apply`);
     
     // Should redirect to login
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
     
     // Login and verify redirect back to application
     await setupAuthenticatedState(page);
-    await page.goto(`/auth/login?redirect=${encodeURIComponent(`/jobs/${jobId}/apply`)}`);
+    await page.goto(`/login?callbackUrl=${encodeURIComponent(`/jobs/${jobId}/apply`)}`);
     
     // Mock that we're already authenticated and should redirect
     await page.evaluate(() => {
@@ -127,6 +127,6 @@ test.describe('Job Application Authentication Scenarios', () => {
     await page.locator('button[type="submit"]').click();
     
     // Should redirect to login due to expired auth
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
   });
 });

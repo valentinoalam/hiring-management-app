@@ -53,7 +53,7 @@ test.describe('Job Application Flow', () => {
     
     // Check that redirect parameter is preserved
     const url = page.url();
-    expect(url).toContain('redirect=');
+    expect(url).toContain('callbackUrl=');
     expect(url).toContain(encodeURIComponent('/jobs/123/apply'));
   });
 
@@ -154,7 +154,7 @@ test.describe('Job Application Flow', () => {
       });
     });
 
-    await page.goto('/auth/login?redirect=/jobs/123/apply');
+    await page.goto('/auth/login?callbackUrl=/jobs/123/apply');
     
     // Try to login with wrong password
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'wrongpassword');

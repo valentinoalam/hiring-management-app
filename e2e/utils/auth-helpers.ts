@@ -50,11 +50,11 @@ export async function loginWithCredentials(page: Page, email: string, password: 
 export async function loginAndGoToApplication(page: Page, jobId: string = '123') {
 
   // Go to login page first
-  await page.goto(`/auth/login?redirect=${encodeURIComponent(`/jobs/${jobId}/apply`)}`);
+  await page.goto(`/login?callbackUrl=${encodeURIComponent(`/jobs/${jobId}/apply`)}`);
   
   // Use specific credentials
   await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
-  
+  await page.waitForLoadState('networkidle');
   // Should redirect to application page
   await expect(page).toHaveURL(new RegExp(`/jobs/${jobId}/apply`));
 }
