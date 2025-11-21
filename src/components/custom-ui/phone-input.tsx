@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useImperativeHandle, Ref  } from 'react';
+import React, { useState, useEffect, useImperativeHandle, Ref, useCallback  } from 'react';
 import { ChevronDown } from 'lucide-react';
 import {
   Popover,
@@ -32,6 +32,7 @@ interface PhoneInputProps extends React.ComponentPropsWithoutRef<"input"> {
   maxLength?: number;
   allowedCharacters?: RegExp;
   showValidation?: boolean;
+  value?: string;
   ref?: Ref<unknown> | undefined;
 }
 const initialCountries = [
@@ -47,11 +48,49 @@ const initialCountries = [
 const DEFAULT_MAX_LENGTH = 15;
 const DEFAULT_ALLOWED_CHARS = /[\d\s()-]/g;
 
+// Helper function to parse initial phone number
+const parseInitialPhoneNumber = (initialValue: string, countries: Country[]) => {
+  if (!initialValue) return { country: initialCountries[0], phoneNumber: '' };
+
+  // Remove all non-digit and non-plus characters for parsing
+  const cleanValue = initialValue.replace(/[^\d+]/g, '');
+  
+  // Find matching country by dial code
+  let matchedCountry = initialCountries[0]; // Default to Indonesia
+  let phoneNumber = cleanValue;
+
+  // Sort countries by dial code length (longest first) to avoid partial matches
+  const sortedCountries = [...countries].sort((a, b) => b.dial.length - a.dial.length);
+  
+  for (const country of sortedCountries) {
+    const dialWithoutPlus = country.dial.replace('+', '');
+    if (cleanValue.startsWith(dialWithoutPlus)) {
+      matchedCountry = country;
+      phoneNumber = cleanValue.slice(dialWithoutPlus.length);
+      break;
+    }
+  }
+
+  // If no country found but starts with +, try to find in all countries
+  if (cleanValue.startsWith('+') && matchedCountry === initialCountries[0]) {
+    for (const country of sortedCountries) {
+      if (cleanValue.startsWith(country.dial)) {
+        matchedCountry = country;
+        phoneNumber = cleanValue.slice(country.dial.length);
+        break;
+      }
+    }
+  }
+
+  return { country: matchedCountry, phoneNumber };
+};
+
 export default function PhoneInput({ 
   onPhoneChange, 
   maxLength = DEFAULT_MAX_LENGTH,
   allowedCharacters = DEFAULT_ALLOWED_CHARS,
   showValidation = false,
+  value = '', 
   ref, 
   ...props }: PhoneInputProps) {
   const [countries, setCountries] = useState<Country[]>([]);
@@ -60,6 +99,7 @@ export default function PhoneInput({
   const [open, setOpen] = useState(false);
   const [isTouched, setIsTouched] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [isInitialized, setIsInitialized] = useState(false);
 
 // Expose values via ref
   useImperativeHandle(ref, () => ({
@@ -90,7 +130,7 @@ export default function PhoneInput({
     return filtered.slice(0, maxLength);
   };
 
-  const formatPhoneNumber = (value: string): string => {
+  const formatPhoneNumber = useCallback((value: string): string => {
     // Remove all non-digits for formatting logic
     const digitsOnly = value.replace(/\D/g, '');
     const limitedDigits = digitsOnly.slice(0, maxLength);
@@ -104,12 +144,11 @@ export default function PhoneInput({
     } else {
       return `${limitedDigits.slice(0, 3)} ${limitedDigits.slice(3, 6)} ${limitedDigits.slice(6, 9)} ${limitedDigits.slice(9, 12)}`;
     }
-  };
-
-  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  }, [maxLength]);
+const handlePhoneChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const rawValue = e.target.value;
     
-    // Filter and limit the input
+    // Filter and limit the input - keep only digits
     const filteredValue = filterAndLimitInput(rawValue);
     
     // Format the phone number
@@ -119,15 +158,15 @@ export default function PhoneInput({
     setIsTouched(true);
     
     // Notify parent component
-    const fullNumber = selectedCountry ? `${selectedCountry.dial}${filteredValue.replace(/\s/g, '')}` : '';
+    const fullNumber = selectedCountry ? `${selectedCountry.dial}${filteredValue}` : '';
     onPhoneChange?.(fullNumber, isValid);
-  };
+  }, [filterAndLimitInput, formatPhoneNumber, selectedCountry, onPhoneChange, isValid]);
 
-  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+  const handlePaste = useCallback((e: React.ClipboardEvent<HTMLInputElement>) => {
     e.preventDefault();
     const pastedData = e.clipboardData.getData('text');
     
-    // Filter and limit pasted content
+    // Filter and limit pasted content - keep only digits
     const filteredValue = filterAndLimitInput(pastedData);
     const formattedValue = formatPhoneNumber(filteredValue);
     
@@ -135,11 +174,11 @@ export default function PhoneInput({
     setIsTouched(true);
     
     // Notify parent component
-    const fullNumber = selectedCountry ? `${selectedCountry.dial}${filteredValue.replace(/\s/g, '')}` : '';
+    const fullNumber = selectedCountry ? `${selectedCountry.dial}${filteredValue}` : '';
     onPhoneChange?.(fullNumber, isValid);
-  };
+  }, [filterAndLimitInput, formatPhoneNumber, selectedCountry, onPhoneChange, isValid]);
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+  const handleKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
     // Allow only specific keys: digits, backspace, delete, tab, arrow keys
     const allowedKeys = [
       'Backspace', 'Delete', 'Tab', 'ArrowLeft', 'ArrowRight', 
@@ -149,50 +188,98 @@ export default function PhoneInput({
     if (!/^\d$/.test(e.key) && !allowedKeys.includes(e.key) && !e.ctrlKey && !e.metaKey) {
       e.preventDefault();
     }
-  };
+  }, []);
 
-  const handleCountrySelect = (country: Country) => {
+  const handleCountrySelect = useCallback((country: Country) => {
     setSelectedCountry(country);
     setOpen(false);
     
     // Notify parent about change
     const fullNumber = `${country.dial}${phoneNumber.replace(/\s/g, '')}`;
     onPhoneChange?.(fullNumber, isValid);
-  };
+  }, [phoneNumber, onPhoneChange, isValid]);
 
-  // Fetch countries data from REST Countries API
+  // Initialize with value prop on mount
+  useEffect(() => {
+    if (value && !isInitialized) {
+      const { country, phoneNumber: parsedPhoneNumber } = parseInitialPhoneNumber(value, countries);
+      setSelectedCountry(country);
+      setPhoneNumber(formatPhoneNumber(parsedPhoneNumber));
+      setIsInitialized(true);
+    }
+  }, [value, countries, isInitialized, formatPhoneNumber]);
+
+  // Fetch countries data from REST Countries API - only once on mount
   useEffect(() => {
     const fetchCountries = async () => {
       try {
         setLoading(true);
         const response = await fetch('/api/countries');
+        
+        if (!response.ok) {
+          throw new Error('Failed to fetch countries');
+        }
+        
         const data = await response.json();
 
         // Transform the API data to match our structure
-        const countriesData: Country[] = data.data;
+        const countriesData: Country[] = data.data || [];
 
-        setCountries(countriesData);
-        
-        // Set default selected country to United States if available, otherwise first country
-        const idCountry: Country | undefined = countriesData.find(country => country.code === 'ID');
-        setSelectedCountry(idCountry || countriesData[0] || null);
+        if (countriesData.length > 0) {
+          setCountries(countriesData);
+          
+          // If we have an initial value and haven't initialized yet, use the new countries data
+          if (value && !isInitialized) {
+            const { country, phoneNumber: parsedPhoneNumber } = parseInitialPhoneNumber(value, countriesData);
+            setSelectedCountry(country);
+            setPhoneNumber(formatPhoneNumber(parsedPhoneNumber));
+            setIsInitialized(true);
+          } else if (!isInitialized) {
+            // Set default selected country to Indonesia if available, otherwise first country
+            const idCountry: Country | undefined = countriesData.find(country => country.code === 'ID');
+            setSelectedCountry(idCountry || countriesData[0] || null);
+            setIsInitialized(true);
+          }
+        }
       } catch (error) {
         console.error('Error fetching countries:', error);
+        // If API fails, we already have initialCountries as fallback
+        if (value && !isInitialized) {
+          const { country, phoneNumber: parsedPhoneNumber } = parseInitialPhoneNumber(value, initialCountries);
+          setSelectedCountry(country);
+          setPhoneNumber(formatPhoneNumber(parsedPhoneNumber));
+          setIsInitialized(true);
+        }
+        setIsInitialized(true); // Mark as initialized even if API fails
       } finally {
         setLoading(false);
       }
     };
 
-    fetchCountries();
-  }, []);
+    // Only fetch if we haven't initialized and have API endpoint
+    if (!isInitialized) {
+      fetchCountries();
+    }
+  }, [value, isInitialized, formatPhoneNumber]); // Remove countries from dependencies
+  
+  // Initialize with value prop if provided (for cases where API is not used)
+  // useEffect(() => {
+  //   if (value && !isInitialized && countries.length > 0) {
+  //     const { country, phoneNumber: parsedPhoneNumber } = parseInitialPhoneNumber(value, countries);
+  //     setSelectedCountry(country);
+  //     setPhoneNumber(formatPhoneNumber(parsedPhoneNumber));
+  //     setIsInitialized(true);
+  //   }
+  // }, [value, countries, isInitialized, formatPhoneNumber]);
   
   // Notify parent when country changes
   useEffect(() => {
-      if (isTouched) {
-        const fullNumber = selectedCountry ? `${selectedCountry.dial}${phoneNumber.replace(/\s/g, '')}` : '';
-        onPhoneChange?.(fullNumber, isValid);
-      }
-    }, [isTouched, isValid, onPhoneChange, phoneNumber, selectedCountry]);
+    if (isTouched && isInitialized) {
+      const fullNumber = selectedCountry ? `${selectedCountry.dial}${phoneNumber.replace(/\s/g, '')}` : '';
+      onPhoneChange?.(fullNumber, isValid);
+    }
+  }, [isTouched, isValid, onPhoneChange, phoneNumber, selectedCountry, isInitialized]);
+
   return (
     <div className="flex flex-col gap-2">
         <div 
@@ -276,7 +363,6 @@ export default function PhoneInput({
           </PopoverContent>
         </Popover>
 
-        {/* 2. Dial Code Display (Restored) */}
         <span className="flex items-center px-3 text-sm leading-6 text-neutral-90 font-sans border-r border-neutral-40">
           {selectedCountry?.dial || ''}
         </span>

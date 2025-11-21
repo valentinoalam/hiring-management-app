@@ -17,9 +17,8 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-// import { Input } from "@/components/ui/input";
+import { Input } from "@/components/ui/input";
 import { useDebounce } from "@/hooks/use-debounce";
-import { Input } from "../ui/input";
 
 interface WilayahItem {
   kode: string;
@@ -37,6 +36,7 @@ interface WilayahAutocompleteProps extends Omit<
   disabled?: boolean;
   placeholder?: string;
   className?: string;
+  allowTypedInput?: boolean;
 }
 
 export function WilayahAutocomplete({
@@ -46,6 +46,7 @@ export function WilayahAutocomplete({
   disabled = false,
   placeholder = "Pilih domisili...",
   className,
+  allowTypedInput = true,
   ...props
 }: WilayahAutocompleteProps) {
   const [open, setOpen] = React.useState(false);
@@ -53,8 +54,14 @@ export function WilayahAutocomplete({
   const [results, setResults] = React.useState<WilayahItem[]>([]);
   const [loading, setLoading] = React.useState(false);
   const [selectedItem, setSelectedItem] = React.useState<WilayahItem | null>(null);
-  // const [domicile, setPhoneNumber] = useState('');
+  const [typedInput, setTypedInput] = React.useState("");
   const debouncedSearch = useDebounce(searchQuery, 300);
+
+  // Check if current value is a typed input (not a wilayah code)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const isTypedInput = React.useMemo(() => {
+    return value && !selectedItem && value !== "";
+  }, [value, selectedItem]);
 
   // Fetch search results
   React.useEffect(() => {
@@ -90,8 +97,17 @@ export function WilayahAutocomplete({
     const findSelectedItem = async () => {
       if (!value) {
         setSelectedItem(null);
+        setTypedInput("");
         return;
       }
+
+      // If value looks like a typed input (not a typical wilayah code pattern)
+      if (allowTypedInput && !/^\d{2,13}$/.test(value)) {
+        setSelectedItem(null);
+        setTypedInput(value);
+        return;
+      }
+
       if (selectedItem?.kode === value) {
         return;
       }
@@ -110,22 +126,39 @@ export function WilayahAutocomplete({
           } else {
             // If the code is not found, clear the selection
             setSelectedItem(null);
+            if (allowTypedInput && value) {
+              setTypedInput(value);
+            }
           }
         }
       } catch (error) {
         console.error("Failed to find selected item:", error);
         setSelectedItem(null);
+        if (allowTypedInput && value) {
+          setTypedInput(value);
+        }
       }
     };
 
     findSelectedItem();
-  }, [value, selectedItem]);
+  }, [value, selectedItem, allowTypedInput]);
 
   const handleSelect = (item: WilayahItem) => {
     setSelectedItem(item);
     onChange?.(item.kode);
+    setTypedInput("");
     setOpen(false);
     setSearchQuery("");
+  };
+
+  const handleTypedInput = () => {
+    if (allowTypedInput && searchQuery.trim()) {
+      onChange?.(searchQuery.trim());
+      setTypedInput(searchQuery.trim());
+      setSelectedItem(null);
+      setOpen(false);
+      setSearchQuery("");
+    }
   };
 
   const getTypeIcon = (type: string) => {
@@ -148,6 +181,11 @@ export function WilayahAutocomplete({
     return colors[type as keyof typeof colors] || "text-gray-600 bg-gray-50";
   };
 
+  const showTypedInputOption = allowTypedInput && 
+    searchQuery.length >= 2 && 
+    !loading && 
+    results.length === 0;
+
   return (
     <div className={cn("space-y-2", className)}>
       <Popover open={open} onOpenChange={setOpen}>
@@ -158,7 +196,7 @@ export function WilayahAutocomplete({
             aria-expanded={open}
             className={cn(
               "w-full justify-between h-10 px-3 py-2 text-sm",
-              !selectedItem && "text-muted-foreground"
+              (!selectedItem && !typedInput) && "text-muted-foreground"
             )}
             disabled={disabled}
             onBlur={onBlur}
@@ -170,9 +208,13 @@ export function WilayahAutocomplete({
                     {getTypeIcon(selectedItem.tipe)}
                   </span>
                   <span className="truncate">{selectedItem.nama}</span>
-                  {/* <span className="text-xs text-muted-foreground ml-2 hidden sm:inline">
-                    ({selectedItem.kode})
-                  </span> */}
+                </>
+              ) : typedInput ? (
+                <>
+                  <span className={cn("text-xs px-2 py-1 rounded", "text-gray-600 bg-gray-50")}>
+                    ✏️
+                  </span>
+                  <span className="truncate">{typedInput}</span>
                 </>
               ) : (
                 <span className="text-muted-foreground">{placeholder}</span>
@@ -252,6 +294,32 @@ export function WilayahAutocomplete({
                       </div>
                     </CommandItem>
                   ))}
+                </CommandGroup>
+              )}
+              {/* Typed input option */}
+              {showTypedInputOption && (
+                <CommandGroup>
+                  <CommandItem
+                    onSelect={handleTypedInput}
+                    className="flex items-center gap-3 py-3 cursor-pointer border-t"
+                  >
+                    <div className={cn(
+                      "flex items-center justify-center w-8 h-8 rounded-full",
+                      "text-gray-600 bg-gray-50"
+                    )}>
+                      <span className="text-sm">✏️</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-sm">
+                          Gunakan &quot;{searchQuery}&quot;
+                        </span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        Input typed
+                      </div>
+                    </div>
+                  </CommandItem>
                 </CommandGroup>
               )}
             </CommandList>

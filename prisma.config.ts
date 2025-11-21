@@ -1,5 +1,5 @@
 import 'dotenv/config';
-import { defineConfig } from "prisma/config";
+import { defineConfig, env } from "prisma/config";
 
 // Prisma CLI configuration
 // See: https://www.prisma.io/docs/orm/reference/prisma-config-reference
@@ -12,4 +12,7 @@ export default defineConfig({
 		path: "./prisma/migrations",
 		seed: "tsx prisma/seed.ts",
 	},
+	datasource: { 
+    url: env("DATABASE_URL") 
+  }
 });

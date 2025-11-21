@@ -2,7 +2,6 @@
 
 import { usePathname } from "next/navigation";
 import Link from 'next/link';
-import { signOut } from "next-auth/react"; // 💡 Import useSession and signOut
 import { LogOut, Loader2 } from "lucide-react"; // Added Lucide icons for better UX
 import {
   DropdownMenu,
@@ -24,9 +23,11 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import React from 'react';
 import { useAuthStore } from "@/stores/auth-store";
+import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {
   const { user, isAuthenticated, isLoading } = useAuthStore()
+  const { logout } = useAuth()
   const pathname = usePathname()
   // ✅ Detect if this layout is on recruiter section
   const isRecruiterPage = pathname.startsWith('/recruiter')
@@ -94,8 +95,7 @@ export default function Header() {
         </Link>
       );
     }
-    console.log(isAuthenticated)
-    console.log(user.name)
+
     const initials = user.name
       ? user.name
           .split(" ")
@@ -138,7 +138,7 @@ export default function Header() {
           </DropdownMenuItem> */}
           <DropdownMenuSeparator />
           {/* 💡 Connect Log out to NextAuth signOut function */}
-          <DropdownMenuItem onClick={() => signOut({ callbackUrl: '/login' })} className="cursor-pointer text-red-500 focus:text-red-600">
+          <DropdownMenuItem onClick={() => logout()} className="cursor-pointer text-red-500 focus:text-red-600">
             <LogOut className="mr-2 h-4 w-4" />
             Log out
           </DropdownMenuItem>
@@ -150,7 +150,7 @@ export default function Header() {
   
   // shadow-[0px_4px_8px_rgba(0,0,0,0.1)]
   return (
-    <header className="h-16 border-neutral-40 sticky top-0 z-40 border-b bg-background">
+    <header className="h-16 border-neutral-40 fixed top-0 w-full z-40 border-b bg-background">
       <div className="container flex h-14 items-center justify-between px-4 md:px-6">
         {/* 💡 Left side: Breadcrumbs */}
         {showBreadcrumb ?

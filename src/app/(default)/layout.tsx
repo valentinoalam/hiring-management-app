@@ -8,7 +8,7 @@ export default function DefaultLayout({
   return (
     <div className="flex-1 grow flex flex-col min-w-0 relative">
       <Header />
-      <main className="relative flex flex-1 flex-col gap-4">
+      <main className="mt-16 relative flex flex-1 flex-col gap-4">
         {children}
       </main>
     </div>

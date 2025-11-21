@@ -264,14 +264,6 @@ export default function JobApplicationForm({
    * Extract date of birth from profile's otherInfo
    */
   const getProfileDateOfBirth = useCallback((): string => {
-    if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
-      const transformedInfo = transformProfileUserInfo(profile.otherInfo as OtherInfoData[]);
-      if (transformedInfo.date_of_birth) {
-        return transformedInfo.date_of_birth;
-      }
-    }
-    
-    // Fallback to direct profile dateOfBirth
     if (profile?.dateOfBirth) {
       if (profile.dateOfBirth instanceof Date) {
         return profile.dateOfBirth.toISOString();
@@ -307,7 +299,7 @@ export default function JobApplicationForm({
     const commonFields = {
       'full_name': profile.fullname || user?.name || '',
       'email': profile.email || user?.email || '',
-      'phone_number': profile.phone || '',
+      'phone_number': profile.phone || '198721674214',
       'date_of_birth': getProfileDateOfBirth(),
       'gender': profile.gender || '',
       'domicile': profile.location || '',

@@ -85,7 +85,31 @@ export const transformProfileUserInfo = (userInfo: OtherInfoData[]): Record<stri
     const answer = item.infoFieldAnswer || '';
 
     if (fieldKey && answer) {
-      acc[fieldKey] = answer; // Direct fieldKey → answer mapping
+      // Handle DateTime objects for date fields
+      if (fieldKey === 'date_of_birth' || item.field.fieldType === 'date') {
+        // If it's a DateTime string, convert to ISO string
+        if (typeof answer === 'string' && answer.includes('T')) {
+          // It's already an ISO string, use as-is
+          acc[fieldKey] = answer;
+        } else if (typeof answer === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(answer)) {
+          // It's YYYY-MM-DD format, convert to ISO
+          acc[fieldKey] = new Date(answer + 'T00:00:00.000Z').toISOString();
+        } else {
+          // Try to parse as Date object
+          try {
+            const date = new Date(answer);
+            if (!isNaN(date.getTime())) {
+              acc[fieldKey] = date.toISOString();
+            }
+          } catch {
+            // If parsing fails, use the original value
+            acc[fieldKey] = answer;
+          }
+        }
+      } else {
+        // For non-date fields, use as-is
+        acc[fieldKey] = answer;
+      }
     }
 
     return acc;
