@@ -4,6 +4,11 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   // transpilePackages: ['three'],
   // headers: headers,
+  experimental: {
+    workerThreads: false,
+    cpus: 2, // Limit CPU usage
+    serverMinification: false
+  },
   images: {
     remotePatterns: [
       {
