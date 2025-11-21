@@ -73,9 +73,9 @@ export async function GET(
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   try {
-    const { id } = await params
+    const { jobId:id } = await params
     
 
     const session = await auth()
@@ -140,9 +140,9 @@ export async function PUT(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function DELETE(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(request: NextRequest, { params }: { params: Promise<{ jobId: string }> }) {
   try {
-    const { id } = await params
+    const { jobId:id } = await params
     
     const session = await auth()
     const user = session?.user
