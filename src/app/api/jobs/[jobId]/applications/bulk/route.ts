@@ -5,7 +5,7 @@ import { auth } from "@/auth";
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ jobId: string }> }
 ) {
   try {
     const session = await auth();
@@ -15,7 +15,7 @@ export async function PUT(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { id: jobId } = await params;
+    const { jobId } = await params;
     const body = await request.json();
 
     const { applicationIds, status, note } = body;
