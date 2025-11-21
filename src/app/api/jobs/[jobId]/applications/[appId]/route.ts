@@ -30,9 +30,9 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
   }
 }
 
-export async function PUT(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(request: NextRequest, { params }: { params: Promise<{ appId: string }> }) {
   try {
-    const { id } = await params
+    const { appId:id } = await params
     const session = await auth()
     const user = session?.user
 
