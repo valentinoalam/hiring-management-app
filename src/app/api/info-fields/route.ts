@@ -3,10 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ jobId: string }> }
-) {
+export async function GET() {
   try {
     const session = await auth();
     
@@ -16,11 +13,9 @@ export async function GET(
         { status: 401 }
       );
     }
-    const {jobId} = await params;
     // Get global info fields (system fields) and user's custom fields
     const infoFields = await prisma.infoField.findMany({
       where: {
-        id: jobId,
         OR: [
           { authorId: undefined }, // System fields
           { authorId: session.user.id }, // User's custom fields
