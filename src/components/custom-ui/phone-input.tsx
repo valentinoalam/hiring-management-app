@@ -165,32 +165,17 @@ export default function PhoneInput({
     const fetchCountries = async () => {
       try {
         setLoading(true);
-        const response = await fetch('https://restcountries.com/v3.1/all?fields=name,cca2,idd,flags');
+        const response = await fetch('/api/countries');
         const data = await response.json();
 
         // Transform the API data to match our structure
-        const transformedCountries: Country[] = data
-          .filter((country: { idd: { root?: string; suffixes?: string[] } }) => country.idd.root && country.idd.suffixes)
-          .map((country: { cca2: string; name: { common: string }; idd: { root: string; suffixes: string[] } }) => {
-            // Get the first suffix for the dial code (most countries have only one)
-            const dialSuffix = country.idd.suffixes[0] || '';
-            const dialCode = `${country.idd.root}${dialSuffix}`;
-            
-            return {
-              code: country.cca2,
-              name: country.name.common,
-              dial: dialCode,
-              flagUrl: getFlagUrl(country.cca2)
-            };
-          })
-          // Sort countries alphabetically by name
-          .sort((a: Country, b: Country) => a.name.localeCompare(b.name));
+        const countriesData: Country[] = data.data;
 
-        setCountries(transformedCountries);
+        setCountries(countriesData);
         
         // Set default selected country to United States if available, otherwise first country
-        const idCountry: Country | undefined = transformedCountries.find(country => country.code === 'ID');
-        setSelectedCountry(idCountry || transformedCountries[0] || null);
+        const idCountry: Country | undefined = countriesData.find(country => country.code === 'ID');
+        setSelectedCountry(idCountry || countriesData[0] || null);
       } catch (error) {
         console.error('Error fetching countries:', error);
       } finally {

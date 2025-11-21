@@ -699,7 +699,7 @@ export default function JobApplicationForm({
             <Input
               type="number"
               {...commonProps}
-              min={appField.validation?.min}
+              min={appField.validation?.min || 0}
               max={appField.validation?.max}
             />
             {appField.description && (

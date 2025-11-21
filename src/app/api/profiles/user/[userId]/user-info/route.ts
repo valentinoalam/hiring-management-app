@@ -42,7 +42,7 @@ export async function GET() {
         },
       },
     });
-
+    console.log('userInfo', userInfo);
     return NextResponse.json(userInfo);
   } catch (error) {
     console.error('Error fetching user info:', error);
