@@ -79,18 +79,13 @@ export interface InfoField {
 /**
  * Transforms array of OtherInfoData into dynamic object of OtherInfo type
  */
-export const transformProfileUserInfo = (userInfo: OtherInfoData[]): OtherInfo => {
-  return userInfo.reduce((acc: OtherInfo, item) => {
+export const transformProfileUserInfo = (userInfo: OtherInfoData[]): Record<string, string> => {
+  return userInfo.reduce((acc: Record<string, string>, item) => {
     const fieldKey = item.field.key;
-    const fieldLabel = item.field.label || "Unknown";
-    const fieldType = item.field.fieldType || "text";
-    const answer = item.infoFieldAnswer;
+    const answer = item.infoFieldAnswer || '';
 
-    if (fieldKey) {
-      acc[fieldKey] = {
-        [fieldLabel]: fieldType,
-        answer,
-      };
+    if (fieldKey && answer) {
+      acc[fieldKey] = answer; // Direct fieldKey → answer mapping
     }
 
     return acc;

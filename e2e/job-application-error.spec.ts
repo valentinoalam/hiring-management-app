@@ -45,6 +45,17 @@ test.describe('Job Application Error Scenarios', () => {
   });
 
   test('should handle form submission failure', async ({ page }) => {
+    page.on('request', request => {
+      if (request.url().includes('/api/')) {
+        console.log('➡️ REQUEST:', request.method(), request.url());
+      }
+    });
+
+    page.on('response', response => {
+      if (response.url().includes('/api/')) {
+        console.log('⬅️ RESPONSE:', response.status(), response.url());
+      }
+    });
     // Mock successful page load
     await page.route('**/api/jobs/*', async (route) => {
       await route.fulfill({
@@ -70,7 +81,7 @@ test.describe('Job Application Error Scenarios', () => {
     });
 
     await loginAndGoToApplication(page, '123');
-    
+    await expect(page).toHaveURL(/\/jobs\/123\/apply/);
     // Fill required fields
     await page.locator('input[name="full_name"]').fill('Test User');
     await page.locator('input[name="email"]').fill('test@example.com');
@@ -83,25 +94,37 @@ test.describe('Job Application Error Scenarios', () => {
     
     await page.locator('select[name="source"]').selectOption('linkedin');
 
-    // const responsePromise = page.waitForResponse(response => 
-    //   response.url().includes('/api/jobs/') && response.request().method() === 'POST'
-    // );
-    const submitButton = page.locator('button[type="submit"]');
-    await expect(submitButton).toBeEnabled();
-    await submitButton.click();
+    console.log('🚀 Clicking submit button...');
+    await expect(async () => {
+      await page.click('button[type="submit"]:has-text("Submit Application")');
+    }).toPass();
     await page.waitForTimeout(2000);
-    // const response = await responsePromise;
-    // console.log('Final Response Status:', response.status());
+    await page.waitForResponse(response => {
+      const url = response.url();
+      const isApplyEndpoint = url.includes('/apply');
+      const isPost = response.request().method() === 'POST';
+      console.log('🔍 Checking response:', url, 'Method:', response.request().method(), 'Match:', isApplyEndpoint && isPost);
+      return isApplyEndpoint && isPost;
+    }, { timeout: 10000 });
+    // Check if there are any network errors
+    const networkLogs = await page.evaluate(() => {
+      return performance.getEntriesByType('resource')
+        .filter(entry => entry.name.includes('/api/'))
+        .map(entry => ({
+          name: entry.name,
+          duration: entry.duration,
+        }));
+    });
+    console.log('🌐 Network requests made:', networkLogs);
     // Wait for and verify the error message appears
-    await expect(page.getByTestId("submission-error")).toBeVisible();
-
     const errorVisible = await Promise.race([
       page.waitForSelector('[data-testid="submission-error"]', { timeout: 10000 })
         .then(() => true)
         .catch(() => false),
       page.waitForTimeout(10000).then(() => false)
     ]);
-    
+    await expect(page.getByTestId("submission-error")).toBeVisible();
+
     if (errorVisible) {
       console.log('✅ Error message detected');
       // Take a screenshot for debugging

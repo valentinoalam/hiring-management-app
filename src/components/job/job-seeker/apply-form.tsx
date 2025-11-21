@@ -23,6 +23,7 @@ import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-ca
 import PhoneInput from "@/components/custom-ui/phone-input";
 import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
 import { MutateFunction } from "@tanstack/react-query";
+import { useAuthStore } from "@/stores/auth-store";
 
 // File validation constants
 const MEGABYTE = 1024 * 1024;
@@ -246,6 +247,8 @@ export default function JobApplicationForm({
   onCancel
 }: JobApplicationFormProps) {
   // ========== State Management ==========
+  const user = useAuthStore((state) => state.user); 
+  const profile = userProfile;
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [avatarFile, setAvatarFile] = useState<File | null>(null);
   const [resumeFile, setResumeFile] = useState<File | null>(null);
@@ -254,21 +257,31 @@ export default function JobApplicationForm({
   const [showGestureCapture, setShowGestureCapture] = useState(false);
   const [errorOnSubmit, setErrorOnSubmit] = useState<Error | null>(null)
   const [isError, setIsError] = useState(false);
-  const profile = userProfile;
   const [resumeUrl, setResumeUrl] = useState<string | undefined>(profile?.resumeUrl);
   // ========== Helper Functions ==========
   
   /**
    * Extract date of birth from profile's otherInfo
    */
-  const getProfileDateOfBirth = useCallback((): string | undefined => {
+  const getProfileDateOfBirth = useCallback((): string => {
     if (profile?.otherInfo && Array.isArray(profile.otherInfo)) {
-      const dobInfo = (profile.otherInfo as unknown as OtherInfoData[]).find(
-        (info: OtherInfoData) => info.field.key === 'date_of_birth'
-      );
-      return dobInfo?.infoFieldAnswer;
+      const transformedInfo = transformProfileUserInfo(profile.otherInfo as OtherInfoData[]);
+      if (transformedInfo.date_of_birth) {
+        return transformedInfo.date_of_birth;
+      }
     }
-    return undefined;
+    
+    // Fallback to direct profile dateOfBirth
+    if (profile?.dateOfBirth) {
+      if (profile.dateOfBirth instanceof Date) {
+        return profile.dateOfBirth.toISOString();
+      }
+      if (typeof profile.dateOfBirth === 'string') {
+        return profile.dateOfBirth;
+      }
+    }
+    
+    return '';
   }, [profile]);
 
   /**
@@ -280,32 +293,37 @@ export default function JobApplicationForm({
   }, []);
 
   /**
-   * Get value from profile for a specific field key
-   * Maps profile properties to form field keys
+   * Get initial values for all form fields
    */
-  const getProfileFieldValue = useCallback((fieldKey: string, transformedOtherInfo?: OtherInfo): string => {
-    // First, check transformed otherInfo
-    if (transformedOtherInfo && transformedOtherInfo[fieldKey]) {
-      return transformedOtherInfo[fieldKey].answer || "";
-    }
+  const getInitialFormData = useCallback((): Partial<ApplicationFormData> => {
+    if (!profile) return {};
 
-    // Then check direct profile properties
-    const fieldMapping: Record<string, string | undefined> = {
-      'phone_number': profile?.phone,
-      'domicile': profile?.location,
-      'linkedin_url': profile?.linkedinUrl,
-      'full_name': profile?.fullname,
-      'email': profile?.email,
-      'gender': profile?.gender,
+    // Transform profile.otherInfo to simple key-value pairs
+    const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
+      ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
+      : {};
+
+    // Common profile fields (fixed section)
+    const commonFields = {
+      'full_name': profile.fullname || user?.name || '',
+      'email': profile.email || user?.email || '',
+      'phone_number': profile.phone || '',
       'date_of_birth': getProfileDateOfBirth(),
+      'gender': profile.gender || '',
+      'domicile': profile.location || '',
+      'linkedin_url': profile.linkedinUrl || '',
     };
 
-    return fieldMapping[fieldKey] || "";
-  }, [profile, getProfileDateOfBirth]);
-  
+    // Merge common fields with dynamic fields from otherInfo
+    // This automatically includes any dynamic fields that match form field keys
+    return { ...commonFields, ...transformedOtherInfo };
+  }, [profile, user, getProfileDateOfBirth]);
+
   // ========== Form Setup ==========
   
   const formSchema = createApplicationSchema(appFormFields);
+  const initialValues = getInitialFormData();
+  
   const {
     register,
     handleSubmit,
@@ -317,6 +335,14 @@ export default function JobApplicationForm({
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(formSchema),
     mode: 'onChange',
+    defaultValues: {
+      // Set all initial values here
+      ...initialValues,
+      // Fixed application fields with defaults
+      coverLetter: '',
+      source: '',
+      // Resume will be handled separately since it's a File
+    } as ApplicationFormData,
   });
   const formValues = useWatch({ control });
 
@@ -330,55 +356,35 @@ export default function JobApplicationForm({
       setAvatarPreview(userProfile.avatarUrl);
     }
   }, [userProfile?.avatarUrl]);
+  
   /**
-   * Pre-fill form with existing profile data
-   * This is the critical mapping logic
+   * Set resume from profile (can't be in defaultValues since it's a File)
    */
   useEffect(() => {
-    if (!profile || appFormFields.length === 0) return;
-
-    const fieldValues: Partial<ApplicationFormData> = {};
-
-    // Transform profile.otherInfo if it's in array format
-    const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
-      ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
-      : (profile.otherInfo as OtherInfo | undefined);
-
-    // Map each field to profile data
-    appFormFields.forEach((appField: AppFormField) => {
-      if (appField.fieldState === "off") return;
-
-      const fieldKey = appField.key;
-      
-      // Special handling for photo_profile
-      if (fieldKey === 'photo_profile') {
-        if (profile.avatarUrl) {
-          setAvatarPreview(profile.avatarUrl);
-        }
-        return;
-      }
-
-      // Get value from profile
-      fieldValues[fieldKey] = getProfileFieldValue(fieldKey, transformedOtherInfo);
-    });
-
-    // Set resume if available
-    if (profile.resumeUrl) {
-      // Note: This is setting a URL string, not a File object
-      // This might cause validation issues since schema expects File
-      setValue('resume', profile.resumeUrl, { shouldValidate: false });
+    if (profile?.resumeUrl && !resumeFile) {
+      // Note: This sets a URL string, not a File object
+      // You might need to handle this differently based on your API
+      setValue('resume', profile.resumeUrl as string, { shouldValidate: false });
     }
+  }, [profile?.resumeUrl, resumeFile, setValue]);
 
-    // Set all field values
-    Object.entries(fieldValues).forEach(([key, value]) => {
-      if (value !== undefined) {
-        setValue(key as keyof ApplicationFormData, value, { 
-          shouldValidate: false,
-          shouldDirty: false
-        });
-      }
+  // Debug: Log what fields are being set
+  useEffect(() => {
+    console.log('🔍 Form initialization complete:', {
+      initialValues,
+      profileData: {
+        fullname: profile?.fullname,
+        email: profile?.email,
+        phone: profile?.phone,
+        location: profile?.location,
+        gender: profile?.gender,
+        dateOfBirth: getProfileDateOfBirth(),
+      },
+      transformedOtherInfo: profile?.otherInfo && Array.isArray(profile.otherInfo) 
+        ? transformProfileUserInfo(profile.otherInfo as OtherInfoData[])
+        : {}
     });
-  }, [profile, appFormFields, setValue, getProfileFieldValue]);
+  }, [initialValues, profile, getProfileDateOfBirth]);
 
   // ========== File Handlers ==========
 
@@ -988,17 +994,6 @@ export default function JobApplicationForm({
     }
   };
 
-  // if (appFormFields.length === 0) {
-  //   return (
-  //     <div className="text-center p-8">
-  //       <h3 className="text-lg font-semibold mb-2">No application form available</h3>
-  //       <p className="text-sm text-muted-foreground">
-  //         This job is not currently accepting applications.
-  //       </p>
-  //     </div>
-  //   );
-  // }
-
   const visibleFields = appFormFields
     .filter((field: AppFormField) => {
       return field.fieldState !== "off" && !isCommonProfileField(field.key);
@@ -1117,13 +1112,26 @@ export default function JobApplicationForm({
                     Phone Number
                     <span className="text-danger-main">*</span>
                   </FieldLabel>
-                  <PhoneInput {...register('phone_number')} />
+
+                  <Controller
+                    name="phone_number"
+                    control={control}
+                    render={({ field }) => (
+                      <PhoneInput
+                        {...field}
+                        value={field.value as string}
+                        onChange={(value) => field.onChange(value)}
+                      />
+                    )}
+                  />
+
                   {errors.phone_number && (
                     <FieldDescription className="text-danger-main">
                       {errors.phone_number.message}
                     </FieldDescription>
                   )}
                 </Field>
+
 
                 {/* Date of Birth */}
                 <Field>
