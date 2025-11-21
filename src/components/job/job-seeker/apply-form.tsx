@@ -1059,7 +1059,7 @@ export default function JobApplicationForm({
                 <Field>
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     Full Name
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
                   <Input
                     type="text"
@@ -1068,7 +1068,7 @@ export default function JobApplicationForm({
                     className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
                   />
                   {errors.full_name && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.full_name.message}
                     </FieldDescription>
                   )}
@@ -1078,7 +1078,7 @@ export default function JobApplicationForm({
                 <Field>
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     Email
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
                   <Input
                     type="email"
@@ -1087,7 +1087,7 @@ export default function JobApplicationForm({
                     className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
                   />
                   {errors.email && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.email.message}
                     </FieldDescription>
                   )}
@@ -1097,7 +1097,7 @@ export default function JobApplicationForm({
                 <Field>
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     Phone Number
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
 
                   <Controller
@@ -1113,7 +1113,7 @@ export default function JobApplicationForm({
                   />
 
                   {errors.phone_number && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.phone_number.message}
                     </FieldDescription>
                   )}
@@ -1124,7 +1124,7 @@ export default function JobApplicationForm({
                 <Field>
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     Date of Birth
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
                   <div className="relative">
                     <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none">
@@ -1140,7 +1140,7 @@ export default function JobApplicationForm({
                     </div>
                   </div>
                   {errors.date_of_birth && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.date_of_birth.message}
                     </FieldDescription>
                   )}
@@ -1150,7 +1150,7 @@ export default function JobApplicationForm({
                 <Field>
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     Gender
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
                   <FieldGroup className="flex flex-col sm:flex-row gap-6">
                     <label className="flex items-center gap-2 cursor-pointer">
@@ -1177,7 +1177,7 @@ export default function JobApplicationForm({
                     </label>
                   </FieldGroup>
                   {errors.gender && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.gender.message}
                     </FieldDescription>
                   )}
@@ -1191,7 +1191,7 @@ export default function JobApplicationForm({
                     <Field>
                       <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                         Domicile
-                        <span className="text-danger-main">*</span>
+                        <span className="text-danger">*</span>
                       </FieldLabel>
                       <WilayahAutocomplete
                         value={field.value as string}
@@ -1200,7 +1200,7 @@ export default function JobApplicationForm({
                         placeholder="Pilih domisili..."
                       />
                       {errors.domicile && (
-                        <FieldDescription className="text-danger-main">
+                        <FieldDescription className="text-danger">
                           {errors.domicile.message}
                         </FieldDescription>
                       )}
@@ -1213,7 +1213,7 @@ export default function JobApplicationForm({
                 <Field className="md:col-span-2">
                   <FieldLabel className="text-xs leading-5 text-neutral-90 font-sans">
                     LinkedIn Profile URL
-                    <span className="text-danger-main">*</span>
+                    <span className="text-danger">*</span>
                   </FieldLabel>
                   <Input
                     type="url"
@@ -1222,7 +1222,7 @@ export default function JobApplicationForm({
                     className="h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans focus:outline-none focus:ring-2 focus:ring-neutral-100 focus:border-transparent"
                   />
                   {errors.linkedin_url && (
-                    <FieldDescription className="text-danger-main">
+                    <FieldDescription className="text-danger">
                       {errors.linkedin_url.message}
                     </FieldDescription>
                   )}
@@ -1454,10 +1454,10 @@ export default function JobApplicationForm({
               <div className="flex flex-col gap-4 mt-6">
                 {/* Submission Error Display */}
                 {isError && (
-                  <div data-testid="submission-error" className="p-4 border border-red-300 bg-red-50 rounded-lg">
+                  <div data-testid="submission-error" className="p-4 border border-danger-border bg-danger-surface rounded-lg">
                     <div className="flex items-start gap-3">
                       <div className="shrink-0">
-                        <svg className="w-5 h-5 text-red-400" fill="currentColor" viewBox="0 0 20 20">
+                        <svg className="w-5 h-5 text-danger-border" fill="currentColor" viewBox="0 0 20 20">
                           <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
                         </svg>
                       </div>
@@ -1465,11 +1465,11 @@ export default function JobApplicationForm({
                         <h3 className="text-sm font-medium text-danger">
                           Failed to Submit Application
                         </h3>
-                        <p className="text-sm text-red-700 mt-1">
+                        <p className="text-sm text-danger mt-1">
                           {errorOnSubmit?.message || 'There was an error submitting your application. Please try again.'}
                         </p>
                         {errorOnSubmit?.message?.includes('network') && (
-                          <p className="text-xs text-red-600 mt-2">
+                          <p className="text-xs text-danger-pressed mt-2">
                             Please check your internet connection and try again.
                           </p>
                         )}
@@ -1480,7 +1480,7 @@ export default function JobApplicationForm({
                           setErrorOnSubmit(null)
                           setIsError(false)
                         }}
-                        className="shrink-0 text-red-400 hover:text-red-600"
+                        className="shrink-0 text-danger-border hover:text-danger-hover"
                         aria-label="Dismiss error"
                       >
                         <X className="w-4 h-4" />
