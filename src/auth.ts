@@ -1,5 +1,4 @@
-// src/auth.ts
-
+import "server-only";
 import NextAuth from "next-auth";
 import type { Provider } from "next-auth/providers";
 import { authConfig } from "./auth.config"; // Relative import within src/
