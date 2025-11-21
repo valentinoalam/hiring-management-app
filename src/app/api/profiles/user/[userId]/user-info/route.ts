@@ -1,4 +1,4 @@
-// app/api/user-info/route.ts
+import "server-only";
 import { NextRequest, NextResponse } from 'next/server';
 
 import { prisma } from '@/lib/prisma';
