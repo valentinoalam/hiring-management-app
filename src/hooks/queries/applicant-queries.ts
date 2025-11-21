@@ -375,7 +375,7 @@ export const useSearchApplicants = (jobId: string, searchTerm: string) => {
         const result = await fetchJobApplicants(jobId);
         return result.applicants;
       }
-      const applicantsData = await apiFetch(`/api/jobs/${jobId}/applicants/search?q=${encodeURIComponent(searchTerm)}`) as ApplicantData[];
+      const applicantsData = await apiFetch(`/api/jobs/${jobId}/applicants?q=${encodeURIComponent(searchTerm)}`) as ApplicantData[];
       return applicantsData.map(translateApplicantData);
     },
     enabled: !!jobId,
