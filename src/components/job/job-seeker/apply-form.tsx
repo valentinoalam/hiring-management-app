@@ -852,11 +852,11 @@ export default function JobApplicationForm({
               name={appField.key as keyof ApplicationFormData}
               control={control}
               rules={{
-                required: appField.required ? `${appField.label} is required` : false,
+                required: isRequired ? `${appField.label} is required` : false,
               }}
               render={({ field, fieldState }) => (
                 <PhoneInput
-                  value={field.value}
+                  value={field.value as string}
                   onChange={field.onChange}
                   onBlur={field.onBlur}
                   placeholder={appField.placeholder || "81XXXXXXXXX"}
