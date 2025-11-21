@@ -848,27 +848,22 @@ export default function JobApplicationForm({
               {appField.label}
               {isRequired && <span className="text-danger">*</span>}
             </FieldLabel>
-            <div className="flex h-10 border-2 border-neutral-40 bg-neutral-10 rounded-lg overflow-hidden focus-within:ring-2 focus-within:ring-neutral-100 focus-within:border-transparent">
-              <div className="flex items-center gap-1 px-4 border-r border-neutral-40">
-                <div className="w-4 h-4 rounded-full overflow-hidden bg-gray-200 shrink-0">
-                  <svg viewBox="0 0 16 16" className="w-full h-full">
-                    <rect width="16" height="5.33" fill="#CE1126" />
-                    <rect y="10.67" width="16" height="5.33" fill="#CE1126" />
-                    <rect y="5.33" width="16" height="5.33" fill="#FFF" />
-                  </svg>
-                </div>
-                <ChevronDown className="w-4 h-4 text-neutral-100" strokeWidth={1.5} />
-              </div>
-              <span className="flex items-center px-3 text-sm leading-6 text-neutral-90 font-sans border-r border-neutral-40">
-                +62
-              </span>
-              <Input
-                type="tel"
-                {...register(appField.key as keyof ApplicationFormData)}
-                placeholder={appField.placeholder || "81XXXXXXXXX"}
-                className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
-              />
-            </div>
+            <Controller
+              name={appField.key as keyof ApplicationFormData}
+              control={control}
+              rules={{
+                required: appField.required ? `${appField.label} is required` : false,
+              }}
+              render={({ field, fieldState }) => (
+                <PhoneInput
+                  value={field.value}
+                  onChange={field.onChange}
+                  onBlur={field.onBlur}
+                  placeholder={appField.placeholder || "81XXXXXXXXX"}
+                  className="flex-1 px-4 text-sm leading-6 text-neutral-100 placeholder:text-neutral-60 font-sans bg-transparent border-none focus:ring-0"
+                />
+              )}
+            />
             {appField.description && (
               <FieldDescription className="text-xs text-neutral-60 mt-1">
                 {appField.description}
