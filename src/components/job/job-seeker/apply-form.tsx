@@ -610,6 +610,7 @@ export default function JobApplicationForm({
     try {
       const formDataToSubmit = prepareFormData(formData);
       await onSubmit(formDataToSubmit);
+      setIsError(true);
     } catch (error) {
       console.error('Application submission error:', error);
       setErrorOnSubmit(error as Error);

@@ -418,7 +418,7 @@ export function JobOpeningModal({
                   <Input
                     id="number-of-candidates"
                     data-testid="candidates-number-input"
-                    type="number"
+                    type="numeric"
                     placeholder="Ex. 2"
                     {...form.register("numberOfCandidates", { valueAsNumber: true })}
                     className="border-2 border-neutral-40 bg-neutral-10"

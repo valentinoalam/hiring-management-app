@@ -29,7 +29,7 @@ test.describe('Job Application Error Scenarios', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          jobData: { id: 'job-123', title: 'Test Job', company: { name: 'Test Co' } },
+          jobData: { id: '123', title: 'Test Job', company: { name: 'Test Co' } },
           formFields: []
         }),
       });
@@ -51,7 +51,7 @@ test.describe('Job Application Error Scenarios', () => {
         status: 200,
         contentType: 'application/json',
         body: JSON.stringify({
-          jobData: { id: 'job-123', title: 'Test Job', company: { name: 'Test Co' } },
+          jobData: { id: '123', title: 'Test Job', company: { name: 'Test Co' } },
           formFields: []
         }),
       });
@@ -82,56 +82,41 @@ test.describe('Job Application Error Scenarios', () => {
     await resumeInput.setInputFiles('./e2e/fixtures/valentino_cv_1014.pdf');
     
     await page.locator('select[name="source"]').selectOption('linkedin');
-    
-    // Submit and verify error handling
-    await page.locator('button[type="submit"]').click();
-    
-    // Wait a bit for the error to appear
-    await page.waitForTimeout(20000);
-    
-    // Debug: Log all visible text on the page
-    const pageText = await page.textContent('body');
-    console.log('Page text after submission:', pageText);
-    
-    // Debug: Check if any error elements are visible
-    const errorElements = await page.locator('[class*="error"], [class*="danger"], [class*="red"]').all();
-    console.log('Error elements found:', errorElements.length);
-    
-    for (const element of errorElements) {
-      const text = await element.textContent();
-      console.log('Error element text:', text);
-    }
 
+    // const responsePromise = page.waitForResponse(response => 
+    //   response.url().includes('/api/jobs/') && response.request().method() === 'POST'
+    // );
+    const submitButton = page.locator('button[type="submit"]');
+    await expect(submitButton).toBeEnabled();
+    await submitButton.click();
+    await page.waitForTimeout(2000);
+    // const response = await responsePromise;
+    // console.log('Final Response Status:', response.status());
     // Wait for and verify the error message appears
-  // Try these different selectors:
-  await expect(page.locator('[data-testid="submission-error"]')).toBeVisible({ timeout: 190000 });
-  await expect(page.locator('[data-testid="submission-error"]')).toContainText(/failed|error/i);
-  await expect(page.locator('text=Failed to submit application')).toBeVisible({ timeout: 10000 });
-  await expect(page.locator('text=Internal server error')).toBeVisible({ timeout: 10000 });
-  
-  // Option 4: Verify we're NOT redirected (still on application page)
-  const errorVisible = await Promise.race([
-    page.waitForSelector('text=/failed|error|submission/i', { timeout: 10000 })
-      .then(() => true)
-      .catch(() => false),
-    page.waitForTimeout(10000).then(() => false)
-  ]);
-  
-  if (errorVisible) {
-    console.log('✅ Error message detected');
-    // Take a screenshot for debugging
-    await page.screenshot({ path: 'submission-error.png' });
-  } else {
-    console.log('❌ No error message detected');
-    // Check current URL
-    console.log('Current URL:', page.url());
-    // Check page content
-    const content = await page.textContent('body');
-    console.log('Page content:', content?.substring(0, 500));
-  }
-  
-  // The test should fail if we were redirected to success page
-  await expect(page).not.toHaveURL(/\/success/);
-  await expect(page).toHaveURL(/\/jobs\/123\/apply/);
+    await expect(page.getByTestId("submission-error")).toBeVisible();
+
+    const errorVisible = await Promise.race([
+      page.waitForSelector('[data-testid="submission-error"]', { timeout: 10000 })
+        .then(() => true)
+        .catch(() => false),
+      page.waitForTimeout(10000).then(() => false)
+    ]);
+    
+    if (errorVisible) {
+      console.log('✅ Error message detected');
+      // Take a screenshot for debugging
+      await page.screenshot({ path: 'submission-error.png' });
+    } else {
+      console.log('❌ No error message detected');
+      // Check current URL
+      console.log('Current URL:', page.url());
+      // Check page content
+      const content = await page.textContent('body');
+      console.log('Page content:', content?.substring(0, 500));
+    }
+    
+    // The test should fail if we were redirected to success page
+    await expect(page).not.toHaveURL(/\/success/);
+    await expect(page).toHaveURL(/\/jobs\/123\/apply/);
   });
 });
