@@ -7,6 +7,7 @@
       "esnext"
     ],
     "allowJs": true,
+    "checkJs": true,
     "skipLibCheck": true,
     "strict": true,
     "types": [
@@ -36,6 +37,7 @@
   "include": [
     "**/*.mts",
     "**/*.ts",
+    "**/*.js",
     "**/*.tsx",
     ".next/dev/types/**/*.ts",
     "next-env.d.ts",
