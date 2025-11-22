@@ -1,7 +1,7 @@
 // __mocks__/@prisma/client.ts or __mocks__/@prisma/client/index.ts
 
 import { jest } from '@jest/globals';
-import { PrismaClient } from '@prisma/client'; // Import actual types for safety
+import { PrismaClient } from '@/generated/prisma/client'; // Import actual types for safety
 
 // 1. Create a mocked implementation for each model
 const mockUser = {
@@ -57,16 +57,10 @@ const mockPrismaClient = {
 };
 
 // 3. Export the mocked client instance
-// This structure mocks the 'new PrismaClient()' behavior.
-class MockPrismaClient extends PrismaClient {
-  constructor() {
-    super();
-    return mockPrismaClient as unknown as PrismaClient;
-  }
-}
-
 // Named export for the default client instance
 export const prisma = mockPrismaClient as unknown as PrismaClient;
 
-// Export the class and the named client for various import styles
-export default MockPrismaClient;
+// Default export as constructor function
+export default function MockPrismaClient() {
+  return mockPrismaClient as unknown as PrismaClient;
+}

@@ -1,5 +1,4 @@
 import {
-  PrismaClient,
   UserRole,
   JobStatus,
   EmploymentType,
@@ -8,8 +7,17 @@ import {
 import { User, Job, Prisma } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
+import { PrismaClient } from "@/generated/prisma/client";
+import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
+import { Pool } from 'pg' 
 
-const prisma = new PrismaClient();
+const pool = new Pool({
+  connectionString: process.env.DATABASE_URL
+})
+
+const adapter = new PrismaPg(pool)
+
+const prisma = new PrismaClient({adapter});
 
 async function main() {
   console.log("🌱 Starting database seeding...");
