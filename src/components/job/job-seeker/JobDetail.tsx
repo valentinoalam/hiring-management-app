@@ -1,6 +1,6 @@
-import { Button } from "@/components/ui/button.js";
+import { Button } from "@/components/ui/button";
 import { MapPin, Banknote } from "lucide-react";
-import Image from "next/image.js";
+import Image from "next/image";
 
 interface JobDetailProps {
   title: string;

@@ -1,12 +1,12 @@
 "use server"
 
-import { signIn } from "@/auth.js"
+import { signIn } from "@/auth"
 import { AuthError } from "next-auth"
-import { prisma } from "@/lib/prisma.js"
+import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
-import { generateVerificationToken } from "@/lib/tokens.js"
-import { sendVerificationEmail } from "@/lib/email.js"
-import { PrismaClient } from "@/generated/prisma/client.js"
+import { generateVerificationToken } from "@/lib/tokens"
+import { sendVerificationEmail } from "@/lib/email"
+import { PrismaClient } from "@/generated/prisma/client"
 
 export async function signUpCredentials(formData: FormData) {
   try {

@@ -2,9 +2,9 @@ import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
-import { PrismaClient, Prisma, User, InfoField, Company } from "@/generated/prisma/client.js";
-import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/enums.js";
-import { Job } from "@/types/job.js";
+import { PrismaClient, Prisma, User, InfoField, Company } from "@/generated/prisma/client";
+import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/enums";
+import { Job } from "@/types/job";
 
 
 const pool = new Pool({

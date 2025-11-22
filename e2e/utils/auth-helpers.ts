@@ -1,6 +1,6 @@
 // tests/utils/auth-helpers.ts
 import { Page, expect } from '@playwright/test';
-import { mockUser } from '../mocks/job-application-mocks.js';
+import { mockUser } from '../mocks/job-application-mocks';
 
 export async function setupAuthenticatedState(page: Page) {
   // Mock Auth.js session endpoint

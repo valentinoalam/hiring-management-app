@@ -2,10 +2,10 @@ import type React from "react"
 import type { Viewport } from "next"
 import { Nunito_Sans } from "next/font/google"
 import "@/styles/globals.css"
-import { generateMetaData } from "@/configs/metadata.js"
+import { generateMetaData } from "@/configs/metadata"
 import { auth } from '@/auth'
-import ClientInitializer from "@/components/layout/providers/ClientInitializer.js"
-import { QueryProvider } from "@/components/layout/providers/query-provider.js"
+import ClientInitializer from "@/components/layout/providers/ClientInitializer"
+import { QueryProvider } from "@/components/layout/providers/query-provider"
 
 const nunitoSans = Nunito_Sans({ subsets: ["latin"] })
 

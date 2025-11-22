@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server.js";
+import { NextResponse } from "next/server";
 
-import countriesData from '@/data/countries.json';;
+import countriesData from '@/data/countrieson';;
 
 export async function GET() {
   try {

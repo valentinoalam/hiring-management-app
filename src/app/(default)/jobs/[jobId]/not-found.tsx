@@ -1,9 +1,9 @@
 'use client'
-import Image from 'next/image.js'
+import Image from 'next/image'
 import React from 'react'
-import { Button } from '@/components/ui/button.js'
+import { Button } from '@/components/ui/button'
 import { ArrowLeft } from 'lucide-react';
-import { useRouter } from 'next/navigation.js';
+import { useRouter } from 'next/navigation';
 
 const JobsNotFound = () => {
   const router = useRouter();

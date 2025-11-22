@@ -5,10 +5,10 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card.js";
-import { Button } from "@/components/ui/button.js";
-import Image from 'next/image.js';
-import { resendVerificationEmail } from '../action.js';
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Image from 'next/image';
+import { resendVerificationEmail } from '../action';
 
 // No need to define props interface - Next.js handles this automatically
 // The params and searchParams are now Promises

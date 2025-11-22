@@ -1,9 +1,9 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { queryKeys } from '@/lib/query-keys.js';
-import { AppFormField, Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job.js';
-import { JobFormData } from '@/components/job/recruiter/JobOpeningModal.js.js';
-import { apiFetch } from '@/lib/api.js';
+import { queryKeys } from '@/lib/query-keys';
+import { AppFormField, Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job';
+import { JobFormData } from '@/components/job/recruiter/JobOpeningModal.js';
+import { apiFetch } from '@/lib/api';
 
 // API functions for Jobs
 const fetchAllJobs = async (filters?: JobFilters & { page?: number }): Promise<JobListResponse> => {

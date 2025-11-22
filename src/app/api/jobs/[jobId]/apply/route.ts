@@ -1,9 +1,9 @@
 import "server-only";
-import { NextRequest, NextResponse } from 'next/server.js';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { uploadToVercelBlob as uploadFile } from '@/lib/upload';
-import { OtherInfo } from '@/types/user.js';
+import { OtherInfo } from '@/types/user';
 
 export async function POST(
   request: NextRequest,

@@ -1,17 +1,17 @@
 // page.tsx
 "use client"
 import { useState, useMemo, useCallback } from 'react';
-import ApplicantsTable from "@/components/job/recruiter/applicants-table.js";
-import { Button } from "@/components/ui/button.js";
-import { useJobDetail } from "@/hooks/queries/job-queries.js";
+import ApplicantsTable from "@/components/job/recruiter/applicants-table";
+import { Button } from "@/components/ui/button";
+import { useJobDetail } from "@/hooks/queries/job-queries";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link.js";
-import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries.js';
-import { ApplicationStatus, Applicant } from '@/types/job.js';
-import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants.js';
-import NoApplicantsHero from '@/components/job/recruiter/no-applicant.js';
-import Loading from '@/components/layout/loading.js';
-import { useParams } from 'next/navigation.js';
+import Link from "next/link";
+import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries';
+import { ApplicationStatus, Applicant } from '@/types/job';
+import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants';
+import NoApplicantsHero from '@/components/job/recruiter/no-applicant';
+import Loading from '@/components/layout/loading';
+import { useParams } from 'next/navigation';
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>()

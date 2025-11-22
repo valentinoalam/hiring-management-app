@@ -1,6 +1,6 @@
 // tests/login-flow.spec.ts
 import { test, expect } from '@playwright/test';
-import { loginWithCredentials } from './utils/auth-helpers.js';
+import { loginWithCredentials } from './utils/auth-helpers';
 
 
 test.describe('Login Flow', () => {

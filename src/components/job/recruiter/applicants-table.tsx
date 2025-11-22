@@ -32,15 +32,15 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 
-import { Checkbox } from '@/components/ui/checkbox.js';
-import { Button } from '@/components/ui/button.js';
-import { Badge } from '@/components/ui/badge.js';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu.js';
+} from '@/components/ui/dropdown-menu';
 import {
   Table,
   TableBody,
@@ -48,7 +48,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '@/components/ui/table.js';
+} from '@/components/ui/table';
 import {
   ChevronDown,
   MoreHorizontal,
@@ -63,8 +63,8 @@ import {
   GripVertical,
   Linkedin,
 } from 'lucide-react';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar.js';
-import { ApplicationStatus, Applicant, AppFormField, Candidate } from '@/types/job.js';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ApplicationStatus, Applicant, AppFormField, Candidate } from '@/types/job';
 // import { useWindowSize } from '@/hooks/useWindowSize';
 
 // Constants

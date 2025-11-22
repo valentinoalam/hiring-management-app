@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PhoneInput from '@/components/custom-ui/phone-input.js';
+import PhoneInput from '@/components/custom-ui/phone-input';
 
 // Mock the REST Countries API response
 const mockCountriesData = [

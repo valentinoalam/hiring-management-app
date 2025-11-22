@@ -1,12 +1,12 @@
 'use client'
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Search, Loader2 } from 'lucide-react'; // Using Lucide icons for aesthetics
-import { Job } from '@/types/job.js';
-import Image from 'next/image.js';
-import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.js';
-import { Input } from '@/components/ui/input.js';
-import { Button } from '@/components/ui/button.js';
-import { ScrollArea } from '@/components/ui/scroll-area.js';
+import { Job } from '@/types/job';
+import Image from 'next/image';
+import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 const LazyJobCard = lazy(() => import('./job-card'));
 

@@ -1,5 +1,5 @@
-import { Button } from '@/components/ui/button.js'
-import Image from 'next/image.js'
+import { Button } from '@/components/ui/button'
+import Image from 'next/image'
 import React from 'react'
 
 const NoApplicantsHero = ({onUseMock}: {onUseMock: () => void}) => {

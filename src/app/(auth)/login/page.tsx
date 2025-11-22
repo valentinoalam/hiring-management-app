@@ -1,11 +1,11 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation.js"
+import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
-import { Button } from "@/components/ui/button.js"
+import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -13,19 +13,19 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card.js"
-import { Input } from "@/components/ui/input.js"
-import { Alert, AlertDescription } from "@/components/ui/alert.js"
-import { signInCredentials, signInOAuth, signInMagicLink } from "./action.js"
-import { useSearchParams } from 'next/navigation.js'
+} from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { signInCredentials, signInOAuth, signInMagicLink } from "./action"
+import { useSearchParams } from 'next/navigation'
 
-import Logo from "@/components/layout/logo.js"
-import { Separator } from "@/components/ui/separator.js"
+import Logo from "@/components/layout/logo"
+import { Separator } from "@/components/ui/separator"
 import { KeyRound, Mail, Lock, Edit } from "lucide-react"
-import LinkSentSuccess from "@/components/layout/link-sent.js"
-import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field.js"
+import LinkSentSuccess from "@/components/layout/link-sent"
+import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field"
 import { useSession } from "next-auth/react"
-import Loading from "@/components/layout/loading.js"
+import Loading from "@/components/layout/loading"
 import Link from "next/link"
 
 // Separate schemas for different auth methods

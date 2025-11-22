@@ -1,7 +1,7 @@
 // tests/job-application-auth.spec.ts
 import { test, expect } from '@playwright/test';
-import { setupAuthenticatedState, clearAuthentication, loginAndGoToApplication } from './utils/auth-helpers.js';
-import { mockJob, mockApplication } from './mocks/job-application-mocks.js';
+import { setupAuthenticatedState, clearAuthentication, loginAndGoToApplication } from './utils/auth-helpers';
+import { mockJob, mockApplication } from './mocks/job-application-mocks';
 
 test.describe('Job Application Authentication Scenarios', () => {
   test('should complete login flow and submit application', async ({ page }) => {

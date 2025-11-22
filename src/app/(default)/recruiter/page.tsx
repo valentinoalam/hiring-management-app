@@ -4,13 +4,13 @@
 import { useState, useCallback, useMemo, useEffect } from 'react';
 import { Loader2, X } from 'lucide-react';
 // 💡 Import TanStack Query hooks
-import { useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries.js'; 
-import { Job } from '@/types/job.js';
-import JobList from '@/components/job/recruiter/job-list.js';
-import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal.js';
+import { useCreateJob, useRecruiterJobs } from '@/hooks/queries/job-queries'; 
+import { Job } from '@/types/job';
+import JobList from '@/components/job/recruiter/job-list';
+import { JobFormData, JobOpeningModal } from '@/components/job/recruiter/JobOpeningModal';
 import { toast } from 'sonner';
-import NoJobsHero from '@/components/job/no-job.js';
-import Loading from '@/components/layout/loading.js';
+import NoJobsHero from '@/components/job/no-job';
+import Loading from '@/components/layout/loading';
 
 export default function RecruiterJobsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);

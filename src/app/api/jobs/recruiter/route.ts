@@ -1,9 +1,9 @@
 import "server-only";
-import { NextRequest, NextResponse } from 'next/server.js';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { AppFormField, Prisma, JobStatus } from '@/generated/prisma/client';
-import { FormField, transformJobData } from '@/types/job.js';
+import { FormField, transformJobData } from '@/types/job';
 
 export async function GET(request: NextRequest) {
   try {

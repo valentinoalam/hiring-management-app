@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname } from "next/navigation.js";
-import Link from 'next/link.js';
+import { usePathname } from "next/navigation";
+import Link from 'next/link';
 import { LogOut, Loader2 } from "lucide-react"; // Added Lucide icons for better UX
 import {
   DropdownMenu,
@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu.js"
+} from "@/components/ui/dropdown-menu"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,11 +18,11 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb.js"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js"
-import { Button } from "@/components/ui/button.js"
+} from "@/components/ui/breadcrumb"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
+import { Button } from "@/components/ui/button"
 import React from 'react';
-import { useAuthStore } from "@/stores/auth-store.js";
+import { useAuthStore } from "@/stores/auth-store";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {

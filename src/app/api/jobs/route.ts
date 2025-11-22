@@ -1,7 +1,7 @@
 // app/api/jobs/route.ts (PUBLIC)
-import { NextRequest, NextResponse } from "next/server.js";
+import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { transformJobData } from "@/types/job.js";
+import { transformJobData } from "@/types/job";
 
 export async function GET(request: NextRequest) {
   try {

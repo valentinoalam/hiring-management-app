@@ -1,9 +1,9 @@
 "use server"
 
-import { signIn } from "@/auth.js"
+import { signIn } from "@/auth"
 import { AuthError } from "next-auth"
-import { generateVerificationToken } from "@/lib/tokens.js"
-import { sendMagicLinkEmail } from "@/lib/email.js"
+import { generateVerificationToken } from "@/lib/tokens"
+import { sendMagicLinkEmail } from "@/lib/email"
 
 export async function signInMagicLink(email: string, callbackUrl?: string) {
   try {

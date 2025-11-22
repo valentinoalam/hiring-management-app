@@ -2,21 +2,21 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
-import { prisma } from '@/lib/prisma.js';
+import { prisma } from '@/lib/prisma';
 import { compare } from 'bcryptjs';
 import { 
   sendVerificationEmail, 
   sendPasswordResetEmail, 
   sendMagicLinkEmail 
-} from '@/lib/email.js';
+} from '@/lib/email';
 import {
   generateVerificationToken,
   generatePasswordResetToken,
   getVerificationTokenByToken,
   getVerificationTokenByEmail,
   deleteVerificationToken,
-} from '@/lib/tokens.js';
-import { useRouter, useSearchParams } from 'next/navigation.js';
+} from '@/lib/tokens';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 // Create a wrapper with QueryClient and SessionProvider
 export const createWrapper = () => {

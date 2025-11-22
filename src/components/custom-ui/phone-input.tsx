@@ -4,7 +4,7 @@ import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/components/ui/popover.js';
+} from '@/components/ui/popover';
 import {
   Command,
   CommandEmpty,
@@ -12,8 +12,8 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from '@/components/ui/command.js';
-import Image from 'next/image.js';
+} from '@/components/ui/command';
+import Image from 'next/image';
 import { Input } from '../ui/input';
 
 // Helper to construct a free CDN URL based on the ISO code (e.g., US -> https://flagcdn.com/16x12/us.png)

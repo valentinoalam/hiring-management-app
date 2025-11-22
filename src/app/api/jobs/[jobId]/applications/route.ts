@@ -1,4 +1,4 @@
-import { type NextRequest, NextResponse } from "next/server.js"
+import { type NextRequest, NextResponse } from "next/server"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 

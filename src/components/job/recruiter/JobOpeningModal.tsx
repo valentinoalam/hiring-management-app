@@ -6,8 +6,8 @@ import {
   DialogTitle,
   DialogClose,
   DialogFooter,
-} from "@/components/ui/dialog.js";
-import { Button } from "@/components/ui/button.js";
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
 import {
   Field,
   FieldDescription,
@@ -16,22 +16,22 @@ import {
   FieldLegend,
   FieldSeparator,
   FieldSet,
-} from "@/components/ui/field.js";
-import { Input } from "@/components/ui/input.js";
-import { Textarea } from "@/components/ui/textarea.js";
+} from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@/components/ui/select.js";
+} from "@/components/ui/select";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { cn } from "@/lib/utils.js";
+import { cn } from "@/lib/utils";
 import { useEffect, useState } from "react";
-import { ApplicationFormConfig } from "@/components/custom-ui/field-configuration.js";
+import { ApplicationFormConfig } from "@/components/custom-ui/field-configuration";
 
 // Zod validation schema based on your updated Prisma schema
 const jobFormSchema = z.object({

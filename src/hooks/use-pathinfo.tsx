@@ -1,5 +1,5 @@
 'use client'
-import { usePathname } from 'next/navigation.js'
+import { usePathname } from 'next/navigation'
 
 export default function usePathInfo() {
   const pathname = usePathname()

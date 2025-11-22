@@ -1,5 +1,5 @@
 import "server-only";
-import { NextRequest, NextResponse } from 'next/server.js';
+import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 

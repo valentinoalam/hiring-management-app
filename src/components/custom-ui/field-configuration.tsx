@@ -18,8 +18,8 @@ import {
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { Button } from '@/components/ui/button.js';
-import { Input } from '@/components/ui/input.js';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import {
   Field,
   FieldDescription,
@@ -27,16 +27,16 @@ import {
   FieldLabel,
   FieldLegend,
   FieldSet,
-} from '@/components/ui/field.js';
+} from '@/components/ui/field';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select.js';
+} from '@/components/ui/select';
 import { X, GripVertical, Plus } from 'lucide-react';
-import { cn } from '@/lib/utils.js';
+import { cn } from '@/lib/utils';
 
 interface InfoField {
   id: string;

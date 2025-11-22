@@ -1,6 +1,6 @@
 // tests/job-application-error.spec.ts
 import { test, expect } from '@playwright/test';
-import { loginAndGoToApplication } from './utils/auth-helpers.js';
+import { loginAndGoToApplication } from './utils/auth-helpers';
 
 test.describe('Job Application Error Scenarios', () => {
   test.beforeEach(async ({ page }) => {
