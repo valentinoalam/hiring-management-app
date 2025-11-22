@@ -5,11 +5,11 @@ import { defineConfig, env } from "prisma/config";
 // See: https://www.prisma.io/docs/orm/reference/prisma-config-reference
 export default defineConfig({
 	// Path to your Prisma schema (or a folder with *.prisma files)
-	schema: "./prisma/schema.prisma",
+	schema: "prisma/schema.prisma",
 
 	// Optional: explicit migrations folder (default is prisma/migrations)
 	migrations: {
-		path: "./prisma/migrations",
+		path: "prisma/migrations",
 		seed: "tsx prisma/seed.ts",
 	},
 	datasource: { 
