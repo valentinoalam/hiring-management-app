@@ -1,13 +1,6 @@
-import {
-  UserRole,
-  JobStatus,
-  EmploymentType,
-  ApplicationStatus,
-} from "@prisma/client";
-import { User, Job, Prisma } from "@prisma/client";
 import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
-import { PrismaClient } from "@/generated/prisma/client";
+import { ApplicationStatus, EmploymentType, Job, JobStatus, Prisma, PrismaClient, User, UserRole } from "@/generated/prisma/client";
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
 
