@@ -1,4 +1,4 @@
-import { ProtectedRoute } from "@/components/layout/protected-route"
+import { ProtectedRoute } from "@/components/layout/protected-route.js"
 import type React from "react"
 export default function DefaultLayout({
   children,

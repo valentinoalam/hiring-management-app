@@ -1,4 +1,4 @@
-import { convertDecimalToNumber } from "@/utils/formatters/formatters";
+import { convertDecimalToNumber } from "@/utils/formatters/formatters.js";
 import { JobStatus, Prisma } from "@/generated/prisma/client";
 import { Profile } from "./user";
 

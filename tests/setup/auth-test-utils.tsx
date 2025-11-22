@@ -3,20 +3,20 @@ import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { prisma } from '@/lib/prisma';
+import { prisma } from '@/lib/prisma.js';
 import { compare } from 'bcryptjs';
 import { 
   sendVerificationEmail, 
   sendPasswordResetEmail, 
   sendMagicLinkEmail 
-} from '@/lib/email';
+} from '@/lib/email.js';
 import {
   generateVerificationToken,
   generatePasswordResetToken,
   getVerificationTokenByToken,
   getVerificationTokenByEmail,
   deleteVerificationToken,
-} from '@/lib/tokens';
+} from '@/lib/tokens.js';
 
 // Create a wrapper with QueryClient and SessionProvider
 export const createWrapper = () => {

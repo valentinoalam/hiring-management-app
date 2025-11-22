@@ -1,12 +1,12 @@
-import { ApplicantData, FormField } from "@/types/job"
+import { ApplicantData, FormField } from "@/types/job.js"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { queryKeys } from '@/lib/query-keys';
-import { apiFetch } from "@/lib/api";
-import { Application } from "@/generated/prisma/client";
-import { Profile } from '@/types/user';
-import { useRouter } from "next/navigation";
-import { useJobDetail } from "./job-queries";
-import { useToast } from "../use-toast";
+import { queryKeys } from '@/lib/query-keys.js';
+import { apiFetch } from "@/lib/api.js";
+import { Application } from "@/generated/prisma/client.js";
+import { Profile } from '@/types/user.js';
+import { useRouter } from "next/navigation.js";
+import { useJobDetail } from "./job-queries.js";
+import { useToast } from "../use-toast.js";
 
 const submitJobApplication = async ({
   jobId,

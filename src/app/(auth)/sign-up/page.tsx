@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form" // Import Controller
 import * as z from "zod"
-import { Button } from "@/components/ui/button"
+import { Button } from "@/components/ui/button.js"
 import {
   Card,
   CardContent,
@@ -13,21 +13,21 @@ import {
   CardFooter,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card.js"
 // Import Field components
 import {
   Field,
   FieldGroup,
   FieldLabel,
   FieldError,
-} from "@/components/ui/field"
-import { Input } from "@/components/ui/input"
-import { Alert, AlertDescription } from "@/components/ui/alert"
+} from "@/components/ui/field.js"
+import { Input } from "@/components/ui/input.js"
+import { Alert, AlertDescription } from "@/components/ui/alert.js"
 import { signInOAuth, signUpCredentials } from "./action"
 import { useSearchParams } from 'next/navigation';
 import Link from "next/link"
-import Logo from "@/components/layout/logo"
-import { Separator } from "@/components/ui/separator"
+import Logo from "@/components/layout/logo.js"
+import { Separator } from "@/components/ui/separator.js"
 import { Mail, CheckCircle2, Eye, EyeOff } from "lucide-react"
 
 // --- ZOD Schema ---

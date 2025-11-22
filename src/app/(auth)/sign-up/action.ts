@@ -1,11 +1,12 @@
 "use server"
 
-import { signIn } from "@/auth"
+import { signIn } from "@/auth.js"
 import { AuthError } from "next-auth"
-import { prisma } from "@/lib/prisma"
+import { prisma } from "@/lib/prisma.js"
 import bcrypt from "bcryptjs"
-import { generateVerificationToken } from "@/lib/tokens"
-import { sendVerificationEmail } from "@/lib/email"
+import { generateVerificationToken } from "@/lib/tokens.js"
+import { sendVerificationEmail } from "@/lib/email.js"
+import { PrismaClient } from "@/generated/prisma/client.js"
 
 export async function signUpCredentials(formData: FormData) {
   try {
@@ -48,7 +49,7 @@ export async function signUpCredentials(formData: FormData) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user with transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx) => {
+    const result = await prisma.$transaction(async (tx: PrismaClient) => {
       // Create user
       const user = await tx.user.create({
         data: {

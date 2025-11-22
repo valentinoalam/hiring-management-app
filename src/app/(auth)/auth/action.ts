@@ -1,10 +1,10 @@
 // lib/actions/email-actions.ts
 'use server';
 
-import { prisma } from '@/lib/prisma';
-import { generateVerificationToken } from '@/lib/tokens';
-import { sendVerificationEmail } from '@/lib/email';
-import { signOut } from '@/auth';
+import { prisma } from '@/lib/prisma.js';
+import { generateVerificationToken } from '@/lib/tokens.js';
+import { sendVerificationEmail } from '@/lib/email.js';
+import { signOut } from '@/auth.js';
 
 export async function resendVerificationEmail(email: string) {
   try {

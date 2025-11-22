@@ -1,8 +1,8 @@
 "use client"
 
 import { useRef, useState, useEffect, useCallback } from "react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { Button } from "@/components/ui/button.js"
+import { Card } from "@/components/ui/card.js"
 import { useHandGestureDetection } from "@/hooks/use-hand-gesture-detection"
 import { Camera, RotateCcw, Download, X, Scan, User } from "lucide-react"
 import Image from "next/image"

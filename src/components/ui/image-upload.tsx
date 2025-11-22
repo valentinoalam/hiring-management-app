@@ -4,8 +4,8 @@ import { useState, useCallback } from "react"
 import { useDropzone } from "react-dropzone"
 import Image from "next/image"
 import { X, Upload, Loader2 } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card, CardContent } from "@/components/ui/card"
+import { Button } from "@/components/ui/button.js"
+import { Card, CardContent } from "@/components/ui/card.js"
 import { toast } from "sonner"
 
 interface ImageData {

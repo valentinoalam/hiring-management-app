@@ -3,7 +3,7 @@
 import { persistQueryClient, PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister'; // For localStorage
 
-import { queryClient } from "@/lib/query-client";
+import { queryClient } from "@/lib/query-client.js";
 import {ReactQueryDevtools} from '@tanstack/react-query-devtools';
 import React, { useEffect } from 'react';
 

@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { AppFormField, Prisma, JobStatus } from '@/generated/prisma/client';
-import { FormField, transformJobData } from '@/types/job';
+import { FormField, transformJobData } from '@/types/job.js';
 
 export async function GET(request: NextRequest) {
   try {

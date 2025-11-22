@@ -1,5 +1,5 @@
 import "server-only";
-import { PrismaClient } from '../generated/prisma/client' // New import path
+import { PrismaClient } from '../generated/prisma/client.js' // New import path
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
 

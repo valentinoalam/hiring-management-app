@@ -1,12 +1,12 @@
 "use client"
 import { useParams, useRouter } from 'next/navigation';
-import JobApplicationForm from '@/components/job/job-seeker/apply-form';
-import { Button } from '@/components/ui/button';
+import JobApplicationForm from '@/components/job/job-seeker/apply-form.js';
+import { Button } from '@/components/ui/button.js';
 import { ArrowLeft } from 'lucide-react';
 import { useJobApplicationFlow } from '@/hooks/queries/application-queries';
 
-import { useAuthStore } from '@/stores/auth-store';
-import Loading from '@/components/layout/loading';
+import { useAuthStore } from '@/stores/auth-store.js';
+import Loading from '@/components/layout/loading.js';
 import JobsNotFound from '../not-found';
 
 export default function JobApplicationPage() {

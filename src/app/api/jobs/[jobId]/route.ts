@@ -1,7 +1,9 @@
+
 // app/api/jobs/[id]/route.ts
-import { type NextRequest, NextResponse } from "next/server"
-import { prisma } from "@/lib/prisma"
-import { auth } from "@/auth"
+import { type NextRequest, NextResponse } from "next/server.js"
+import { prisma } from "@/lib/prisma.js"
+import { auth } from "@/auth.js"
+import { AppFormField } from "@/generated/prisma/client.js"
 
 export async function GET(
   request: NextRequest, 
@@ -53,7 +55,7 @@ export async function GET(
     }
     // Transform the response to make it easier for the frontend
     const {applicationFormFields,...jobData} = job
-    const formFields = applicationFormFields.map(appField => ({
+    const formFields = applicationFormFields.map((appField: AppFormField) => ({
       id: appField.field.id,
       key: appField.field.key,
       label: appField.field.label,

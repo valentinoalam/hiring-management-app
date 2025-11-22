@@ -1,4 +1,4 @@
-import { ApplicationStatus } from "@/types/job";
+import { ApplicationStatus } from "@/types/job.js";
 
 export const generateMockApplicants = (count: number = 6) => {
   const statuses: ApplicationStatus[] = ['PENDING', 'UNDER_REVIEW', 'SHORTLISTED', 'REJECTED', 'ACCEPTED', 'WITHDRAWN'];

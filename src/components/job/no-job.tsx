@@ -1,6 +1,6 @@
 import Image from 'next/image'
 import React from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button.js'
 import { useSession } from 'next-auth/react';
 
 const NoJobsHero = ({onCreateJob}: {onCreateJob?: () => void}) => {

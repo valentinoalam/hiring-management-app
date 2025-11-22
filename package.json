@@ -98,7 +98,7 @@
     "moment": "^2.30.1",
     "motion": "^12.23.24",
     "net": "latest",
-    "next": "^15.3.3",
+    "next": "16.0.3",
     "next-auth": "^5.0.0-beta.30",
     "next-themes": "latest",
     "nodemailer": "^7.0.10",
@@ -140,8 +140,8 @@
     "@types/node": "^24",
     "@types/nodemailer": "^7.0.4",
     "@types/qrcode": "^1.5.6",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3",
     "@types/uuid": "^11.0.0",
     "babel-jest": "^30.2.0",
     "dotenv-cli": "^11.0.0",
@@ -156,5 +156,9 @@
     "ts-jest": "^29.4.5",
     "tsx": "^4.20.6",
     "typescript": "^5"
+  },
+  "overrides": {
+    "@types/react": "19.2.6",
+    "@types/react-dom": "19.2.3"
   }
 }

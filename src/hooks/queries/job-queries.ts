@@ -1,21 +1,21 @@
 import { useQuery, useMutation, useQueryClient, useInfiniteQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { queryKeys } from '@/lib/query-keys';
-import { AppFormField, Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job';
-import { JobFormData } from '@/components/job/recruiter/JobOpeningModal';
-import { apiFetch } from '@/lib/api';
+import { queryKeys } from '@/lib/query-keys.js';
+import { AppFormField, Job, JobFilters, JobListResponse, UpdateJobData } from '@/types/job.js';
+import { JobFormData } from '@/components/job/recruiter/JobOpeningModal.js.js';
+import { apiFetch } from '@/lib/api.js';
 
 // API functions for Jobs
 const fetchAllJobs = async (filters?: JobFilters & { page?: number }): Promise<JobListResponse> => {
   const params = new URLSearchParams();
-  if (filters?.employmentType) filters.employmentType.forEach(t => params.append('employmentType', t));
-  if (filters?.status) filters.status.forEach(s => params.append('status', s));
-  if (filters?.employmentType) filters.employmentType.forEach(t => params.append('employmentType', t));
-  if (filters?.department) filters.department.forEach(d => params.append('department', d));
-  if (filters?.location) filters.location.forEach(l => params.append('location', l));
-  if (filters?.companyId) filters.companyId.forEach(c => params.append('companyId', c));
-  if (filters?.department) filters.department.forEach(d => params.append('department', d));
-  if (filters?.location) filters.location.forEach(l => params.append('location', l));
+  if (filters?.employmentType) filters.employmentType.forEach((t: string) => params.append('employmentType', t));
+  if (filters?.status) filters.status.forEach((s: string) => params.append('status', s));
+  if (filters?.employmentType) filters.employmentType.forEach((t: string) => params.append('employmentType', t));
+  if (filters?.department) filters.department.forEach((d: string) => params.append('department', d));
+  if (filters?.location) filters.location.forEach((l: string) => params.append('location', l));
+  if (filters?.companyId) filters.companyId.forEach((c: string) => params.append('companyId', c));
+  if (filters?.department) filters.department.forEach((d: string) => params.append('department', d));
+  if (filters?.location) filters.location.forEach((l: string) => params.append('location', l));
   if (filters?.search) params.append('search', filters.search);
   if (filters?.page) params.append('page', filters.page.toString());
 

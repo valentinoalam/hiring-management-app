@@ -1,7 +1,7 @@
 'use client'
 import Image from 'next/image'
 import React from 'react'
-import { Button } from '@/components/ui/button'
+import { Button } from '@/components/ui/button.js'
 import { ArrowLeft } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 

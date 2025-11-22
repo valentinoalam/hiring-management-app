@@ -20,7 +20,7 @@ export default function usePathInfo() {
   // Optional: Format page name (e.g., "my-page" → "My Page")
   const formattedPageName = pageName
     .replace(/-/g, ' ')
-    .replace(/\b\w/g, l => l.toUpperCase())
+    .replace(/\b\w/g, (l:string) => l.toUpperCase())
 
   return {
     pathname,

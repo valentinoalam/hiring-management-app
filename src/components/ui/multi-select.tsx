@@ -11,15 +11,15 @@ import {
   WandSparkles,
 } from "lucide-react";
 
-import { cn } from "@/lib/utils";
-import { Separator } from "@/components/ui/separator";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils.js";
+import { Separator } from "@/components/ui/separator.js";
+import { Button } from "@/components/ui/button.js";
+import { Badge } from "@/components/ui/badge.js";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
+} from "@/components/ui/popover.js";
 import {
   Command,
   CommandEmpty,
@@ -28,7 +28,7 @@ import {
   CommandItem,
   CommandList,
   CommandSeparator,
-} from "@/components/ui/command";
+} from "@/components/ui/command.js";
 
 /**
  * Variants for the multi-select component to handle different styles.

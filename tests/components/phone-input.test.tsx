@@ -1,7 +1,7 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import PhoneInput from '@/components/custom-ui/phone-input';
+import PhoneInput from '@/components/custom-ui/phone-input.js';
 
 // Mock the REST Countries API response
 const mockCountriesData = [
@@ -42,7 +42,7 @@ jest.mock('lucide-react', () => ({
 }));
 
 // Mock UI components
-jest.mock('@/components/ui/popover', () => ({
+jest.mock('@/components/ui/popover.js', () => ({
   Popover: ({ children }: { children: React.ReactNode }) => children,
   PopoverContent: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="popover-content">{children}</div>
@@ -50,7 +50,7 @@ jest.mock('@/components/ui/popover', () => ({
   PopoverTrigger: ({ children }: { children: React.ReactNode }) => children,
 }));
 
-jest.mock('@/components/ui/command', () => ({
+jest.mock('@/components/ui/command.js', () => ({
   Command: ({ children }: { children: React.ReactNode }) => (
     <div data-testid="command">{children}</div>
   ),
@@ -81,7 +81,7 @@ jest.mock('@/components/ui/command', () => ({
   ),
 }));
 
-jest.mock('@/components/ui/button', () => ({
+jest.mock('@/components/ui/button.js', () => ({
   Button: ({ children, ...props }: { children: React.ReactNode; [key: string]: unknown }) => (
     <button {...props}>{children}</button>
   ),

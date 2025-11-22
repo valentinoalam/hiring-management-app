@@ -5,7 +5,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from "@/components/ui/card"
+} from "@/components/ui/card.js"
 import Image from 'next/image'
 function LinkSentSuccess({email}: {email: string}) {
   return (

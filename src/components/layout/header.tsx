@@ -10,7 +10,7 @@ import {
   DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
+} from "@/components/ui/dropdown-menu.js"
 import {
   Breadcrumb,
   BreadcrumbItem,
@@ -18,11 +18,11 @@ import {
   BreadcrumbList,
   BreadcrumbPage,
   BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb"
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import { Button } from "@/components/ui/button"
+} from "@/components/ui/breadcrumb.js"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar.js"
+import { Button } from "@/components/ui/button.js"
 import React from 'react';
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store.js";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function Header() {

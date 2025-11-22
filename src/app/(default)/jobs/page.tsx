@@ -4,14 +4,14 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAllJobs } from '@/hooks/queries/job-queries';
 import { Loader2, Briefcase, MapPin, Filter, X, AlertCircle, Search, Check } from 'lucide-react';
-import { salaryDisplay } from '@/utils/formatters/salaryFormatter';
-import { Job } from '@/types/job';
-import Drawer from '@/components/custom-ui/drawer';
-import JobDetail from '@/components/job/job-seeker/JobDetail';
-import JobCard from '@/components/job/job-seeker/JobCard';
-import NoJobsHero from '@/components/job/no-job';
-import Loading from '@/components/layout/loading';
-import FullViewError from '@/components/layout/error';
+import { salaryDisplay } from '@/utils/formatters/salaryFormatter.js';
+import { Job } from '@/types/job.js';
+import Drawer from '@/components/custom-ui/drawer.js';
+import JobDetail from '@/components/job/job-seeker/JobDetail.js';
+import JobCard from '@/components/job/job-seeker/JobCard.js';
+import NoJobsHero from '@/components/job/no-job.js';
+import Loading from '@/components/layout/loading.js';
+import FullViewError from '@/components/layout/error.js';
 
 // --- Type Definitions ---
 

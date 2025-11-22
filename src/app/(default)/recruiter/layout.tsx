@@ -1,6 +1,6 @@
 'use client'
-import { ProtectedRoute } from "@/components/layout/protected-route"
-import { useAuthStore } from "@/stores/auth-store";
+import { ProtectedRoute } from "@/components/layout/protected-route.js"
+import { useAuthStore } from "@/stores/auth-store.js";
 import { useRouter } from "next/navigation";
 import type React from "react"
 export default function DefaultLayout({

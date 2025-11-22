@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
 import { uploadToVercelBlob as uploadFile } from '@/lib/upload';
-import { OtherInfo } from '@/types/user';
+import { OtherInfo } from '@/types/user.js';
 
 export async function POST(
   request: NextRequest,

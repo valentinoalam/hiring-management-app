@@ -2,7 +2,7 @@ import "server-only";
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { auth } from '@/auth';
-import { Profile } from '@/types/user';
+import { Profile } from '@/types/user.js';
 
 export async function GET(
   request: NextRequest,

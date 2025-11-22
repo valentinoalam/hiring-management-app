@@ -1,4 +1,4 @@
-import { Applicant, AppFormField } from '@/types/job';
+import { Applicant, AppFormField } from '@/types/job.js';
 
 export const mockApplicants: (Applicant & { matchRate?: number })[] = [
   {

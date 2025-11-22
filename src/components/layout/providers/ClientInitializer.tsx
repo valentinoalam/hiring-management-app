@@ -1,13 +1,13 @@
 "use client";
 
 import { useEffect, ReactNode } from 'react';
-import { useAuthStore } from '@/stores/auth-store';
+import { useAuthStore } from '@/stores/auth-store.js';
 import { Session } from 'next-auth';
 import { NextAuthProvider } from './next-auth-provider';
 import { Analytics } from '@vercel/analytics/next';
 import { Toaster } from 'sonner';
 import { useUserProfile } from '@/hooks/queries/application-queries';
-import { useFastProfileStore } from '@/stores/fast-profile-store';
+import { useFastProfileStore } from '@/stores/fast-profile-store.js';
 import { useQueryClient } from '@tanstack/react-query';
 
 interface ClientInitializerProps {

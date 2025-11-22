@@ -1,10 +1,10 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { queryKeys } from '@/lib/query-keys';
+import { queryKeys } from '@/lib/query-keys.js';
 import { useSession } from 'next-auth/react';
-import type { Application } from '@/generated/prisma/client';
-import { Job, Company } from '@/types/job';
-import { Profile } from '@/types/user';
-import { apiFetch } from '@/lib/api';
+import type { Application } from '@/generated/prisma/client.js';
+import { Job, Company } from '@/types/job.js';
+import { Profile } from '@/types/user.js';
+import { apiFetch } from '@/lib/api.js';
 
 // API functions
 const fetchUserProfile = async (userId: string): Promise<Profile> => {

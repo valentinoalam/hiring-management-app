@@ -2,28 +2,28 @@
 "use client"
 import { useState, useEffect, useCallback } from "react";
 import { ArrowLeft, Upload, Calendar, ChevronDown, FileText, X, Camera } from "lucide-react";
-import { Button } from "@/components/ui/button";
+import { Button } from "@/components/ui/button.js";
 import {
   Field,
   FieldDescription,
   FieldGroup,
   FieldLabel,
   FieldSet,
-} from "@/components/ui/field";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
+} from "@/components/ui/field.js";
+import { Input } from "@/components/ui/input.js";
+import { Textarea } from "@/components/ui/textarea.js";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
-import { AppFormField, ApplicantData, Job } from "@/types/job";
+import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user.js";
+import { AppFormField, ApplicantData, Job } from "@/types/job.js";
 import Image from "next/image";
 import React from "react";
-import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture";
-import PhoneInput from "@/components/custom-ui/phone-input";
-import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input";
+import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture.js";
+import PhoneInput from "@/components/custom-ui/phone-input.js";
+import { WilayahAutocomplete } from "@/components/custom-ui/domicile-input.js";
 import { MutateFunction } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/auth-store";
+import { useAuthStore } from "@/stores/auth-store.js";
 
 // File validation constants
 const MEGABYTE = 1024 * 1024;

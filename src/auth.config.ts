@@ -4,9 +4,9 @@ import Credentials from "next-auth/providers/credentials"
 import Google from 'next-auth/providers/google'
 import Email from 'next-auth/providers/nodemailer'
 import { PrismaAdapter } from "@auth/prisma-adapter"
-import { prisma } from '@/lib/prisma'
+import { prisma } from '@/lib/prisma.js'
 import { compare } from "bcryptjs"
-import type { UserRole } from "@/generated/prisma/client" 
+import { UserRole } from "@/generated/prisma/enums.js"
 
 // try {;
   

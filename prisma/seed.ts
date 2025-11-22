@@ -1,8 +1,11 @@
 import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
-import { ApplicationStatus, EmploymentType, Job, JobStatus, Prisma, PrismaClient, User, UserRole } from "@/generated/prisma/client";
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
+import { PrismaClient, Prisma, User, InfoField, Company } from "@/generated/prisma/client.js";
+import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/enums.js";
+import { Job } from "@/types/job.js";
+
 
 const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
@@ -442,7 +445,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
   );
   // Filter out system fields that shouldn't be in job applications
   const applicableInfoFields = infoFields.filter(
-    (field) =>
+    (field: InfoField) =>
       !field.key.includes("photo_profile") && !field.key.includes("resume") // Exclude resume as it's handled separately
   );
 
@@ -461,7 +464,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
 
     // Find company related to this recruiter
     let company: CompanyWithRecruiters | null =
-      companies.find((company) =>
+      companies.find((company: Company) =>
         company.recruiter?.some(
           (profile: { id: string }) => profile.id === recruiter.id
         )
@@ -494,7 +497,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
       const maxFields = Math.min(10, applicableInfoFields.length);
       const numberOfFormFields = faker.number.int({ min: minFields, max: maxFields });
       
-      const selectedFields = faker.helpers.arrayElements(applicableInfoFields, numberOfFormFields);
+      const selectedFields: InfoField[] = faker.helpers.arrayElements(applicableInfoFields, numberOfFormFields);
       
       applicationFormFields = selectedFields.map((field, index) => ({
         fieldId: field.id,
@@ -786,7 +789,7 @@ async function createInfoFields(users: User[]) {
   // Get all info fields after ensuring they exist
   const existingInfoFields = await prisma.infoField.findMany();
   const infoFieldMap = new Map(
-    existingInfoFields.map((field) => [field.key, field])
+    existingInfoFields.map((field: InfoField) => [field.key, field])
   );
 
   // ... rest of the function remains the same as the first solution
@@ -810,7 +813,7 @@ async function createInfoFields(users: User[]) {
       );
 
       for (const field of selectedFields) {
-        const infoField = infoFieldMap.get(field.key);
+        const infoField: InfoField = infoFieldMap.get(field.key);
         if (!infoField) {
           console.warn(
             `InfoField '${field.key}' not found for user ${user.email}, skipping`

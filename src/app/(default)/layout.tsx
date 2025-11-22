@@ -1,4 +1,4 @@
-import Header from "@/components/layout/header"
+import Header from "@/components/layout/header.js"
 import type React from "react"
 export default function DefaultLayout({
   children,

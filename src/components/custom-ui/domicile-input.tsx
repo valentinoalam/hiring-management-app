@@ -2,8 +2,8 @@
 
 import * as React from "react";
 import { Check, ChevronsUpDown, MapPin, Search, Loader2 } from "lucide-react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils.js";
+import { Button } from "@/components/ui/button.js";
 import {
   Command,
   CommandEmpty,
@@ -11,14 +11,14 @@ import {
   CommandInput,
   CommandItem,
   CommandList,
-} from "@/components/ui/command";
+} from "@/components/ui/command.js";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from "@/components/ui/popover";
-import { Input } from "@/components/ui/input";
-import { useDebounce } from "@/hooks/use-debounce";
+} from "@/components/ui/popover.js";
+import { Input } from "@/components/ui/input.js";
+import { useDebounce } from "@/hooks/use-debounce.js";
 
 interface WilayahItem {
   kode: string;
