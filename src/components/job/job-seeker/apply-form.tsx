@@ -17,7 +17,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user.js";
 import { AppFormField, ApplicantData, Job } from "@/types/job.js";
-import Image from "next/image";
+import Image from "next/image.js";
 import React from "react";
 import { GestureProfileCapture } from "@/components/custom-ui/gesture-profile-capture.js";
 import PhoneInput from "@/components/custom-ui/phone-input.js";

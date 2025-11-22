@@ -6,7 +6,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card.js"
-import Image from 'next/image'
+import Image from 'next/image.js'
 function LinkSentSuccess({email}: {email: string}) {
   return (
     <Card className="min-h-[400px] md:w-[500px] border-neutral-40 bg-neutral-10 p-10">

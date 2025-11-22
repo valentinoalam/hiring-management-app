@@ -1,5 +1,5 @@
 // app/api/jobs/[id]/applications/route.ts
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server.js"
 import { prisma } from "@/lib/prisma"
 import { auth } from "@/auth"
 

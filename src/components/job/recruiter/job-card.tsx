@@ -2,7 +2,7 @@ import { Button } from '@/components/ui/button.js';
 import { Job } from '@/types/job.js';
 import { formatDate } from '@/utils/formatters/formatDate.js';
 import { salaryDisplay } from '@/utils/formatters/salaryFormatter.js';
-import { useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation.js';
 import React from 'react'
 
 

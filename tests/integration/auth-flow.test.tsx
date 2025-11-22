@@ -1,12 +1,12 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 // tests/integration/auth-flow.test.tsx
 import React from 'react'
-import { createWrapper, render, screen, setupAuthMocks, setupRouterMock, waitFor } from '../setup/auth-test-utils'
+import { createWrapper, render, screen, setupAuthMocks, setupRouterMock, waitFor } from '../setup/auth-test-utils.js'
 import userEvent from '@testing-library/user-event'
-import LoginPage from '@/app/(auth)/login/page'
-import SignUpPage from '@/app/(auth)/sign-up/page'
-import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/(auth)/login/action'
-import { signUpWithEmail } from '@/app/(auth)/sign-up/action'
+import LoginPage from '@/app/(auth)/login/page.js'
+import SignUpPage from '@/app/(auth)/sign-up/page.js'
+import { signInCredentials, signInMagicLink, signInOAuth } from '@/app/(auth)/login/action.js'
+import { signUpWithEmail } from '@/app/(auth)/sign-up/action.js'
 import { toast } from 'sonner'
 
 // Cast the mocks to jest.Mock for TypeScript

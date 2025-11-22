@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname } from "next/navigation";
-import Link from 'next/link';
+import { usePathname } from "next/navigation.js";
+import Link from 'next/link.js';
 import { LogOut, Loader2 } from "lucide-react"; // Added Lucide icons for better UX
 import {
   DropdownMenu,

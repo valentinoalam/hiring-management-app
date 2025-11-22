@@ -13,7 +13,7 @@ import {
   CommandItem,
   CommandList,
 } from '@/components/ui/command.js';
-import Image from 'next/image';
+import Image from 'next/image.js';
 import { Input } from '../ui/input';
 
 // Helper to construct a free CDN URL based on the ISO code (e.g., US -> https://flagcdn.com/16x12/us.png)

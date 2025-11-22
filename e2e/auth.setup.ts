@@ -1,6 +1,6 @@
 // tests/auth.setup.ts
 import { test as setup, expect } from '@playwright/test';
-import { loginWithCredentials, mockAuthJsEndpoints } from './utils/auth-helpers';
+import { loginWithCredentials, mockAuthJsEndpoints } from './utils/auth-helpers.js';
 
 const authFile = 'tests/auth-state.json';
 

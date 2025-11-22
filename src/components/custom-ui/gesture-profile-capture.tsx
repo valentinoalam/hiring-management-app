@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button.js"
 import { Card } from "@/components/ui/card.js"
 import { useHandGestureDetection } from "@/hooks/use-hand-gesture-detection"
 import { Camera, RotateCcw, Download, X, Scan, User } from "lucide-react"
-import Image from "next/image"
+import Image from "next/image.js"
 import { useFaceDetection } from "@/hooks/use-face-detection"
 
 interface GestureProfileCaptureProps {

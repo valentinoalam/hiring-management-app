@@ -1,5 +1,5 @@
 import { MapPin, Banknote } from "lucide-react";
-import Image from "next/image";
+import Image from "next/image.js";
 
 interface JobCardProps {
   title: string;

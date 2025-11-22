@@ -1,6 +1,6 @@
 
 // app/api/jobs/[id]/route.ts
-import { type NextRequest, NextResponse } from "next/server.js"
+import { type NextRequest, NextResponse } from "next/server.js.js"
 import { prisma } from "@/lib/prisma.js"
 import { auth } from "@/auth.js"
 import { AppFormField } from "@/generated/prisma/client.js"

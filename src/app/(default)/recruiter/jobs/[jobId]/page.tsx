@@ -5,13 +5,13 @@ import ApplicantsTable from "@/components/job/recruiter/applicants-table.js";
 import { Button } from "@/components/ui/button.js";
 import { useJobDetail } from "@/hooks/queries/job-queries.js";
 import { ArrowLeft } from "lucide-react";
-import Link from "next/link";
+import Link from "next/link.js";
 import { useJobApplicants, useBulkActionApplicants, useUpdateApplicantStatus } from '@/hooks/queries/applicant-queries.js';
 import { ApplicationStatus, Applicant } from '@/types/job.js';
 import { mockApplicants, mockVisibleFields, mockTotalApplicants } from './mock-applicants.js';
 import NoApplicantsHero from '@/components/job/recruiter/no-applicant.js';
 import Loading from '@/components/layout/loading.js';
-import { useParams } from 'next/navigation';
+import { useParams } from 'next/navigation.js';
 
 export default function JobApplicantsPage() {
   const params = useParams<{ jobId: string }>()

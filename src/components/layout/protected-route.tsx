@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { usePathname, useRouter } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation.js"
 import { Loader2 } from "lucide-react"
 import { useSession } from "next-auth/react"
 

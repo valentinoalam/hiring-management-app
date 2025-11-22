@@ -100,6 +100,7 @@
     "net": "latest",
     "next": "16.0.3",
     "next-auth": "^5.0.0-beta.30",
+    "next-devtools-mcp": "^0.3.4",
     "next-themes": "latest",
     "nodemailer": "^7.0.10",
     "pg": "^8.16.3",

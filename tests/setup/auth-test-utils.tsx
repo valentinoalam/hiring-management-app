@@ -2,7 +2,6 @@
 import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { SessionProvider } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
 import { prisma } from '@/lib/prisma.js';
 import { compare } from 'bcryptjs';
 import { 
@@ -17,6 +16,7 @@ import {
   getVerificationTokenByEmail,
   deleteVerificationToken,
 } from '@/lib/tokens.js';
+import { useRouter, useSearchParams } from 'next/navigation.js';
 
 // Create a wrapper with QueryClient and SessionProvider
 export const createWrapper = () => {

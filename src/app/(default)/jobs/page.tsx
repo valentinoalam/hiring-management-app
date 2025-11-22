@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation.js';
 import { useMemo, useCallback, useEffect, useState } from 'react';
 import { useAllJobs } from '@/hooks/queries/job-queries';
 import { Loader2, Briefcase, MapPin, Filter, X, AlertCircle, Search, Check } from 'lucide-react';

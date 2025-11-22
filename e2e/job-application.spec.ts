@@ -1,7 +1,7 @@
 // tests/job-application.spec.ts
 import { test, expect, Page } from '@playwright/test';
-import { mockUser, mockJob, mockApplication } from './mocks/job-application-mocks';
-import { setupAuthenticatedState, clearAuthentication, loginWithCredentials } from './utils/auth-helpers';
+import { mockUser, mockJob, mockApplication } from './mocks/job-application-mocks.js';
+import { setupAuthenticatedState, clearAuthentication, loginWithCredentials } from './utils/auth-helpers.js';
 
 test.describe('Job Application Flow', () => {
   let page: Page;

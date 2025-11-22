@@ -1,5 +1,5 @@
 // app/api/jobs/route.ts (PUBLIC)
-import { NextRequest, NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server.js";
 import { prisma } from "@/lib/prisma";
 import { transformJobData } from "@/types/job.js";
 

@@ -1,7 +1,7 @@
-// import Image from 'next/image';
+// import Image from 'next/image.js';
 import { cn } from '@/lib/utils.js';
-import Image from 'next/image';
-import Link from 'next/link';
+import Image from 'next/image.js';
+import Link from 'next/link.js';
 interface LogoProps {
   className?: string;
   linkToHome?: boolean;

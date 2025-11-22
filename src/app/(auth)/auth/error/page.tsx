@@ -1,6 +1,6 @@
 'use client';
 
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation.js';
 import { TriangleAlert } from 'lucide-react'; // Assuming you use lucide-react for icons
 
 // Map NextAuth.js error codes to user-friendly messages

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "next/navigation.js"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Controller, useForm } from "react-hook-form"
 import * as z from "zod"
@@ -16,9 +16,9 @@ import {
 } from "@/components/ui/card.js"
 import { Input } from "@/components/ui/input.js"
 import { Alert, AlertDescription } from "@/components/ui/alert.js"
-import { signInCredentials, signInOAuth, signInMagicLink } from "./action"
-import { useSearchParams } from 'next/navigation'
-import Link from "next/link"
+import { signInCredentials, signInOAuth, signInMagicLink } from "./action.js"
+import { useSearchParams } from 'next/navigation.js'
+
 import Logo from "@/components/layout/logo.js"
 import { Separator } from "@/components/ui/separator.js"
 import { KeyRound, Mail, Lock, Edit } from "lucide-react"
@@ -26,6 +26,7 @@ import LinkSentSuccess from "@/components/layout/link-sent.js"
 import { FieldGroup, Field, FieldLabel, FieldError } from "@/components/ui/field.js"
 import { useSession } from "next-auth/react"
 import Loading from "@/components/layout/loading.js"
+import Link from "next/link"
 
 // Separate schemas for different auth methods
 const emailSchema = z.object({

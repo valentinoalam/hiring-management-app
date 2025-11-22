@@ -34,14 +34,14 @@ global.ResizeObserver = jest.fn().mockImplementation(() => ({
 global.fetch = jest.fn();
 
 // --- Global Mocks ---
-jest.mock('next/navigation', () => ({
+jest.mock('next/navigation.js', () => ({
   useRouter: jest.fn(),
   useSearchParams: jest.fn(),
   usePathname: jest.fn(),
   useParams: jest.fn(),
 }));
-// Mock next/font
-jest.mock('next/font/local', () => ({
+// Mock next/font.js
+jest.mock('next/font/local.js', () => ({
   __esModule: true,
   default: () => ({
     className: 'mock-font-class',
@@ -49,7 +49,7 @@ jest.mock('next/font/local', () => ({
   }),
 }));
 
-jest.mock('next/font/google', () => ({
+jest.mock('next/font/google.js', () => ({
   Inter: () => ({
     className: 'mock-font-class',
     style: { fontFamily: 'mock-font' },
@@ -57,8 +57,8 @@ jest.mock('next/font/google', () => ({
 }));
 
 
-// Mock next/navigation with default implementations
-jest.mock('next/navigation', () => {
+// Mock next/navigation.js with default implementations
+jest.mock('next/navigation.js', () => {
   const mockPush = jest.fn();
   const mockReplace = jest.fn();
   const mockBack = jest.fn();

@@ -1,5 +1,5 @@
 "use client"
-import { useParams, useRouter } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation.js';
 import JobApplicationForm from '@/components/job/job-seeker/apply-form.js';
 import { Button } from '@/components/ui/button.js';
 import { ArrowLeft } from 'lucide-react';

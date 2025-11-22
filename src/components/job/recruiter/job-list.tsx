@@ -2,7 +2,7 @@
 import React, { useState, useMemo, lazy, Suspense } from 'react';
 import { Search, Loader2 } from 'lucide-react'; // Using Lucide icons for aesthetics
 import { Job } from '@/types/job.js';
-import Image from 'next/image';
+import Image from 'next/image.js';
 import { Card, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card.js';
 import { Input } from '@/components/ui/input.js';
 import { Button } from '@/components/ui/button.js';

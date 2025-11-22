@@ -1,7 +1,7 @@
 // __mocks__/@/generated/prisma/client.ts or __mocks__/@/generated/prisma/client/index.ts
 
 import { jest } from '@jest/globals';
-import { PrismaClient } from '@/generated/prisma/client'; // Import actual types for safety
+import { PrismaClient } from '@/generated/prisma/client.js'; // Import actual types for safety
 
 // 1. Create a mocked implementation for each model
 const mockUser = {

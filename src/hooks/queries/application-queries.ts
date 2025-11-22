@@ -4,7 +4,7 @@ import { queryKeys } from '@/lib/query-keys.js';
 import { apiFetch } from "@/lib/api.js";
 import { Application } from "@/generated/prisma/client.js";
 import { Profile } from '@/types/user.js';
-import { useRouter } from "next/navigation.js";
+import { useRouter } from "next/navigation.js.js";
 import { useJobDetail } from "./job-queries.js";
 import { useToast } from "../use-toast.js";
 
