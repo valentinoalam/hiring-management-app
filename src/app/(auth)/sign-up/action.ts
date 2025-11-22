@@ -6,7 +6,6 @@ import { prisma } from "@/lib/prisma"
 import bcrypt from "bcryptjs"
 import { generateVerificationToken } from "@/lib/tokens"
 import { sendVerificationEmail } from "@/lib/email"
-import { PrismaClient } from "@/generated/prisma/client"
 
 export async function signUpCredentials(formData: FormData) {
   try {
@@ -49,7 +48,7 @@ export async function signUpCredentials(formData: FormData) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     // Create user with transaction to ensure data consistency
-    const result = await prisma.$transaction(async (tx: PrismaClient) => {
+    const result = await prisma.$transaction(async (tx) => {
       // Create user
       const user = await tx.user.create({
         data: {
