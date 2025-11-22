@@ -2,9 +2,8 @@ import { faker } from "@faker-js/faker";
 import { hash } from "bcryptjs";
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
-import { PrismaClient, Prisma, User, InfoField, Company } from "@/generated/prisma/client";
+import { PrismaClient, Prisma, User, InfoField, Job } from "@/generated/prisma/client";
 import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/enums";
-import { Job } from "@/types/job";
 
 
 const pool = new Pool({
@@ -464,7 +463,7 @@ async function createJobs(users: User[]): Promise<Job[]> {
 
     // Find company related to this recruiter
     let company: CompanyWithRecruiters | null =
-      companies.find((company: Company) =>
+      companies.find((company: CompanyWithRecruiters) =>
         company.recruiter?.some(
           (profile: { id: string }) => profile.id === recruiter.id
         )
@@ -813,7 +812,7 @@ async function createInfoFields(users: User[]) {
       );
 
       for (const field of selectedFields) {
-        const infoField: InfoField = infoFieldMap.get(field.key);
+        const infoField = infoFieldMap.get(field.key);
         if (!infoField) {
           console.warn(
             `InfoField '${field.key}' not found for user ${user.email}, skipping`
