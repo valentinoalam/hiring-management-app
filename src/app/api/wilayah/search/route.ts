@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import wilayahData from '@/data/wilayahon';
+import wilayahData from '@/data/wilayah.json';
 
 
 interface WilayahItem {
