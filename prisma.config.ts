@@ -5,7 +5,7 @@ import { defineConfig, env } from "prisma/config";
 // See: https://www.prisma.io/docs/orm/reference/prisma-config-reference
 export default defineConfig({
 	// Path to your Prisma schema (or a folder with *.prisma files)
-	schema: "./prisma",
+	schema: "./prisma/schema.prisma",
 
 	// Optional: explicit migrations folder (default is prisma/migrations)
 	migrations: {
@@ -13,6 +13,7 @@ export default defineConfig({
 		seed: "tsx prisma/seed.ts",
 	},
 	datasource: { 
-    url: env("DATABASE_URL") 
+    url: env("DATABASE_URL"),
+	shadowDatabaseUrl: env('SHADOW_DATABASE_URL') 
   }
 });
