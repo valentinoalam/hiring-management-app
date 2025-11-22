@@ -1,6 +1,9 @@
 import { convertDecimalToNumber } from "@/utils/formatters/formatters";
-import { JobStatus, Prisma } from "@/generated/prisma/client";
+
+import { JobStatus } from "@/generated/prisma/enums";
 import { Profile } from "./user";
+import { Prisma } from "@/generated/prisma/client";
+
 
 export interface JobData {
   id: string;
@@ -35,16 +38,16 @@ export interface JobData {
   };
 }
 
-export const jobWithAuthorAndCount = Prisma.validator<Prisma.JobDefaultArgs>()({
+export const jobWithAuthorAndCount = {
   include: {
-    author: {
-      select: {
-        id: true,
-        email: true,
-        name: true,
-      },
+    author: { 
+      select: { 
+        id: true, 
+        email: true, 
+        name: true 
+      } 
     },
-    company: { // Added company include
+    company: {
       select: {
         id: true,
         name: true,
@@ -57,7 +60,7 @@ export const jobWithAuthorAndCount = Prisma.validator<Prisma.JobDefaultArgs>()({
       select: { candidates: true },
     },
   },
-});
+} as const;
 
 export type JobWithAuthorAndCount = Prisma.JobGetPayload<typeof jobWithAuthorAndCount>;
 

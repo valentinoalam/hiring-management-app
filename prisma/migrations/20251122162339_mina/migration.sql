@@ -10,6 +10,9 @@ CREATE TYPE "ApplicationStatus" AS ENUM ('PENDING', 'UNDER_REVIEW', 'SHORTLISTED
 -- CreateEnum
 CREATE TYPE "EmploymentType" AS ENUM ('FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE');
 
+-- CreateEnum
+CREATE TYPE "Gender" AS ENUM ('PRIA', 'WANITA');
+
 -- CreateTable
 CREATE TABLE "verification_tokens" (
     "identifier" TEXT NOT NULL,
@@ -19,7 +22,7 @@ CREATE TABLE "verification_tokens" (
 
 -- CreateTable
 CREATE TABLE "password_reset_tokens" (
-    "id" TEXT NOT NULL,
+    "id" UUID NOT NULL,
     "email" TEXT NOT NULL,
     "token" TEXT NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
@@ -29,15 +32,11 @@ CREATE TABLE "password_reset_tokens" (
 
 -- CreateTable
 CREATE TABLE "sessions" (
-    "id" UUID NOT NULL,
-    "user_id" UUID,
-    "session_token" TEXT NOT NULL,
-    "access_token" TEXT,
+    "sessionToken" TEXT NOT NULL,
+    "userId" UUID NOT NULL,
     "expires" TIMESTAMP(3) NOT NULL,
     "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updatedAt" TIMESTAMP(3) NOT NULL,
-
-    CONSTRAINT "sessions_pkey" PRIMARY KEY ("id")
+    "updatedAt" TIMESTAMP(3) NOT NULL
 );
 
 -- CreateTable
@@ -54,8 +53,24 @@ CREATE TABLE "accounts" (
     "scope" TEXT,
     "id_token" TEXT,
     "session_state" TEXT,
+    "createdAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "updatedAt" TIMESTAMP(3) NOT NULL,
 
     CONSTRAINT "accounts_pkey" PRIMARY KEY ("id")
+);
+
+-- CreateTable
+CREATE TABLE "Authenticator" (
+    "credentialID" TEXT NOT NULL,
+    "userId" UUID NOT NULL,
+    "providerAccountId" TEXT NOT NULL,
+    "credentialPublicKey" TEXT NOT NULL,
+    "counter" INTEGER NOT NULL,
+    "credentialDeviceType" TEXT NOT NULL,
+    "credentialBackedUp" BOOLEAN NOT NULL,
+    "transports" TEXT,
+
+    CONSTRAINT "Authenticator_pkey" PRIMARY KEY ("userId","credentialID")
 );
 
 -- CreateTable
@@ -80,7 +95,10 @@ CREATE TABLE "profiles" (
     "userId" UUID NOT NULL,
     "companyId" UUID,
     "fullname" TEXT NOT NULL,
+    "gender" "Gender" DEFAULT 'PRIA',
+    "date_of_birth" TIMESTAMP(3),
     "bio" TEXT,
+    "email" TEXT,
     "phone" TEXT,
     "location" TEXT,
     "avatar_url" TEXT,
@@ -179,6 +197,9 @@ CREATE TABLE "application_form_fields" (
     "jobId" UUID NOT NULL,
     "fieldId" UUID NOT NULL,
     "fieldState" TEXT NOT NULL DEFAULT 'optional',
+    "description" TEXT,
+    "placeholder" TEXT,
+    "validation" JSONB,
     "sortOrder" INTEGER DEFAULT 0,
     "updated_at" TIMESTAMP(3) NOT NULL,
 
@@ -193,6 +214,7 @@ CREATE TABLE "applications" (
     "status" "ApplicationStatus" NOT NULL DEFAULT 'PENDING',
     "formResponse" JSONB NOT NULL,
     "coverLetter" TEXT,
+    "coverLetterFileUrl" TEXT,
     "source" TEXT DEFAULT 'direct',
     "applied_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "viewed_at" TIMESTAMP(3),
@@ -243,10 +265,13 @@ CREATE UNIQUE INDEX "verification_tokens_identifier_token_key" ON "verification_
 CREATE UNIQUE INDEX "password_reset_tokens_token_key" ON "password_reset_tokens"("token");
 
 -- CreateIndex
-CREATE UNIQUE INDEX "sessions_session_token_key" ON "sessions"("session_token");
+CREATE UNIQUE INDEX "sessions_sessionToken_key" ON "sessions"("sessionToken");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "accounts_provider_providerAccountId_key" ON "accounts"("provider", "providerAccountId");
+
+-- CreateIndex
+CREATE UNIQUE INDEX "Authenticator_credentialID_key" ON "Authenticator"("credentialID");
 
 -- CreateIndex
 CREATE UNIQUE INDEX "users_email_key" ON "users"("email");
@@ -324,10 +349,13 @@ CREATE INDEX "interviews_applicationId_idx" ON "interviews"("applicationId");
 CREATE INDEX "interviews_scheduled_at_idx" ON "interviews"("scheduled_at");
 
 -- AddForeignKey
-ALTER TABLE "sessions" ADD CONSTRAINT "sessions_user_id_fkey" FOREIGN KEY ("user_id") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "sessions" ADD CONSTRAINT "sessions_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "accounts" ADD CONSTRAINT "accounts_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE "Authenticator" ADD CONSTRAINT "Authenticator_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE CASCADE ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE "profiles" ADD CONSTRAINT "profiles_userId_fkey" FOREIGN KEY ("userId") REFERENCES "users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
