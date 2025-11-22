@@ -1,5 +1,4 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
-import type { NextAuthConfig, User } from "next-auth"
+import type { NextAuthConfig } from "next-auth"
 import Credentials from "next-auth/providers/credentials"
 import Google from 'next-auth/providers/google'
 import Email from 'next-auth/providers/nodemailer'
