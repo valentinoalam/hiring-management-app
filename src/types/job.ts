@@ -1,5 +1,5 @@
 import { convertDecimalToNumber } from "@/utils/formatters/formatters";
-import { JobStatus, Prisma } from "@prisma/client";
+import { JobStatus, Prisma } from "@/generated/prisma/client";
 import { Profile } from "./user";
 
 export interface JobData {
