@@ -1,7 +1,7 @@
 import "server-only";
 import { PrismaClient } from '../generated/prisma/client' // New import path
 import { PrismaPg } from '@prisma/adapter-pg'
-
+import { withAccelerate } from "@prisma/extension-accelerate"
 const adapter = new PrismaPg({
   connectionString: process.env.DATABASE_URL
 })
@@ -15,7 +15,7 @@ function createPrismaClient() {
     adapter,
     log: ['query', 'error', 'warn'],
     errorFormat: 'minimal',
-  })
+  }).$extends(withAccelerate())
 
   // Add connection error handling
   client.$connect().catch((error: unknown) => {
