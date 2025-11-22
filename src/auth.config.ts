@@ -41,7 +41,7 @@ async function markUserAsLoggedIn(email: string) {
 }
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  // adapter: PrismaAdapter(prisma),
   providers: [
     Credentials({
       id: "credentials",
