@@ -1,6 +1,6 @@
 import { convertDecimalToNumber } from "@/utils/formatters/formatters";
 
-import { JobStatus } from "@/generated/prisma/enums";
+import { JobStatus } from "@/generated/prisma/client";
 import { Profile } from "./user";
 import { Prisma } from "@/generated/prisma/client";
 

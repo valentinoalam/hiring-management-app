@@ -5,7 +5,7 @@ import Email from 'next-auth/providers/nodemailer'
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from '@/lib/prisma'
 import { compare } from "bcryptjs"
-import { UserRole } from "@/generated/prisma/enums"
+import { UserRole } from "@/generated/prisma/client"
  import PrismaClient from "@prisma/client";
 
 // try {;
