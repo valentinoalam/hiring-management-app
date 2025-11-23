@@ -4,8 +4,8 @@
 generator client {
     provider = "prisma-client"
     output = "../src/generated/prisma"
+    runtime  = "vercel-edge"
     engineType = "client"
-    runtime = "nodejs"
     moduleFormat= "cjs"
     generatedFileExtension = "ts"
     importFileExtension = "ts"
