@@ -9,7 +9,7 @@ import { withAccelerate } from "@prisma/extension-accelerate"
 //   idleTimeoutMillis: 30000,
 //   connectionTimeoutMillis: 2000,
 // })
-
+console.log(typeof PrismaClient)
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma = globalForPrisma.prisma ?? 

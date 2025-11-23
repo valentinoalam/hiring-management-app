@@ -5,7 +5,7 @@ import Email from 'next-auth/providers/nodemailer'
 import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from '@/lib/prisma'
 import { compare } from "bcryptjs"
-import { UserRole } from "@/generated/prisma/client"
+import { PrismaClient, UserRole } from "@/generated/prisma/client"
 
 // try {;
   
@@ -41,7 +41,7 @@ async function markUserAsLoggedIn(email: string) {
 }
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma as unknown as { prisma: PrismaClient }),
   providers: [
     Credentials({
       id: "credentials",
