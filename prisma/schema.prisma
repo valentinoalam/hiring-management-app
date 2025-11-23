@@ -4,16 +4,12 @@
 generator client {
     provider = "prisma-client"
     output = "../src/generated/prisma"
-    runtime  = "vercel-edge"
-    engineType = "client"
-    moduleFormat= "cjs"
     generatedFileExtension = "ts"
     importFileExtension = "ts"
 }
 
 datasource db {
     provider = "postgresql"
-    url = env("DATABASE_URL")
 }
 
 // ====================================== ENUMS (Enhanced)
