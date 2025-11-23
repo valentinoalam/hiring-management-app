@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { Check, ChevronsUpDown, MapPin, Search, Loader2 } from "lucide-react";
+import { Check, ChevronsUpDown, MapPin, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import {
@@ -145,7 +145,7 @@ export function WilayahAutocomplete({
 
   const handleSelect = (item: WilayahItem) => {
     setSelectedItem(item);
-    onChange?.(item.kode);
+    onChange?.(item.nama);
     setTypedInput("");
     setOpen(false);
     setSearchQuery("");
@@ -158,6 +158,19 @@ export function WilayahAutocomplete({
       setSelectedItem(null);
       setOpen(false);
       setSearchQuery("");
+    }
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && allowTypedInput && searchQuery.trim()) {
+      e.preventDefault();
+      // If there are results, select the first one
+      if (results.length > 0) {
+        handleSelect(results[0]);
+      } else {
+        // If no results, use the typed input
+        handleTypedInput();
+      }
     }
   };
 
@@ -226,11 +239,11 @@ export function WilayahAutocomplete({
         <PopoverContent className="w-full p-0" align="start">
           <Command shouldFilter={false}>
             <div className="flex items-center border-b px-3">
-              <Search className="mr-2 h-4 w-4 shrink-0 opacity-50" />
               <CommandInput
                 placeholder="Cari provinsi, kabupaten, kecamatan, atau desa..."
                 value={searchQuery}
                 onValueChange={setSearchQuery}
+                onKeyDown={handleKeyDown}
                 className="border-none focus:ring-0"
               />
               {loading && (
@@ -276,7 +289,7 @@ export function WilayahAutocomplete({
                           <span className="font-medium text-sm truncate">
                             {item.nama}
                           </span>
-                          {selectedItem?.kode === item.kode && (
+                          {selectedItem?.nama === item.nama && (
                             <Check className="h-4 w-4 shrink-0" />
                           )}
                         </div>

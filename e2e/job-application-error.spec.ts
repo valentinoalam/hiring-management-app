@@ -100,7 +100,8 @@ test.describe('Job Application Error Scenarios', () => {
     
     const resumeInput = page.locator('input[id="resume"]');
     await resumeInput.setInputFiles('./e2e/fixtures/valentino_cv_1014.pdf');
-    
+    await page.locator('[placeholder="Pilih domisili..."]').click();
+    await page.locator('[placeholder="Cari provinsi, kabupaten, kecamatan, atau desa..."]').fill("Bekasi Barat");
     await page.locator('select[name="source"]').selectOption('linkedin');
 
     console.log('🚀 Clicking submit button...');
