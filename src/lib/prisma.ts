@@ -15,21 +15,11 @@ const adapter = new PrismaPg(pool)
 
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
-export const prisma = globalForPrisma.prisma ?? createPrismaClient()
-
-function createPrismaClient() {
-  const client = new PrismaClient({
+export const prisma = globalForPrisma.prisma ?? 
+  new PrismaClient({
     adapter,
   }).$extends(withAccelerate())
 
-  // Add connection error handling
-  client.$connect().catch((error: unknown) => {
-    console.error('❌ Failed to connect to database:', error)
-    process.exit(1)
-  })
-
-  return client
-}
 
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
