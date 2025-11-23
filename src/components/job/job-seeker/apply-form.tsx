@@ -1034,7 +1034,7 @@ export default function JobApplicationForm({
     const hasResume = resumeFile || resumeUrl;
     const hasSource = formValues.source;
 
-    return hasRequiredProfile && hasAvatar && hasResume && hasSource && isValid;
+    return hasRequiredProfile && hasAvatar && hasResume && hasSource;
   };
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">
@@ -1543,7 +1543,7 @@ export default function JobApplicationForm({
                 <div className="flex justify-end mt-6">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || isSending}
+                    disabled={isSubmitting || !isFormValid() || isSending}
                     className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSubmitting || isSending ? "Submitting..." : "Submit Application"}

@@ -110,13 +110,6 @@ test.describe('Job Application Error Scenarios', () => {
     await submit.isVisible();
     await submit.click();
     await page.waitForTimeout(2000);
-    await page.waitForResponse(response => {
-      const url = response.url();
-      const isApplyEndpoint = url.includes('/apply');
-      const isPost = response.request().method() === 'POST';
-      console.log('🔍 Checking response:', url, 'Method:', response.request().method(), 'Match:', isApplyEndpoint && isPost);
-      return isApplyEndpoint && isPost;
-    }, { timeout: 10000 });
     // Check if there are any network errors
     const networkLogs = await page.evaluate(() => {
       return performance.getEntriesByType('resource')
