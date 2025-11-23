@@ -1034,7 +1034,7 @@ export default function JobApplicationForm({
     const hasResume = resumeFile || resumeUrl;
     const hasSource = formValues.source;
 
-    return hasRequiredProfile && hasAvatar && hasResume && hasSource && isValid;
+    return hasRequiredProfile && hasAvatar && hasResume && hasSource;
   };
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">

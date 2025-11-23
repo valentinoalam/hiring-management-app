@@ -96,7 +96,7 @@ test.describe('Job Application Error Scenarios', () => {
     await page.locator('input[type="tel"]').fill('8123456789');
     await page.locator('input[name="date_of_birth"]').fill('1990-01-01');
     await page.locator('input[type="radio"][value="male"]').check();
-    await page.locator('input[type="url"][name="linkedin_url]').fill('https://www.linkedin.com/in/valentinoalam/');
+    await page.locator('input[type="url"][placeholder="https://linkedin.com/in/yourprofile"]').fill('https://www.linkedin.com/in/valentinoalam/');
     const resumeInput = page.locator('input[id="resume"]');
     await resumeInput.setInputFiles('./e2e/fixtures/valentino_cv_1014.pdf');
     await page.locator('button[role="combobox"]:has-text("Pilih domisili...")').click();
