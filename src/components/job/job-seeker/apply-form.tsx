@@ -1543,7 +1543,7 @@ export default function JobApplicationForm({
                 <div className="flex justify-end mt-6">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || !isFormValid() || isSending}
+                    disabled={isSubmitting || isSending}
                     className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSubmitting || isSending ? "Submitting..." : "Submit Application"}

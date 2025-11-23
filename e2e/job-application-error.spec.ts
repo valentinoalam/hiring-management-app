@@ -1,7 +1,6 @@
 // tests/job-application-error.spec.ts
 import { test, expect } from '@playwright/test';
 import { loginAndGoToApplication } from './utils/auth-helpers';
-import path from 'path';
 
 test.describe('Job Application Error Scenarios', () => {
   test.beforeEach(async ({ page }) => {
@@ -97,17 +96,19 @@ test.describe('Job Application Error Scenarios', () => {
     await page.locator('input[type="tel"]').fill('8123456789');
     await page.locator('input[name="date_of_birth"]').fill('1990-01-01');
     await page.locator('input[value="male"]').check();
-    
+    await page.locator('input[type="radio"][value="male"]').check();
     const resumeInput = page.locator('input[id="resume"]');
     await resumeInput.setInputFiles('./e2e/fixtures/valentino_cv_1014.pdf');
-    await page.locator('[placeholder="Pilih domisili..."]').click();
-    await page.locator('[placeholder="Cari provinsi, kabupaten, kecamatan, atau desa..."]').fill("Bekasi Barat");
+    await page.locator('button[role="combobox"]:has-text("Pilih domisili...")').click();
+    const inputField = page.locator('[placeholder="Cari provinsi, kabupaten, kecamatan, atau desa..."]');
+    await inputField.fill("Bekasi Barat");
+    await inputField.press("Enter");
     await page.locator('select[name="source"]').selectOption('linkedin');
 
     console.log('🚀 Clicking submit button...');
-    await expect(async () => {
-      await page.click('button[type="submit"]:has-text("Submit Application")');
-    }).toPass();
+    const submit = page.locator('button[type="submit"]:has-text("Submit Application")');
+    await submit.isVisible();
+    await submit.click();
     await page.waitForTimeout(2000);
     await page.waitForResponse(response => {
       const url = response.url();
