@@ -1079,7 +1079,20 @@ export default function JobApplicationForm({
                     <Image width={128} height={128} className="object-cover object-center" src={avatarPreview? avatarPreview : "/Avatar.svg"} alt={"avatar"} />
                   </div>
                   <div className="flex gap-2">
-                    <Button
+                    <input
+                      type="file"
+                      id="avatar"
+                      accept="image/*"
+                      onChange={handleAvatarChange}
+                      className="hidden"
+                    />
+                    <label
+                      htmlFor="avatar"
+                      className="flex items-center gap-2 px-4 py-2 border border-neutral-40 bg-neutral-10 rounded-lg text-sm leading-6 text-neutral-90 font-sans cursor-pointer hover:bg-gray-50 transition-colors"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload Photo
+                    </label>                     <Button
                       type="button"
                       onClick={() => setShowGestureCapture(true)}
                       className="flex gap-2 px-4 py-1 border-2 items-normal content-center border-neutral-40 bg-neutral-10 rounded-xl text-sm font-bold shadow-xl leading-6 text-neutral-100 cursor-pointer hover:bg-gray-50 transition-colors"

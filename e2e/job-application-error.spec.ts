@@ -1,6 +1,7 @@
 // tests/job-application-error.spec.ts
 import { test, expect } from '@playwright/test';
 import { loginAndGoToApplication } from './utils/auth-helpers';
+import path from 'path';
 
 test.describe('Job Application Error Scenarios', () => {
   test.beforeEach(async ({ page }) => {
@@ -83,6 +84,14 @@ test.describe('Job Application Error Scenarios', () => {
     await loginAndGoToApplication(page, '123');
     await expect(page).toHaveURL(/\/jobs\/123\/apply/);
     // Fill required fields
+    console.log('📸 Uploading avatar...');
+    // Upload avatar (photo profile) - THIS IS REQUIRED
+    const avatarInput = page.locator('input[type="file"][accept*="image"]').first();
+    const avatarPath = './e2e/fixtures/test-avatar.png';
+    await avatarInput.setInputFiles(avatarPath);
+    
+    // Wait for avatar preview to appear
+    await page.waitForTimeout(1000);
     await page.locator('input[name="full_name"]').fill('Test User');
     await page.locator('input[name="email"]').fill('test@example.com');
     await page.locator('input[type="tel"]').fill('8123456789');
