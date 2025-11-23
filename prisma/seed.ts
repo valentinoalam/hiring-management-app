@@ -3,7 +3,7 @@ import { hash } from "bcryptjs";
 import { PrismaPg } from '@prisma/adapter-pg' // Install your adapter
 import { Pool } from 'pg' 
 import { PrismaClient, Prisma, User, InfoField, Job } from "@/generated/prisma/client";
-import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/enums";
+import { UserRole, EmploymentType, JobStatus, ApplicationStatus } from "@/generated/prisma/client";
 
 
 const pool = new Pool({
