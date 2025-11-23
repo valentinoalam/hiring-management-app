@@ -15,7 +15,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { OtherInfo, OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
+import { OtherInfoData, Profile, ProfileData, transformProfileUserInfo } from "@/types/user";
 import { AppFormField, ApplicantData, Job } from "@/types/job";
 import Image from "next/image";
 import React from "react";
@@ -57,11 +57,9 @@ const COMMON_PROFILE_FIELDS = [
 // ============================================================================
 const createApplicationSchema = (appFormFields: AppFormField[]) => {
   const schema: Record<string, z.ZodTypeAny> = {};
-  schema.avatar = z.instanceof(File)
+  schema.avatar = z.instanceof(File, { message: "Photo profile is required" })
     .refine(file => file.size <= MAX_FILE_SIZE, `Avatar must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
-    .refine(file => ACCEPTED_IMAGE_TYPES.includes(file.type), "Avatar must be JPG, PNG, or WebP")
-    .optional()
-    .or(z.literal(undefined));
+    .refine(file => ACCEPTED_IMAGE_TYPES.includes(file.type), "Avatar must be JPG, PNG, or WebP");
     
   // 1. Filter and sort fields
   const sortedFields = [...appFormFields]
@@ -78,11 +76,11 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
     // 2. Create base validator based on field type
     switch (field.fieldType) {
       case 'email':
-        fieldValidator = z.email("Invalid email address");
+        fieldValidator = z.email("Invalid email address").min(1, `${fieldLabel} is required`);
         break;
 
       case 'url':
-        fieldValidator = z.url("Must be a valid URL");
+        fieldValidator = z.url("Must be a valid URL").min(1, `${fieldLabel} is required`);
         break;
 
       case 'number':
@@ -90,6 +88,7 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         let baseNumberSchema = z.union([
           z.number({ message: "Must be a valid number" }),
           z.string()
+            .min(1, `${fieldLabel} is required`)
             .regex(/^-?\d+(\.\d+)?$/, "Invalid number format")
             .transform(val => Number(val))
         ]).pipe(z.number());
@@ -112,7 +111,8 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
 
       case 'date':
         // Enforce ISO string format and apply date validation (string comparison works for ISO)
-        fieldValidator = z.iso.datetime({ message: "Invalid date format (expected ISO string)" });
+        fieldValidator = z.iso.datetime({ message: "Invalid date format (expected ISO string)" })
+          .min(1, `${fieldLabel} is required`);
         
         if (field.validation?.minDate) {
           fieldValidator = fieldValidator.refine(
@@ -170,7 +170,9 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
         );
       } else if (fieldValidator instanceof z.ZodString) {
         // Mandatory strings must have content
-        fieldValidator = fieldValidator.min(1, `${fieldLabel} is required`);
+        fieldValidator = fieldValidator
+          .min(1, `${fieldLabel} is required`)
+          .refine(val => val.trim().length > 0, `${fieldLabel} cannot be only whitespace`);
       }
       // Note: File fields are inherently required here due to z.instanceof(File, { message: ... })
       // and only become optional if !isRequired is true.
@@ -206,13 +208,16 @@ const createApplicationSchema = (appFormFields: AppFormField[]) => {
   .max(15000, "Cover letter must be less than 15000 characters")
   .optional()
   .or(z.literal(''));
+
   schema.coverLetterFile = z.instanceof(File) // File input
     .refine(file => file.size <= MAX_FILE_SIZE, `Cover letter file must be less than ${MAX_FILE_SIZE / MEGABYTE}MB`)
     .refine(file => ACCEPTED_RESUME_TYPES.includes(file.type), "Cover letter must be PDF or Word document")
     .optional()
     .or(z.literal(undefined));
 
-  schema.source = z.string().min(1, "Please specify how you heard about this position");
+  schema.source = z.string()
+    .min(1, "Please specify how you heard about this position")
+    .refine(val => val.trim().length > 0, "Please select a valid option");
 
   return z.object(schema);
 };
@@ -288,7 +293,15 @@ export default function JobApplicationForm({
    * Get initial values for all form fields
    */
   const getInitialFormData = useCallback((): Partial<ApplicationFormData> => {
-    if (!profile) return {};
+    if (!profile) return {
+      full_name: undefined,
+      email: undefined,
+      phone_number: undefined,
+      date_of_birth: undefined,
+      gender: undefined,
+      domicile: undefined,
+      linkedin_url: undefined,
+    };
 
     // Transform profile.otherInfo to simple key-value pairs
     const transformedOtherInfo = profile.otherInfo && Array.isArray(profile.otherInfo) 
@@ -297,13 +310,13 @@ export default function JobApplicationForm({
 
     // Common profile fields (fixed section)
     const commonFields = {
-      'full_name': profile.fullname || user?.name || '',
-      'email': profile.email || user?.email || '',
-      'phone_number': profile.phone || '198721674214',
-      'date_of_birth': getProfileDateOfBirth(),
-      'gender': profile.gender || '',
-      'domicile': profile.location || '',
-      'linkedin_url': profile.linkedinUrl || '',
+      'full_name': profile.fullname || user?.name || undefined,
+      'email': profile.email || user?.email || undefined,
+      'phone_number': profile.phone || undefined,
+      'date_of_birth': getProfileDateOfBirth() || undefined,
+      'gender': profile.gender || undefined,
+      'domicile': profile.location || undefined,
+      'linkedin_url': profile.linkedinUrl || undefined,
     };
 
     // Merge common fields with dynamic fields from otherInfo
@@ -326,11 +339,10 @@ export default function JobApplicationForm({
     formState: { errors, isSubmitting, isValid },
   } = useForm<ApplicationFormData>({
     resolver: zodResolver(formSchema),
-    mode: 'onChange',
+    mode: 'onBlur', // ✅ Validate on blur for better UX
+    reValidateMode: 'onChange', // ✅ Re-validate on change after first validation
     defaultValues: {
-      // Set all initial values here
       ...initialValues,
-      // Fixed application fields with defaults
       coverLetter: '',
       source: '',
       // Resume will be handled separately since it's a File
@@ -354,8 +366,6 @@ export default function JobApplicationForm({
    */
   useEffect(() => {
     if (profile?.resumeUrl && !resumeFile) {
-      // Note: This sets a URL string, not a File object
-      // You might need to handle this differently based on your API
       setValue('resume', profile.resumeUrl as string, { shouldValidate: false });
     }
   }, [profile?.resumeUrl, resumeFile, setValue]);
@@ -603,8 +613,20 @@ export default function JobApplicationForm({
   };
 
   const handleFormSubmit = async (formData: ApplicationFormData) => {
-    if (!profile) return;
-
+    if (!avatarFile && !avatarPreview) {
+      setError('avatar', { 
+        type: 'manual', 
+        message: 'Photo profile is required' 
+      });
+      return;
+    }
+    if (!resumeFile && !resumeUrl) {
+      setError('resume', { 
+        type: 'manual', 
+        message: 'Resume is required' 
+      });
+      return;
+    }
     try {
       const formDataToSubmit = prepareFormData(formData);
       await onSubmit(formDataToSubmit);
@@ -998,6 +1020,22 @@ export default function JobApplicationForm({
     );
   }
 
+  const isFormValid = () => {
+    const hasRequiredProfile = 
+      formValues.full_name &&
+      formValues.email &&
+      formValues.phone_number &&
+      formValues.date_of_birth &&
+      formValues.gender &&
+      formValues.domicile &&
+      formValues.linkedin_url;
+    
+    const hasAvatar = avatarFile || avatarPreview;
+    const hasResume = resumeFile || resumeUrl;
+    const hasSource = formValues.source;
+
+    return hasRequiredProfile && hasAvatar && hasResume && hasSource && isValid;
+  };
   return (
     <div className="min-h-screen bg-neutral-10 flex items-center justify-center p-4 sm:p-6 md:p-10">
       <div className="w-full max-w-[700px] border border-neutral-40 bg-neutral-10 rounded-none shadow-sm">
@@ -1492,7 +1530,7 @@ export default function JobApplicationForm({
                 <div className="flex justify-end mt-6">
                   <Button
                     type="submit"
-                    disabled={isSubmitting || !isValid}
+                    disabled={isSubmitting || !isFormValid() || isSending}
                     className="px-6 py-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {isSubmitting || isSending ? "Submitting..." : "Submit Application"}
