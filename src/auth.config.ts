@@ -6,6 +6,7 @@ import { PrismaAdapter } from "@auth/prisma-adapter"
 import { prisma } from '@/lib/prisma'
 import { compare } from "bcryptjs"
 import { UserRole } from "@/generated/prisma/enums"
+import { PrismaClient } from "./generated/prisma/client"
 
 // try {;
   
@@ -41,7 +42,7 @@ async function markUserAsLoggedIn(email: string) {
 }
 
 export const authConfig: NextAuthConfig = {
-  adapter: PrismaAdapter(prisma),
+  adapter: PrismaAdapter(prisma as PrismaClient),
   providers: [
     Credentials({
       id: "credentials",
