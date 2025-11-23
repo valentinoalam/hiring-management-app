@@ -31,11 +31,6 @@ function createPrismaClient() {
   return client
 }
 
-// Handle graceful shutdown
-process.on('beforeExit', async () => {
-  await prisma.$disconnect()
-})
-
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
