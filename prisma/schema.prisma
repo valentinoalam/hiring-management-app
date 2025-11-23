@@ -4,6 +4,8 @@
 generator client {
     provider = "prisma-client-js"
     output = "../src/generated/prisma"
+    engineType = "client"
+    runtime = "nodejs"
     moduleFormat= "cjs"
     generatedFileExtension = "ts"
     importFileExtension = "ts"
@@ -14,8 +16,7 @@ datasource db {
     url = env("DATABASE_URL")
 }
 
-// ====================================== 
-//  ENUMS
+// ====================================== ENUMS (Enhanced)
 // ======================================
 
 enum UserRole {
