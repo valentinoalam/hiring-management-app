@@ -36,11 +36,6 @@ process.on('beforeExit', async () => {
   await prisma.$disconnect()
 })
 
-process.on('SIGINT', async () => {
-  await prisma.$disconnect()
-  process.exit(0)
-})
-
 if (process.env.NODE_ENV !== 'production') {
   globalForPrisma.prisma = prisma
 }
