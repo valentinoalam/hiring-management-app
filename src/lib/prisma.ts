@@ -15,7 +15,13 @@ console.log(typeof PrismaClient)
 const globalForPrisma = global as unknown as { prisma: PrismaClient }
 
 export const prisma = globalForPrisma.prisma ?? 
-  new PrismaClient({adapter}).$extends(withAccelerate())
+  new PrismaClient({
+    adapter,
+    transactionOptions: {
+      maxWait: 30000,    // Maximum time to wait for a transaction
+      timeout: 120000,    // Maximum time for transaction to complete
+    },
+  }).$extends(withAccelerate())
 
 
 if (process.env.NODE_ENV !== 'production') {
