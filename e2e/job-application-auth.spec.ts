@@ -73,7 +73,7 @@ test.describe('Job Application Authentication Scenarios', () => {
     });
 
     // Try to access application without auth
-    await clearAuthentication(page);
+    await page.goto('/auth/signout');
     await page.goto(`/jobs/${jobId}/apply`);
     
     // Should redirect to login

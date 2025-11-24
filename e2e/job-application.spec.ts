@@ -43,13 +43,13 @@ test.describe('Job Application Flow', () => {
 
   test('should redirect to login when not authenticated', async () => {
     // Clear authentication for this test
-    await clearAuthentication(page);
-
+    await page.goto('/auth/signout');
+    await page.waitForLoadState('networkidle');
     await page.goto('/jobs/123/apply');
     
     // Should redirect to login page
-    await expect(page).toHaveURL(/\/auth\/login/);
-    await expect(page.locator('text=Sign in to your account')).toBeVisible();
+    await expect(page).toHaveURL(/\/login/);
+    await expect(page.locator('text=Masuk ke Rakamin')).toBeVisible();
     
     // Check that redirect parameter is preserved
     const url = page.url();
@@ -58,7 +58,8 @@ test.describe('Job Application Flow', () => {
   });
 
   test('should login with specific credentials and access application', async () => {
-    await clearAuthentication(page);
+    await page.goto('/auth/signout');
+    await page.waitForLoadState('networkidle');
     
     // Mock login API
     await page.route('**/api/auth/login', async (route) => {
@@ -76,7 +77,7 @@ test.describe('Job Application Flow', () => {
     await page.goto('/jobs/123/apply');
     
     // Verify we're on login page
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
     
     // Login with specific credentials
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'password123');
@@ -160,7 +161,7 @@ test.describe('Job Application Flow', () => {
     await loginWithCredentials(page, 'recruiter1@careerconnect.com', 'wrongpassword');
     
     // Should stay on login page and show error
-    await expect(page).toHaveURL(/\/auth\/login/);
+    await expect(page).toHaveURL(/\/login/);
     await expect(page.locator('text=Invalid credentials')).toBeVisible();
   });
 });
@@ -174,7 +175,7 @@ async function fillRequiredFields(page: Page) {
   await page.locator('input[name="linkedin_url"]').fill('https://linkedin.com/in/johndoe');
   
   const resumeInput = page.locator('input[id="resume"]');
-  await resumeInput.setInputFiles('./tests/fixtures/sample-resume.pdf');
+  await resumeInput.setInputFiles('./tests/fixtures/valentino_cv_1014.pdf');
   
   await page.locator('select[name="source"]').selectOption('linkedin');
 }
